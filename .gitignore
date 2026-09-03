@@ -1,0 +1,6 @@
+# Ignorar arquivos temporários e caches de SO
+.DS_Store
+Thumbs.db
+*.tmp
+*.log
+.vscode/
