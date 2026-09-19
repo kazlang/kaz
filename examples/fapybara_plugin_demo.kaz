@@ -1,0 +1,86 @@
+// Plugin de Demonstração para Fapybara em Kaz 🦅
+// Automação de Análise de Rede, Cabeçalhos e Regras de Segurança
+
+struct Alvo {
+    string host;
+    int porta;
+    string protocolo;
+    bool ssl;
+}
+
+struct Requisicao {
+    string metodo;
+    string caminho;
+    array headers;
+    string payload;
+}
+
+struct ResultadoScan {
+    Alvo alvo;
+    int status_http;
+    float latencia_ms;
+    bool vulneravel;
+    string diagnostico;
+}
+
+function executar_auditoria(Alvo alvo, Requisicao req): ResultadoScan {
+    runoff("--------------------------------------------------");
+    runoff("Enviando " + req.metodo + " para " + alvo.protocolo + "://" + alvo.host + ":" + alvo.porta + req.caminho);
+    runoff("Payload: " + req.payload);
+
+    bool possui_ssl = alvo.ssl;
+    bool porta_segura = (alvo.porta == 443 || alvo.porta == 8443);
+
+    bool is_vulneravel = !possui_ssl && !porta_segura;
+    string msg = "Conexão Segura e Criptografada";
+
+    if (is_vulneravel) {
+        msg = "ALERTA: Tráfego não criptografado detectado!";
+    }
+
+    return ResultadoScan {
+        alvo: alvo,
+        status_http: 200,
+        latencia_ms: 24.5,
+        vulneravel: is_vulneravel,
+        diagnostico: msg
+    };
+}
+
+function Main() {
+    runoff("╔══════════════════════════════════════════════════════╗");
+    runoff("║       FAPYBARA 🦫 - PLUGIN DE AUDITORIA KAZ 🦅       ║");
+    runoff("╚══════════════════════════════════════════════════════╝\n");
+
+    Alvo web_insegura = Alvo {
+        host: "api.legado.local",
+        porta: 8080,
+        protocolo: "http",
+        ssl: false
+    };
+
+    Alvo web_segura = Alvo {
+        host: "auth.fapybara.dev",
+        porta: 443,
+        protocolo: "https",
+        ssl: true
+    };
+
+    Requisicao ping_req = Requisicao {
+        metodo: "POST",
+        caminho: "/v1/health",
+        headers: ["Authorization: Bearer test-token", "Content-Type: application/json"],
+        payload: "{\"action\": \"audit_check\"}"
+    };
+
+    array alvos = [web_insegura, web_segura];
+
+    for (int i = 0; i < len(alvos); i++) {
+        ResultadoScan res = executar_auditoria(alvos[i], ping_req);
+        runoff("Resultado para " + res.alvo.host + ":");
+        runoff("  Status: " + res.status_http + " | Latência: " + res.latencia_ms + "ms");
+        runoff("  Diagnóstico: " + res.diagnostico + "\n");
+    }
+
+    runoff("✔ Auditoria do Fapybara concluída com sucesso!");
+}

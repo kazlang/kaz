@@ -1,0 +1,12 @@
+// Modelo de Domínio: Usuário
+struct Usuario {
+    int id;
+    string nome;
+    string email;
+    bool ativo;
+}
+
+function formatar_usuario(Usuario u): string {
+    string status = u.ativo ? "ATIVO ✔" : "INATIVO ❌";
+    return "[" + u.id + "] " + u.nome + " <" + u.email + "> - " + status;
+}

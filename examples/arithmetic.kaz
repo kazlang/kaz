@@ -1,0 +1,34 @@
+// Exemplo: Expressões Aritméticas e Operadores em Kaz
+
+int a = 20;
+int b = 6;
+
+int soma = a + b;
+int subtracao = a - b;
+int multiplicacao = a * b;
+int divisao = a / b;
+int resto = a % b;
+
+println("=== Operações Aritméticas Básicas ===");
+println(a + " + " + b + " = " + soma);
+println(a + " - " + b + " = " + subtracao);
+println(a + " * " + b + " = " + multiplicacao);
+println(a + " / " + b + " = " + divisao);
+println(a + " % " + b + " = " + resto);
+
+println("\n=== Precedência e Agrupamento ===");
+int sem_parenteses = 2 + 3 * 4;
+int com_parenteses = (2 + 3) * 4;
+println("2 + 3 * 4 = " + sem_parenteses);
+println("(2 + 3) * 4 = " + com_parenteses);
+
+println("\n=== Operadores de Atribuição Composta ===");
+int pontuacao = 100;
+pontuacao += 50;
+println("Pontuação após += 50: " + pontuacao);
+pontuacao *= 2;
+println("Pontuação após *= 2: " + pontuacao);
+pontuacao -= 20;
+println("Pontuação após -= 20: " + pontuacao);
+pontuacao /= 4;
+println("Pontuação após /= 4: " + pontuacao);

@@ -1,0 +1,103 @@
+// ============================================================================
+//   Kaz Network & API Dashboard 🌐
+//   Software Base de Monitoramento de Infraestrutura & APIs em Kaz
+//   Propriedade Intelectual (c) 2026 Armando Soares - Todos os Direitos Reservados
+// ============================================================================
+
+struct Servidor {
+    string nome;
+    string host;
+    int porta;
+    string categoria;
+}
+
+struct RelatorioAlvo {
+    string nome;
+    string host;
+    int latencia_ms;
+    bool online;
+    string badge;
+}
+
+struct ResumoGeral {
+    int total_alvos;
+    int online_count;
+    int offline_count;
+    int latencia_total;
+    float latencia_media;
+}
+
+function verificar_alvo(Servidor s): RelatorioAlvo {
+    int lat = net.ping(s.host, s.porta, 1200);
+    bool is_online = (lat >= 0);
+    string badge_status = is_online ? "[ ONLINE ✔ ]" : "[ OFFLINE ❌ ]";
+
+    return RelatorioAlvo {
+        nome: s.nome,
+        host: s.host + ":" + s.porta,
+        latencia_ms: is_online ? lat : 0,
+        online: is_online,
+        badge: badge_status
+    };
+}
+
+function Main() {
+    runoff("╔══════════════════════════════════════════════════════════════════════╗");
+    runoff("║                  KAZ NETWORK & API DASHBOARD 🌐 🦅                   ║");
+    runoff("║          Painel de Infraestrutura & Diagnóstico de Conexões          ║");
+    runoff("╚══════════════════════════════════════════════════════════════════════╝\n");
+
+    // 1. Definição do catálogo de servidores e serviços
+    array[Servidor] infraestrutura = [
+        Servidor { nome: "Cloudflare DNS Primário", host: "1.1.1.1", porta: 53, categoria: "DNS / Anycast" },
+        Servidor { nome: "Google Public DNS",      host: "8.8.8.8", porta: 53, categoria: "DNS Global" },
+        Servidor { nome: "Quad9 Secure DNS",       host: "9.9.9.9", porta: 53, categoria: "DNS Seguro" },
+        Servidor { nome: "OpenDNS Home",           host: "208.67.222.222", porta: 53, categoria: "DNS Filtrado" }
+    ];
+
+    runoff("→ Iniciando varredura de " + infraestrutura.len + " nós de infraestrutura...\n");
+
+    array[RelatorioAlvo] relatorios = [];
+    int online_total = 0;
+    int offline_total = 0;
+    int soma_latencias = 0;
+
+    // 2. Coleta de telemetria via net.ping em loop for..in
+    for (servidor in infraestrutura) {
+        RelatorioAlvo rel = verificar_alvo(servidor);
+        relatorios.push(rel);
+
+        if (rel.online) {
+            online_total++;
+            soma_latencias += rel.latencia_ms;
+        } else {
+            offline_total++;
+        }
+    }
+
+    // 3. Exibição da tabela de status formatada
+    runoff("┌───────────────────────────┬──────────────────────┬─────────────┬──────────────┐");
+    runoff("│ SERVIÇO / NÓ              │ ENDEREÇO             │ LATÊNCIA    │ STATUS       │");
+    runoff("├───────────────────────────┼──────────────────────┼─────────────┼──────────────┤");
+
+    for (r in relatorios) {
+        string lat_str = r.online ? (r.latencia_ms + " ms") : "Timeout";
+        runoff("│ " + r.nome + " │ " + r.host + " │ " + lat_str + " │ " + r.badge + " │");
+    }
+    runoff("└───────────────────────────┴──────────────────────┴─────────────┴──────────────┘\n");
+
+    // 4. Cálculo de métricas e KPIs
+    float media = (online_total > 0) ? (soma_latencias * 1.0 / online_total) : 0.0;
+    float disponibilidade = (online_total * 100.0) / relatorios.len;
+
+    runoff("=== RESUMO EXECUTIVO DE TELEMETRIA ===");
+    runoff("  • Nós Monitorados:     " + relatorios.len);
+    runoff("  • Serviços Operando:   " + online_total);
+    runoff("  • Serviços Inativos:   " + offline_total);
+    runoff("  • Latência Média:      " + media + " ms");
+    runoff("  • Disponibilidade:     " + disponibilidade + "%\n");
+
+    string saude_geral = (disponibilidade >= 100.0) ? "EXCELENTE ⭐⭐⭐⭐⭐" : (disponibilidade >= 75.0) ? "ESTÁVEL ⭐⭐⭐⭐" : "DEGRADADO ⚠️";
+    runoff("→ Status Geral da Rede: " + saude_geral);
+    runoff("────────────────────────────────────────────────────────────────────────\n");
+}

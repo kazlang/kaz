@@ -1,0 +1,68 @@
+// ============================================================================
+//   Kaz Virtual Machine Benchmark Suite ⚡🦅
+//   Medição de Performance de Bytecode, Recursão, Loops e Operações de Structs
+// ============================================================================
+
+struct Ponto3D {
+    float x;
+    float y;
+    float z;
+}
+
+function fib(int n): int {
+    if (n <= 1) {
+        return n;
+    }
+    return fib(n - 1) + fib(n - 2);
+}
+
+function Main() {
+    runoff("╔══════════════════════════════════════════════════════════════════════╗");
+    runoff("║               KAZ STACK BYTECODE VM - BENCHMARK SUITE ⚡             ║");
+    runoff("╚══════════════════════════════════════════════════════════════════════╝\n");
+
+    // 1. Benchmark de Recursão Profunda (Fibonacci 26)
+    runoff("→ Teste 1: Recursão Profunda - Fibonacci(26)");
+    int t_inicio = time_now_ms();
+    int resultado_fib = fib(26);
+    int t_fib = time_now_ms() - t_inicio;
+    runoff("  • Resultado: fib(26) = " + resultado_fib);
+    runoff("  • Tempo decorrido: " + t_fib + " ms\n");
+
+    // 2. Benchmark de Loop Aritmético com 50.000 iterações na Pilha
+    runoff("→ Teste 2: Loop Aritmético e Dispatch de Opcodes (50.000 iterações)");
+    int t_inicio_loop = time_now_ms();
+    float acumulador = 0.0;
+    for (int i = 1; i <= 50000; i++) {
+        acumulador += (i * 1.5) - (i / 2.0);
+    }
+    int t_loop = time_now_ms() - t_inicio_loop;
+    runoff("  • Acumulador final: " + acumulador);
+    runoff("  • Tempo decorrido:  " + t_loop + " ms\n");
+
+    // 3. Benchmark de Structs & Alocação de Coleções (10.000 structs)
+    runoff("→ Teste 3: Criação e Manipulação de Structs (10.000 instâncias)");
+    int t_inicio_struct = time_now_ms();
+    float soma_distancias = 0.0;
+    for (int j = 1; j <= 10000; j++) {
+        Ponto3D p = Ponto3D {
+            x: j * 1.0,
+            y: j * 2.0,
+            z: j * 3.0
+        };
+        soma_distancias += math.sqrt(p.x * p.x + p.y * p.y + p.z * p.z);
+    }
+    int t_struct = time_now_ms() - t_inicio_struct;
+    runoff("  • Soma das distâncias: " + soma_distancias);
+    runoff("  • Tempo decorrido:     " + t_struct + " ms\n");
+
+    // 4. Resumo Consolidado do Benchmark
+    runoff("========================================================================");
+    runoff("  RESULTADOS CONSOLIDADOS - KAZ BYTECODE VM 🦅");
+    runoff("  • Recursão de CallFrames (Fib 26): " + t_fib + " ms");
+    runoff("  • Dispatch de Loop (50k ops):      " + t_loop + " ms");
+    runoff("  • Heap & Structs (10k instâncias): " + t_struct + " ms");
+    int tempo_total = t_fib + t_loop + t_struct;
+    runoff("  • TEMPO TOTAL DA SUÍTE:            " + tempo_total + " ms");
+    runoff("========================================================================\n");
+}

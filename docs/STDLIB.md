@@ -1,0 +1,228 @@
+# Referência da Biblioteca Padrão (Stdlib) 📚
+
+A Biblioteca Padrão de Kaz reúne módulos nativos compilados em Rust diretamente no binário `kaz.exe`.  
+Isso significa **máxima velocidade de execução e zero necessidade de instalar bibliotecas de terceiros**.
+
+---
+
+## 📑 Módulos Disponíveis
+
+1. [Entrada e Saída (`io`)](#1-entrada-e-saída-io)
+2. [Conversão de Tipos (`convert`)](#2-conversão-de-tipos-convert)
+3. [Matemática (`math.*`)](#3-matemática-math)
+4. [Manipulação de Strings (`str`)](#4-manipulação-de-strings-str)
+5. [Arrays e Coleções (`arr`)](#5-arrays-e-coleções-arr)
+6. [Sistema de Arquivos (`fs`)](#6-sistema-de-arquivos-fs)
+7. [Rede e HTTP (`net.*`)](#7-rede-e-http-net)
+8. [Banco de Dados Relacional SQLite (`db.*`)](#8-banco-de-dados-relacional-sqlite-db)
+9. [Serialização e Parsing JSON (`json.*`)](#9-serialização-e-parsing-json-json)
+10. [Tempo e Sistema (`time`)](#10-tempo-e-sistema-time)
+
+---
+
+## 1. Entrada e Saída (`io`)
+
+| Função | Parâmetros | Retorno | Descrição |
+|---|---|---|---|
+| `runoff(...)` | `...valores: any` | `void` | Imprime um ou mais valores no terminal seguidos de quebra de linha. |
+| `println(...)` | `...valores: any` | `void` | Sinônimo padrão de `runoff`. |
+| `print(...)` | `...valores: any` | `void` | Imprime valores no terminal **sem** quebra de linha no final. |
+| `input(mensagem?)` | `mensagem?: string` | `string` | Exibe mensagem opcional e aguarda o usuário digitar uma linha de texto. |
+| `read_line()` | *(nenhum)* | `string` | Lê uma linha de texto do teclado. |
+
+```kaz
+runoff("Total:", 100, "itens processados.");
+string nome = input("Digite seu nome: ");
+runoff("Olá, " + nome);
+```
+
+---
+
+## 2. Conversão de Tipos (`convert`)
+
+| Função | Parâmetros | Retorno | Descrição |
+|---|---|---|---|
+| `to_int(valor)` | `valor: any` | `int` | Converte string, float ou bool para número inteiro. |
+| `to_float(valor)` | `valor: any` | `float` | Converte string, int ou bool para ponto flutuante. |
+| `to_string(valor)` | `valor: any` | `string` | Converte qualquer valor ou struct para representação em texto. |
+| `to_bool(valor)` | `valor: any` | `bool` | Converte número ou texto para booleano. |
+| `type_of(valor)` | `valor: any` | `string` | Retorna o nome textual do tipo do dado (ex: `"int"`, `"string"`, `"Usuario"`). |
+
+```kaz
+int num = to_int("1234");      // 1234
+float preco = to_float("49.9");// 49.9
+string t = type_of([1, 2, 3]); // "array"
+```
+
+---
+
+## 3. Matemática (`math.*`)
+
+Acesso via namespace `math.<funcao>()` ou chamada global direta:
+
+| Função | Parâmetros | Retorno | Descrição |
+|---|---|---|---|
+| `math.sqrt(x)` | `x: float` | `float` | Raiz quadrada de `x`. |
+| `math.pow(base, exp)` | `base, exp: float` | `float` | Potenciação: base elevada ao expoente. |
+| `math.abs(x)` | `x: int` ou `float` | `int` ou `float` | Valor absoluto (módulo) do número. |
+| `math.random()` | *(nenhum)* | `float` | Gera número aleatório entre `0.0` e `1.0`. |
+| `math.sin(rad)` | `rad: float` | `float` | Seno em radianos. |
+| `math.cos(rad)` | `rad: float` | `float` | Cosseno em radianos. |
+| `math.tan(rad)` | `rad: float` | `float` | Tangente em radianos. |
+| `math.floor(x)` | `x: float` | `float` | Arredonda para baixo. |
+| `math.ceil(x)` | `x: float` | `float` | Arredonda para cima. |
+| `math.round(x)` | `x: float` | `float` | Arredonda para o inteiro mais próximo. |
+| `math.min(a, b)` | `a, b: int` ou `float` | Mesmo tipo | Retorna o menor entre `a` e `b`. |
+| `math.max(a, b)` | `a, b: int` ou `float` | Mesmo tipo | Retorna o maior entre `a` e `b`. |
+
+```kaz
+float hipotenusa = math.sqrt(math.pow(3.0, 2.0) + math.pow(4.0, 2.0)); // 5.0
+int sorteio = to_int(math.random() * 100.0);
+```
+
+---
+
+## 4. Manipulação de Strings (`str`)
+
+Podem ser chamadas como funções (`str_upper(s)`) ou como métodos na própria string (`s.upper()`):
+
+| Método / Função | Retorno | Descrição |
+|---|---|---|
+| `s.len` / `str_len(s)` | `int` | Quantidade de caracteres na string. |
+| `s.upper()` / `str_upper(s)` | `string` | Converte texto para letras maiúsculas. |
+| `s.lower()` / `str_lower(s)` | `string` | Converte texto para letras minúsculas. |
+| `s.trim()` / `str_trim(s)` | `string` | Remove espaços no início e fim. |
+| `s.split(sep)` / `str_split(s, sep)` | `array[string]` | Divide o texto pelo delimitador `sep`. |
+| `s.replace(de, para)` / `str_replace(...)` | `string` | Substitui substrings. |
+| `s.contains(busca)` / `str_contains(...)` | `bool` | Retorna `true` se o texto contiver a busca. |
+| `s.starts_with(pre)` / `str_starts_with(...)` | `bool` | Checa prefixo. |
+| `s.ends_with(pos)` / `str_ends_with(...)` | `bool` | Checa sufixo. |
+| `s.substring(ini, fim)` | `string` | Extrai fatia da string. |
+
+```kaz
+string texto = "   Kaz Language   ";
+string limpo = texto.trim().upper(); // "KAZ LANGUAGE"
+array[string] partes = "a,b,c".split(","); // ["a", "b", "c"]
+```
+
+---
+
+## 5. Arrays e Coleções (`arr`)
+
+| Método / Função | Retorno | Descrição |
+|---|---|---|
+| `arr.len` / `len(arr)` | `int` | Quantidade de elementos na coleção. |
+| `arr.indices` | `array[int]` | Array contendo todos os índices numéricos válidos. |
+| `arr.push(elem)` | `void` | Insere `elem` no final do array. |
+| `arr.pop()` | `any` | Remove e retorna o último elemento. |
+| `arr.join(separador)` | `string` | Concatena elementos intercalados por um separador. |
+| `arr.contains(elem)` | `bool` | Checa se o elemento está presente no array. |
+| `arr.reverse()` | `array` | Retorna o array com a ordem invertida. |
+
+```kaz
+array[string] lista = ["maçã", "banana"];
+lista.push("laranja");
+runoff(lista.join(" -> ")); // "maçã -> banana -> laranja"
+```
+
+---
+
+## 6. Sistema de Arquivos (`fs`)
+
+| Função | Parâmetros | Retorno | Descrição |
+|---|---|---|---|
+| `file_read(caminho)` | `caminho: string` | `string` | Lê todo o conteúdo de um arquivo de texto. |
+| `file_write(caminho, texto)` | `caminho, texto: string` | `bool` | Sobrescreve o arquivo com o texto fornecido. |
+| `file_append(caminho, texto)` | `caminho, texto: string` | `bool` | Adiciona o texto ao final do arquivo existente. |
+| `file_exists(caminho)` | `caminho: string` | `bool` | Verifica se o arquivo existe no disco. |
+| `file_delete(caminho)` | `caminho: string` | `bool` | Exclui o arquivo indicado. |
+
+```kaz
+if (!file_exists("log.txt")) {
+    file_write("log.txt", "Início do log\n");
+}
+file_append("log.txt", "Novo evento registrado\n");
+string conteudo = file_read("log.txt");
+```
+
+---
+
+## 7. Rede e HTTP (`net.*`)
+
+| Função | Parâmetros | Retorno | Descrição |
+|---|---|---|---|
+| `net.ping(host, porta, timeout_ms?)` | `host: string, porta: int, timeout_ms?: int` | `int` | Mede latência TCP em ms. Retorna `-1` em timeout/erro. |
+| `net.http_get(url)` | `url: string` | `string` | Realiza requisição HTTP/1.1 GET e retorna corpo da resposta. |
+| `net.http_post(url, body, content_type?)` | `url, body: string, content_type?: string` | `string` | Envia requisição HTTP/1.1 POST com payload. |
+| `net.tcp_send(host, porta, msg)` | `host: string, porta: int, msg: string` | `string` | Envia mensagem por socket TCP bruto e retorna resposta. |
+
+```kaz
+int ping = net.ping("1.1.1.1", 53, 1000);
+runoff("DNS Cloudflare Ping: " + ping + "ms");
+
+string json_resposta = net.http_get("http://api.exemplo.com/dados");
+```
+
+---
+
+## 8. Banco de Dados Relacional SQLite (`db.*`)
+
+Motor relacional SQLite embutido diretamente no executável Kaz (zero dependências externas):
+
+| Função | Parâmetros | Retorno | Descrição |
+|---|---|---|---|
+| `db.open(caminho)` | `caminho: string` | `int` | Abre ou cria arquivo SQLite (use `":memory:"` para banco em RAM). Retorna o ID da conexão. |
+| `db.execute(conn, sql, params?)` | `conn: int, sql: string, params?: array` | `int` | Executa comandos SQL (`CREATE`, `INSERT`, `UPDATE`, `DELETE`). Retorna número de linhas afetadas. |
+| `db.query(conn, sql, params?)` | `conn: int, sql: string, params?: array` | `array[any]` | Executa consultas `SELECT`. Retorna array onde cada linha é acessada por campo: `linha.nome`. |
+| `db.close(conn)` | `conn: int` | `void` | Fecha a conexão com o banco e garante sincronização no disco. |
+
+```kaz
+int db_conn = db.open("banco.db");
+
+db.execute(db_conn, "CREATE TABLE IF NOT EXISTS usuarios (id INTEGER PRIMARY KEY, nome TEXT);");
+db.execute(db_conn, "INSERT INTO usuarios (nome) VALUES ('Armando');");
+
+array[any] usuarios = db.query(db_conn, "SELECT id, nome FROM usuarios;");
+for (u in usuarios) {
+    runoff("ID: " + u.id + " | Nome: " + u.nome);
+}
+
+db.close(db_conn);
+```
+
+---
+
+## 9. Serialização e Parsing JSON (`json.*`)
+
+| Função | Parâmetros | Retorno | Descrição |
+|---|---|---|---|
+| `json.parse(texto_json)` | `texto_json: string` | `any` | Faz o parse de string JSON para objetos, structs, números e arrays de Kaz. |
+| `json.stringify(valor, formatado?)` | `valor: any, formatado?: bool` | `string` | Converte structs, arrays ou valores para texto JSON (com indentação bonita se `true`). |
+
+```kaz
+struct Pedido { int id; float total; }
+Pedido p = Pedido { id: 101, total: 250.0 };
+
+string json_str = json.stringify(p, true);
+runoff(json_str);
+
+any payload = json.parse("{\"status\":\"sucesso\",\"codigo\":200}");
+runoff("Status: " + payload.status);
+```
+
+---
+
+## 10. Tempo e Sistema (`time`)
+
+| Função | Parâmetros | Retorno | Descrição |
+|---|---|---|---|
+| `time_now_ms()` | *(nenhum)* | `int` | Timestamp UNIX atual em milissegundos. |
+| `time_now_secs()` / `time_now()` | *(nenhum)* | `float` | Timestamp UNIX atual em segundos com precisão fracionária. |
+| `sleep_ms(ms)` / `sleep(ms)` | `ms: int` | `void` | Pausa a execução pelo número especificado de milissegundos. |
+
+```kaz
+int inicio = time_now_ms();
+sleep_ms(50);
+int decorrido = time_now_ms() - inicio;
+runoff("Operação levou " + decorrido + " ms");
+```

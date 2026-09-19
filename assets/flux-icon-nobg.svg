@@ -1,0 +1,102 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 820" width="1024" height="820">
+  <defs>
+    <linearGradient id="fBody" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#1E88E5"/>
+      <stop offset="100%" stop-color="#1565C0"/>
+    </linearGradient>
+    <linearGradient id="fTab" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#64B5F6"/>
+      <stop offset="100%" stop-color="#42A5F5"/>
+    </linearGradient>
+    <linearGradient id="fW" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.97"/>
+      <stop offset="100%" stop-color="#E3F2FD" stop-opacity="0.88"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Folder tab -->
+  <path d="M60 310 L60 268 Q60 245 82 245 L270 245 Q295 245 310 268 L336 310 Z" fill="url(#fTab)"/>
+
+  <!-- Folder body -->
+  <rect x="60" y="308" width="904" height="482" rx="36" fill="url(#fBody)"/>
+  <rect x="60" y="306" width="904" height="12" rx="4" fill="#ffffff" fill-opacity="0.14"/>
+
+  <!-- Sidebar -->
+  <rect x="60" y="308" width="52" height="482" fill="#0D47A1" fill-opacity="0.45"/>
+  <circle cx="86" cy="370" r="13" fill="#ffffff" fill-opacity="0.9"/>
+  <circle cx="86" cy="415" r="13" fill="#ffffff" fill-opacity="0.4"/>
+  <circle cx="86" cy="460" r="13" fill="#ffffff" fill-opacity="0.4"/>
+  <circle cx="86" cy="505" r="13" fill="#ffffff" fill-opacity="0.4"/>
+  <circle cx="86" cy="550" r="13" fill="#ffffff" fill-opacity="0.4"/>
+  <circle cx="86" cy="595" r="13" fill="#ffffff" fill-opacity="0.4"/>
+
+  <!-- Path bar -->
+  <rect x="124" y="322" width="820" height="32" rx="10" fill="#ffffff" fill-opacity="0.10"/>
+  <circle cx="144" cy="338" r="7" fill="#ffffff" fill-opacity="0.55"/>
+  <line x1="160" y1="338" x2="936" y2="338" stroke="#ffffff" stroke-opacity="0.18" stroke-width="2" stroke-linecap="round"/>
+
+  <!-- Row 1 files -->
+  <!-- File 1 Blue -->
+  <rect x="124" y="368" width="258" height="195" rx="16" fill="url(#fW)"/>
+  <rect x="124" y="368" width="258" height="62" rx="16" fill="#1976D2" fill-opacity="0.9"/>
+  <rect x="124" y="414" width="258" height="16" fill="#1976D2" fill-opacity="0.9"/>
+  <line x1="148" y1="452" x2="364" y2="452" stroke="#90CAF9" stroke-width="5" stroke-linecap="round"/>
+  <line x1="148" y1="476" x2="340" y2="476" stroke="#90CAF9" stroke-width="5" stroke-linecap="round"/>
+  <line x1="148" y1="500" x2="352" y2="500" stroke="#90CAF9" stroke-width="5" stroke-linecap="round"/>
+  <line x1="148" y1="524" x2="334" y2="524" stroke="#90CAF9" stroke-width="5" stroke-linecap="round"/>
+  <path d="M364 368 L382 386 L364 386 Z" fill="#0D47A1" fill-opacity="0.4"/>
+
+  <!-- File 2 Green -->
+  <rect x="394" y="368" width="258" height="195" rx="16" fill="url(#fW)"/>
+  <rect x="394" y="368" width="258" height="62" rx="16" fill="#2E7D32" fill-opacity="0.9"/>
+  <rect x="394" y="414" width="258" height="16" fill="#2E7D32" fill-opacity="0.9"/>
+  <line x1="418" y1="452" x2="634" y2="452" stroke="#A5D6A7" stroke-width="5" stroke-linecap="round"/>
+  <line x1="418" y1="476" x2="610" y2="476" stroke="#A5D6A7" stroke-width="5" stroke-linecap="round"/>
+  <line x1="418" y1="500" x2="622" y2="500" stroke="#A5D6A7" stroke-width="5" stroke-linecap="round"/>
+  <line x1="418" y1="524" x2="604" y2="524" stroke="#A5D6A7" stroke-width="5" stroke-linecap="round"/>
+  <path d="M634 368 L652 386 L634 386 Z" fill="#1B5E20" fill-opacity="0.4"/>
+
+  <!-- File 3 Purple -->
+  <rect x="664" y="368" width="258" height="195" rx="16" fill="url(#fW)"/>
+  <rect x="664" y="368" width="258" height="62" rx="16" fill="#6A1B9A" fill-opacity="0.9"/>
+  <rect x="664" y="414" width="258" height="16" fill="#6A1B9A" fill-opacity="0.9"/>
+  <line x1="688" y1="452" x2="904" y2="452" stroke="#CE93D8" stroke-width="5" stroke-linecap="round"/>
+  <line x1="688" y1="476" x2="880" y2="476" stroke="#CE93D8" stroke-width="5" stroke-linecap="round"/>
+  <line x1="688" y1="500" x2="892" y2="500" stroke="#CE93D8" stroke-width="5" stroke-linecap="round"/>
+  <line x1="688" y1="524" x2="874" y2="524" stroke="#CE93D8" stroke-width="5" stroke-linecap="round"/>
+  <path d="M904 368 L922 386 L904 386 Z" fill="#4A148C" fill-opacity="0.4"/>
+
+  <!-- Row 2 files -->
+  <!-- File 4 Orange -->
+  <rect x="124" y="578" width="258" height="178" rx="16" fill="#ffffff" fill-opacity="0.55"/>
+  <rect x="124" y="578" width="258" height="56" rx="16" fill="#E65100" fill-opacity="0.82"/>
+  <rect x="124" y="618" width="258" height="16" fill="#E65100" fill-opacity="0.82"/>
+  <line x1="148" y1="654" x2="364" y2="654" stroke="#FFCCBC" stroke-width="4" stroke-linecap="round"/>
+  <line x1="148" y1="676" x2="340" y2="676" stroke="#FFCCBC" stroke-width="4" stroke-linecap="round"/>
+  <line x1="148" y1="698" x2="350" y2="698" stroke="#FFCCBC" stroke-width="4" stroke-linecap="round"/>
+  <line x1="148" y1="720" x2="336" y2="720" stroke="#FFCCBC" stroke-width="4" stroke-linecap="round"/>
+  <line x1="148" y1="742" x2="346" y2="742" stroke="#FFCCBC" stroke-width="4" stroke-linecap="round"/>
+
+  <!-- File 5 Teal -->
+  <rect x="394" y="578" width="258" height="178" rx="16" fill="#ffffff" fill-opacity="0.55"/>
+  <rect x="394" y="578" width="258" height="56" rx="16" fill="#00838F" fill-opacity="0.82"/>
+  <rect x="394" y="618" width="258" height="16" fill="#00838F" fill-opacity="0.82"/>
+  <line x1="418" y1="654" x2="634" y2="654" stroke="#B2EBF2" stroke-width="4" stroke-linecap="round"/>
+  <line x1="418" y1="676" x2="610" y2="676" stroke="#B2EBF2" stroke-width="4" stroke-linecap="round"/>
+  <line x1="418" y1="698" x2="622" y2="698" stroke="#B2EBF2" stroke-width="4" stroke-linecap="round"/>
+  <line x1="418" y1="720" x2="606" y2="720" stroke="#B2EBF2" stroke-width="4" stroke-linecap="round"/>
+  <line x1="418" y1="742" x2="618" y2="742" stroke="#B2EBF2" stroke-width="4" stroke-linecap="round"/>
+
+  <!-- File 6 Red -->
+  <rect x="664" y="578" width="258" height="178" rx="16" fill="#ffffff" fill-opacity="0.55"/>
+  <rect x="664" y="578" width="258" height="56" rx="16" fill="#C62828" fill-opacity="0.82"/>
+  <rect x="664" y="618" width="258" height="16" fill="#C62828" fill-opacity="0.82"/>
+  <line x1="688" y1="654" x2="904" y2="654" stroke="#FFCDD2" stroke-width="4" stroke-linecap="round"/>
+  <line x1="688" y1="676" x2="880" y2="676" stroke="#FFCDD2" stroke-width="4" stroke-linecap="round"/>
+  <line x1="688" y1="698" x2="892" y2="698" stroke="#FFCDD2" stroke-width="4" stroke-linecap="round"/>
+  <line x1="688" y1="720" x2="876" y2="720" stroke="#FFCDD2" stroke-width="4" stroke-linecap="round"/>
+  <line x1="688" y1="742" x2="888" y2="742" stroke="#FFCDD2" stroke-width="4" stroke-linecap="round"/>
+
+  <!-- Bottom shine -->
+  <rect x="60" y="758" width="904" height="32" rx="36" fill="#ffffff" fill-opacity="0.05"/>
+</svg>

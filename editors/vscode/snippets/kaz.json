@@ -1,0 +1,124 @@
+{
+    "Main Function": {
+        "prefix": "main",
+        "body": [
+            "function Main() {",
+            "\t$0",
+            "}"
+        ],
+        "description": "Função de entrada Main() da linguagem Kaz"
+    },
+    "Function Declaration": {
+        "prefix": "fn",
+        "body": [
+            "function ${1:nome}(${2:params}) {",
+            "\t$0",
+            "}"
+        ],
+        "description": "Declaração de função em Kaz"
+    },
+    "Function with Return Type": {
+        "prefix": "fnret",
+        "body": [
+            "function ${1:nome}(${2:params}): ${3:tipo} {",
+            "\t$0",
+            "\treturn ${4:valor};",
+            "}"
+        ],
+        "description": "Declaração de função com tipo de retorno"
+    },
+    "Struct Definition": {
+        "prefix": "struct",
+        "body": [
+            "struct ${1:Nome} {",
+            "\t${2:tipo} ${3:campo};",
+            "\t$0",
+            "}"
+        ],
+        "description": "Definição de estrutura de dados (struct)"
+    },
+    "For Loop": {
+        "prefix": "for",
+        "body": [
+            "for (int ${1:i} = 0; ${1:i} < ${2:limite}; ${1:i}++) {",
+            "\t$0",
+            "}"
+        ],
+        "description": "Loop for clássico de 3 cláusulas"
+    },
+    "For In Loop": {
+        "prefix": "forin",
+        "body": [
+            "for (${1:item} in ${2:colecao}) {",
+            "\t$0",
+            "}"
+        ],
+        "description": "Loop for..in moderno sobre coleções"
+    },
+    "For In Indices": {
+        "prefix": "foridx",
+        "body": [
+            "for (${1:indice} in ${2:colecao}.indices) {",
+            "\t$0",
+            "}"
+        ],
+        "description": "Loop for..in iterando pelos índices da coleção"
+    },
+    "While Loop": {
+        "prefix": "while",
+        "body": [
+            "while (${1:condicao}) {",
+            "\t$0",
+            "}"
+        ],
+        "description": "Loop de repetição while"
+    },
+    "If Statement": {
+        "prefix": "if",
+        "body": [
+            "if (${1:condicao}) {",
+            "\t$0",
+            "}"
+        ],
+        "description": "Condicional if"
+    },
+    "If-Else Statement": {
+        "prefix": "ifelse",
+        "body": [
+            "if (${1:condicao}) {",
+            "\t$2",
+            "} else {",
+            "\t$0",
+            "}"
+        ],
+        "description": "Condicional if..else"
+    },
+    "Ternary Operator": {
+        "prefix": "ternary",
+        "body": [
+            "(${1:condicao}) ? ${2:valor_se_verdadeiro} : ${3:valor_se_falso}"
+        ],
+        "description": "Operador ternário condicional"
+    },
+    "Runoff (Print)": {
+        "prefix": "runoff",
+        "body": [
+            "runoff(${1:mensagem});"
+        ],
+        "description": "Função nativa primária de saída Kaz runoff()"
+    },
+    "Network Ping": {
+        "prefix": "netping",
+        "body": [
+            "int ${1:lat} = net.ping(\"${2:1.1.1.1}\", ${3:53}, ${4:1000});"
+        ],
+        "description": "Medição de latência TCP com net.ping()"
+    },
+    "HTTP GET": {
+        "prefix": "httpget",
+        "body": [
+            "string ${1:resposta} = net.http_get(\"${2:http://exemplo.com/api}\");"
+        ],
+        "description": "Requisição HTTP GET com net.http_get()"
+    }
+}

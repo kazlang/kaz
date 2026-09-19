@@ -1,0 +1,29 @@
+// Exemplo: Variáveis, Tipos Primitivos e Constantes em Kaz
+
+// Inteiros e Ponto Flutuante
+int idade = 25;
+float altura = 1.78;
+double pi = 3.1415926535;
+
+// Textos e Caracteres
+string linguagem = "Kaz";
+char inicial = 'K';
+
+// Booleanos (suporta 'bol' ou 'bool')
+bol ativo = true;
+bool verificado = false;
+
+// Constantes
+string const autor = "Armando Soares";
+const int ano_criacao = 2026;
+
+println("=== Demonstração de Variáveis ===");
+runoff("Linguagem: " + linguagem + " (" + inicial + ")");
+runoff("Criador: " + autor + " em " + ano_criacao);
+runoff("Idade: " + idade + " anos | Altura: " + altura + "m");
+runoff("Status: ativo=" + ativo + ", verificado=" + verificado);
+
+// Reatribuição de variáveis mutáveis
+idade = 26;
+runoff("Idade atualizada para: " + idade);
+

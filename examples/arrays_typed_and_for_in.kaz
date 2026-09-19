@@ -1,0 +1,39 @@
+// Demonstração: Arrays Tipados, Loop for..in, Métodos Nativos e Operador Ternário 🦅
+
+function Main() {
+    runoff("=== 1. Arrays Tipados (Homogêneo vs Heterogêneo) ===");
+    array[string] frutas = ["maçã", "banana", "laranja"];
+    array[any] misto = ["Kaz", 2026, true, 3.14];
+
+    runoff("Total de frutas: " + frutas.len);
+    runoff("Item misto[0]: " + misto[0] + " | misto[1]: " + misto[1]);
+
+    runoff("\n=== 2. Métodos Nativos de Array ===");
+    frutas.push("morango");
+    runoff("Frutas após push: " + frutas.join(", "));
+
+    runoff("\n=== 3. Loop 'for in' por Valores ===");
+    for (fruta in frutas) {
+        runoff("  -> " + fruta);
+    }
+
+    runoff("\n=== 4. Loop 'for in' por Índices (.indices) ===");
+    for (indice in frutas.indices) {
+        runoff("  Índice [" + indice + "] = " + frutas[indice]);
+    }
+
+    runoff("\n=== 5. Operador Ternário ===");
+    int idade = 20;
+    string status = (idade >= 18) ? "Maior de idade" : "Menor de idade";
+    runoff("Idade " + idade + " -> " + status);
+
+    int temperatura = 32;
+    string clima = (temperatura > 30) ? "Muito Quente ☀️" : (temperatura > 20) ? "Agradável ⛅" : "Frio ❄️";
+    runoff("Temperatura " + temperatura + "°C -> " + clima);
+
+    runoff("\n=== 6. Namespace 'math' ===");
+    float raiz = math.sqrt(49.0);
+    float potencia = math.pow(2.0, 10.0);
+    runoff("Raiz de 49 = " + raiz);
+    runoff("2 elevado a 10 = " + potencia);
+}

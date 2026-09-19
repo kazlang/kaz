@@ -1,0 +1,82 @@
+// Aplicação Completa em Kaz 🦅: Sistema de Gestão Acadêmica e Estatísticas
+
+function classificar_conceito(float media): string {
+    if (media >= 9.0) {
+        return "A (Excelente)";
+    } else if (media >= 8.0) {
+        return "B (Ótimo)";
+    } else if (media >= 7.0) {
+        return "C (Aprovado)";
+    } else if (media >= 5.0) {
+        return "D (Recuperação)";
+    } else {
+        return "F (Reprovado)";
+    }
+}
+
+function calcular_media(array notas): float {
+    float soma = 0.0;
+    for (int i = 0; i < len(notas); i++) {
+        soma += notas[i];
+    }
+    if (len(notas) == 0) {
+        return 0.0;
+    }
+    return soma / len(notas);
+}
+
+function processar_turma() {
+    runoff("=================================================");
+    runoff("     SISTEMA DE GESTÃO ACADÊMICA - KAZ 🦅       ");
+    runoff("=================================================\n");
+
+    array nomes = ["Alice", "Bernardo", "Carla", "Diego", "Elena"];
+    array notas_alice = [8.5, 9.0, 9.5];
+    array notas_bernardo = [6.0, 7.5, 7.0];
+    array notas_carla = [9.5, 10.0, 9.0];
+    array notas_diego = [4.5, 5.0, 5.5];
+    array notas_elena = [8.0, 8.5, 9.0];
+
+    array todas_notas = [notas_alice, notas_bernardo, notas_carla, notas_diego, notas_elena];
+
+    float maior_media = 0.0;
+    string melhor_aluno = "";
+    float soma_geral = 0.0;
+    int aprovados = 0;
+
+    for (int i = 0; i < len(nomes); i++) {
+        string aluno = nomes[i];
+        array notas = todas_notas[i];
+        float media = calcular_media(notas);
+        string conceito = classificar_conceito(media);
+
+        soma_geral += media;
+
+        if (media >= 7.0) {
+            aprovados++;
+        }
+
+        if (media > maior_media) {
+            maior_media = media;
+            melhor_aluno = aluno;
+        }
+
+        runoff("Aluno: " + aluno);
+        runoff("  Notas: " + arr_join(notas, ", "));
+        runoff("  Média: " + media);
+        runoff("  Conceito: " + conceito + "\n");
+    }
+
+    float media_geral = soma_geral / len(nomes);
+
+    runoff("-------------------------------------------------");
+    runoff("                   ESTATÍSTICAS                  ");
+    runoff("-------------------------------------------------");
+    runoff("Total de Estudantes: " + len(nomes));
+    runoff("Estudantes Aprovados: " + aprovados + " / " + len(nomes));
+    runoff("Média Geral da Turma: " + media_geral);
+    runoff("Melhor Desempenho: " + melhor_aluno + " com média " + maior_media);
+    runoff("=================================================");
+}
+
+processar_turma();

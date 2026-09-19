@@ -1,0 +1,46 @@
+// Exemplo: Declaração e Chamada de Funções em Kaz 🦅
+
+// Função com parâmetros e retorno tipado
+function somar(int a, int b): int {
+    return a + b;
+}
+
+// Função de procedimento (sem retorno explícito)
+function saudar(string nome) {
+    runoff("Olá, " + nome + "! Seja bem-vindo ao Kaz.");
+}
+
+// Função recursiva: Fatorial
+function fatorial(int n): int {
+    if (n <= 1) {
+        return 1;
+    }
+    return n * fatorial(n - 1);
+}
+
+// Função recursiva: Fibonacci
+function fibonacci(int n): int {
+    if (n <= 0) {
+        return 0;
+    }
+    if (n == 1) {
+        return 1;
+    }
+    return fibonacci(n - 1) + fibonacci(n - 2);
+}
+
+runoff("=== Teste de Funções Kaz ===");
+saudar("Programador");
+
+int res_soma = somar(40, 2);
+runoff("Resultado de somar(40, 2) = " + res_soma);
+
+runoff("\n=== Recursão ===");
+runoff("Fatorial de 5 = " + fatorial(5));
+runoff("Fatorial de 6 = " + fatorial(6));
+
+runoff("\nSequência de Fibonacci até N=8:");
+for (int i = 0; i <= 8; i++) {
+    runoff("Fib(" + i + ") = " + fibonacci(i));
+}
+

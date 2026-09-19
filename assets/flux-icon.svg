@@ -1,0 +1,104 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0.6" y2="1">
+      <stop offset="0%" stop-color="#1565C0"/>
+      <stop offset="100%" stop-color="#0D47A1"/>
+    </linearGradient>
+    <linearGradient id="folderBody" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#1E88E5"/>
+      <stop offset="100%" stop-color="#1565C0"/>
+    </linearGradient>
+    <linearGradient id="folderTab" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#64B5F6"/>
+      <stop offset="100%" stop-color="#42A5F5"/>
+    </linearGradient>
+    <linearGradient id="fileW" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.97"/>
+      <stop offset="100%" stop-color="#E3F2FD" stop-opacity="0.88"/>
+    </linearGradient>
+    <clipPath id="roundedBg">
+      <rect x="0" y="0" width="1024" height="1024" rx="220"/>
+    </clipPath>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1024" height="1024" rx="220" fill="url(#bg)"/>
+  <rect width="1024" height="1024" rx="220" fill="none" stroke="#ffffff" stroke-opacity="0.07" stroke-width="6"/>
+
+  <!-- Folder tab -->
+  <path d="M152 430 L152 382 Q152 355 179 355 L370 355 Q400 355 418 382 L445 430 Z" fill="url(#folderTab)"/>
+
+  <!-- Folder body -->
+  <rect x="152" y="428" width="720" height="430" rx="36" fill="url(#folderBody)"/>
+  <rect x="152" y="426" width="720" height="12" rx="4" fill="#ffffff" fill-opacity="0.12"/>
+
+  <!-- Sidebar strip -->
+  <rect x="152" y="428" width="48" height="430" rx="0" fill="#0D47A1" fill-opacity="0.5"/>
+  <!-- Sidebar nav dots -->
+  <circle cx="176" cy="510" r="12" fill="#ffffff" fill-opacity="0.9"/>
+  <circle cx="176" cy="560" r="12" fill="#ffffff" fill-opacity="0.45"/>
+  <circle cx="176" cy="610" r="12" fill="#ffffff" fill-opacity="0.45"/>
+  <circle cx="176" cy="660" r="12" fill="#ffffff" fill-opacity="0.45"/>
+  <circle cx="176" cy="710" r="12" fill="#ffffff" fill-opacity="0.45"/>
+
+  <!-- Top path bar -->
+  <rect x="218" y="444" width="636" height="32" rx="10" fill="#ffffff" fill-opacity="0.10"/>
+  <circle cx="240" cy="460" r="7" fill="#ffffff" fill-opacity="0.55"/>
+  <line x1="255" y1="460" x2="840" y2="460" stroke="#ffffff" stroke-opacity="0.2" stroke-width="2" stroke-linecap="round"/>
+
+  <!-- File cards row 1 -->
+  <!-- File 1 - Blue -->
+  <rect x="218" y="494" width="188" height="225" rx="18" fill="url(#fileW)"/>
+  <rect x="218" y="494" width="188" height="68" rx="18" fill="#1976D2" fill-opacity="0.9"/>
+  <rect x="218" y="544" width="188" height="18" fill="#1976D2" fill-opacity="0.9"/>
+  <line x1="242" y1="590" x2="388" y2="590" stroke="#90CAF9" stroke-width="5" stroke-linecap="round"/>
+  <line x1="242" y1="618" x2="358" y2="618" stroke="#90CAF9" stroke-width="5" stroke-linecap="round"/>
+  <line x1="242" y1="646" x2="372" y2="646" stroke="#90CAF9" stroke-width="5" stroke-linecap="round"/>
+  <line x1="242" y1="674" x2="350" y2="674" stroke="#90CAF9" stroke-width="5" stroke-linecap="round"/>
+  <path d="M388 494 L406 512 L388 512 Z" fill="#0D47A1" fill-opacity="0.45"/>
+
+  <!-- File 2 - Green -->
+  <rect x="424" y="494" width="188" height="225" rx="18" fill="url(#fileW)"/>
+  <rect x="424" y="494" width="188" height="68" rx="18" fill="#2E7D32" fill-opacity="0.9"/>
+  <rect x="424" y="544" width="188" height="18" fill="#2E7D32" fill-opacity="0.9"/>
+  <line x1="448" y1="590" x2="594" y2="590" stroke="#A5D6A7" stroke-width="5" stroke-linecap="round"/>
+  <line x1="448" y1="618" x2="564" y2="618" stroke="#A5D6A7" stroke-width="5" stroke-linecap="round"/>
+  <line x1="448" y1="646" x2="578" y2="646" stroke="#A5D6A7" stroke-width="5" stroke-linecap="round"/>
+  <line x1="448" y1="674" x2="556" y2="674" stroke="#A5D6A7" stroke-width="5" stroke-linecap="round"/>
+  <path d="M594 494 L612 512 L594 512 Z" fill="#1B5E20" fill-opacity="0.45"/>
+
+  <!-- File 3 - Purple -->
+  <rect x="630" y="494" width="188" height="225" rx="18" fill="url(#fileW)"/>
+  <rect x="630" y="494" width="188" height="68" rx="18" fill="#6A1B9A" fill-opacity="0.9"/>
+  <rect x="630" y="544" width="188" height="18" fill="#6A1B9A" fill-opacity="0.9"/>
+  <line x1="654" y1="590" x2="800" y2="590" stroke="#CE93D8" stroke-width="5" stroke-linecap="round"/>
+  <line x1="654" y1="618" x2="770" y2="618" stroke="#CE93D8" stroke-width="5" stroke-linecap="round"/>
+  <line x1="654" y1="646" x2="784" y2="646" stroke="#CE93D8" stroke-width="5" stroke-linecap="round"/>
+  <line x1="654" y1="674" x2="762" y2="674" stroke="#CE93D8" stroke-width="5" stroke-linecap="round"/>
+  <path d="M800 494 L818 512 L800 512 Z" fill="#4A148C" fill-opacity="0.45"/>
+
+  <!-- File cards row 2 (shorter, peeking) -->
+  <!-- File 4 - Orange -->
+  <rect x="218" y="736" width="188" height="90" rx="18" fill="#FFFFFF" fill-opacity="0.55"/>
+  <rect x="218" y="736" width="188" height="48" rx="18" fill="#E65100" fill-opacity="0.8"/>
+  <rect x="218" y="768" width="188" height="16" fill="#E65100" fill-opacity="0.8"/>
+  <line x1="242" y1="800" x2="388" y2="800" stroke="#FFCCBC" stroke-width="4" stroke-linecap="round"/>
+  <line x1="242" y1="818" x2="358" y2="818" stroke="#FFCCBC" stroke-width="4" stroke-linecap="round"/>
+
+  <!-- File 5 - Teal -->
+  <rect x="424" y="736" width="188" height="90" rx="18" fill="#FFFFFF" fill-opacity="0.55"/>
+  <rect x="424" y="736" width="188" height="48" rx="18" fill="#00838F" fill-opacity="0.8"/>
+  <rect x="424" y="768" width="188" height="16" fill="#00838F" fill-opacity="0.8"/>
+  <line x1="448" y1="800" x2="594" y2="800" stroke="#B2EBF2" stroke-width="4" stroke-linecap="round"/>
+  <line x1="448" y1="818" x2="564" y2="818" stroke="#B2EBF2" stroke-width="4" stroke-linecap="round"/>
+
+  <!-- File 6 - Red -->
+  <rect x="630" y="736" width="188" height="90" rx="18" fill="#FFFFFF" fill-opacity="0.55"/>
+  <rect x="630" y="736" width="188" height="48" rx="18" fill="#C62828" fill-opacity="0.8"/>
+  <rect x="630" y="768" width="188" height="16" fill="#C62828" fill-opacity="0.8"/>
+  <line x1="654" y1="800" x2="800" y2="800" stroke="#FFCDD2" stroke-width="4" stroke-linecap="round"/>
+  <line x1="654" y1="818" x2="770" y2="818" stroke="#FFCDD2" stroke-width="4" stroke-linecap="round"/>
+
+  <!-- Bottom shine -->
+  <rect x="152" y="818" width="720" height="40" rx="36" fill="#ffffff" fill-opacity="0.05"/>
+</svg>

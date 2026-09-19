@@ -1,0 +1,39 @@
+// Exemplo: Estruturas Personalizadas (Structs) em Kaz 🦅
+
+struct Usuario {
+    string nome;
+    int idade;
+    string cargo;
+    bool ativo;
+}
+
+function exibir_usuario(Usuario u) {
+    runoff("--- Perfil do Usuário ---");
+    runoff("Nome:  " + u.nome);
+    runoff("Idade: " + u.idade + " anos");
+    runoff("Cargo: " + u.cargo);
+    runoff("Ativo: " + u.ativo);
+}
+
+function aniversario(Usuario u): Usuario {
+    u.idade += 1;
+    return u;
+}
+
+// Instanciação
+Usuario dev = Usuario {
+    nome: "Armando",
+    idade: 25,
+    cargo: "Engenheiro de Software",
+    ativo: true
+};
+
+exibir_usuario(dev);
+
+// Modificação de campos
+runoff("\nAtualizando cargo e idade...");
+dev.cargo = "Arquiteto de Sistemas";
+dev = aniversario(dev);
+
+runoff("Novo cargo: " + dev.cargo);
+runoff("Nova idade: " + dev.idade);

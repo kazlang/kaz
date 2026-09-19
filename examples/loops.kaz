@@ -1,0 +1,26 @@
+// Exemplo: Estruturas de Repetição (for e while) em Kaz 🦅
+runoff("=== Loop 'for' Clássico (10 a 25) ===");
+for (int i = 10; i <= 15; i++) {
+    runoff("Iteração i = " + i);
+}
+
+runoff("\n=== Loop 'while' com decremento ===");
+int contador = 3;
+while (contador > 0) {
+    runoff("Contagem regressiva: " + contador);
+    contador--;
+}
+runoff("Lançamento! 🚀");
+
+runoff("\n=== Uso de 'continue' e 'break' ===");
+runoff("Números pares entre 1 e 10 (interrompe se for 8):");
+for (int num = 1; num <= 10; num++) {
+    if (num % 2 != 0) {
+        continue; // Pula números ímpares
+    }
+    if (num == 8) {
+        runoff("Atingiu 8! Interrompendo com break...");
+        break;
+    }
+    runoff("Par: " + num);
+}

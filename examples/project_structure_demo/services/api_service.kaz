@@ -1,0 +1,10 @@
+// Serviço de Integração e Serialização JSON
+import "../models/usuario.kaz";
+
+function exportar_relatorio_json(array[Usuario] usuarios): string {
+    return json.stringify(usuarios, true);
+}
+
+function processar_payload_entrada(string json_texto): any {
+    return json.parse(json_texto);
+}

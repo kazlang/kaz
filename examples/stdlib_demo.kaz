@@ -1,0 +1,34 @@
+// Exemplo: Recursos da Biblioteca Padrão Kaz
+
+println("=== 1. Matemática ===");
+println("Raiz quadrada de 25 = " + sqrt(25.0));
+println("2 elevado a 8 = " + pow(2.0, 8.0));
+println("Valor absoluto de -99 = " + abs(-99));
+println("Seno de 0.0 = " + sin(0.0));
+println("Cosseno de 0.0 = " + cos(0.0));
+println("Mínimo entre 42 e 17 = " + min(42, 17));
+println("Máximo entre 42 e 17 = " + max(42, 17));
+
+println("\n=== 2. Manipulação de Strings ===");
+string frase = "  Linguagem Kaz com Rust  ";
+println("Original: '" + frase + "'");
+println("Trim: '" + str_trim(frase) + "'");
+println("Maiúsculas: " + str_upper(frase));
+println("Minúsculas: " + str_lower(frase));
+println("Substituir 'Rust' por 'Super Performance': " + str_replace(frase, "Rust", "Super Performance"));
+
+println("\n=== 3. Conversões de Tipos ===");
+int num = to_int("500");
+float flt = to_float("12.34");
+string str = to_string(999);
+println("Tipo de num: " + type_of(num) + " (valor: " + num + ")");
+println("Tipo de flt: " + type_of(flt) + " (valor: " + flt + ")");
+println("Tipo de str: " + type_of(str) + " (valor: " + str + ")");
+
+println("\n=== 4. Sistema de Arquivos ===");
+string temp_arquivo = "kaz_exemplo_saida.txt";
+file_write(temp_arquivo, "Linha gravada automaticamente pelo Kaz!");
+println("Arquivo criado? " + file_exists(temp_arquivo));
+println("Conteúdo lido: " + file_read(temp_arquivo));
+file_delete(temp_arquivo);
+println("Arquivo limpo após teste.");

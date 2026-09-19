@@ -1,0 +1,52 @@
+// ============================================================================
+//   Projeto Real em Kaz: Estrutura Modular, SQLite e JSON 🦅
+//   Propriedade Intelectual (c) 2026 Armando Soares
+// ============================================================================
+
+import "models/usuario.kaz";
+import "db/sqlite_repo.kaz";
+import "services/api_service.kaz";
+
+function Main() {
+    runoff("╔══════════════════════════════════════════════════════════════════════╗");
+    runoff("║        KAZ MODULAR ENTERPRISE APP 🦅 (Multi-File & SQLite DB)         ║");
+    runoff("╚══════════════════════════════════════════════════════════════════════╝\n");
+
+    // 1. Inicializa o banco de dados relacional SQLite em memória
+    runoff("→ [1/4] Inicializando banco de dados SQLite...");
+    int db_conn = inicializar_banco(":memory:");
+    runoff("  • Conexão estabelecida com sucesso! ID: " + db_conn);
+
+    // 2. Persistência de registros
+    runoff("\n→ [2/4] Persistindo novos registros no banco...");
+    salvar_usuario(db_conn, "Armando Soares", "armando@kaz-lang.org", true);
+    salvar_usuario(db_conn, "Beatriz Lima", "beatriz@dev.io", true);
+    salvar_usuario(db_conn, "Carlos Mendes", "carlos@corp.com", false);
+    runoff("  • 3 usuários inseridos na tabela 'usuarios'.");
+
+    // 3. Consulta de dados relacionais
+    runoff("\n→ [3/4] Consultando registros do SQLite...");
+    array[any] linhas = listar_usuarios(db_conn);
+
+    array[Usuario] usuarios = [];
+    for (linha in linhas) {
+        bool is_ativo = (linha.ativo == 1);
+        Usuario u = Usuario {
+            id: linha.id,
+            nome: linha.nome,
+            email: linha.email,
+            ativo: is_ativo
+        };
+        usuarios.push(u);
+        runoff("  " + formatar_usuario(u));
+    }
+
+    // 4. Integração JSON
+    runoff("\n→ [4/4] Serializando relatório para JSON formatado...");
+    string relatorio_json = exportar_relatorio_json(usuarios);
+    runoff(relatorio_json);
+
+    // Finalização
+    db.close(db_conn);
+    runoff("\n✔ Execução concluída com sucesso! Banco fechado de forma segura.");
+}

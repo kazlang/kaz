@@ -1,0 +1,18 @@
+// Repositório de Persistência SQLite
+import "../models/usuario.kaz";
+
+function inicializar_banco(string caminho_db): int {
+    int conn = db.open(caminho_db);
+    db.execute(conn, "CREATE TABLE IF NOT EXISTS usuarios (id INTEGER PRIMARY KEY AUTOINCREMENT, nome TEXT NOT NULL, email TEXT NOT NULL, ativo INTEGER DEFAULT 1);");
+    return conn;
+}
+
+function salvar_usuario(int conn, string nome, string email, bool ativo): int {
+    int is_ativo = ativo ? 1 : 0;
+    string sql = "INSERT INTO usuarios (nome, email, ativo) VALUES ('" + nome + "', '" + email + "', " + is_ativo + ");";
+    return db.execute(conn, sql);
+}
+
+function listar_usuarios(int conn): array[any] {
+    return db.query(conn, "SELECT id, nome, email, ativo FROM usuarios ORDER BY id ASC;");
+}
