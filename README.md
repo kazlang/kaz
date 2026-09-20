@@ -10,7 +10,7 @@
     <a href="LICENSE"><img src="https://img.shields.io/badge/License-Proprietary-red.svg" alt="License: Proprietary"></a>
     <img src="https://img.shields.io/badge/build-passing-brightgreen.svg" alt="Build Status">
     <img src="https://img.shields.io/badge/Engine-Stack%20Bytecode%20VM-purple.svg" alt="Engine: Bytecode VM">
-    <img src="https://img.shields.io/badge/Tests-79%20passed-success.svg" alt="Tests">
+    <img src="https://img.shields.io/badge/Tests-107%20passed-success.svg" alt="Tests">
     <a href="https://www.rust-lang.org/"><img src="https://img.shields.io/badge/Rust-2024-orange.svg" alt="Rust Edition"></a>
 </p>
 
@@ -20,7 +20,7 @@
 
 **Kaz** é uma linguagem de programação moderna, fortemente tipada e inspirada em **Rust**, projetada para aliar máxima clareza sintática, segurança estrita de tipos e altíssimo desempenho de execução.
 
-Construída do zero com uma **Máquina Virtual de Bytecode baseada em Pilha (Stack VM)**, Kaz é uma plataforma completa que inclui compilador nativo, sistema de módulos multi-arquivos com resolução de dependências em pastas, banco de dados relacional **SQLite embutido no próprio executável**, cliente HTTP/REST, parser JSON, terminal interativo integrado e **extensão oficial de coloração sintática para Lumina IDE e VS Code**.
+Construída do zero com uma **Máquina Virtual de Bytecode baseada em Pilha (Stack VM)**, Kaz é uma plataforma completa que inclui compilador nativo, sistema de módulos multi-arquivos com resolução de dependências em pastas, banco de dados relacional **SQLite embutido no próprio executável**, cliente HTTP/REST, parser JSON, terminal interativo integrado, formatador canônico de código com validação de AST e **extensão oficial de coloração sintática para Lumina IDE e VS Code**.
 
 > 🔒 **Licença & Propriedade Intelectual**: Software proprietário com desenvolvimento sob controle fechado. Todos os direitos reservados © 2026 Armando Soares. Não são permitidos *forks*, clonagens não autorizadas ou criação de variantes derivadas sem autorização prévia formal por escrito.
 
@@ -30,6 +30,7 @@ Construída do zero com uma **Máquina Virtual de Bytecode baseada em Pilha (Sta
 
 - ⚡ **Stack Bytecode Virtual Machine**: Código compilado diretamente para sequências lineares de `OpCode`, com variáveis locais mapeadas em offsets de memória fixos (até **27x mais rápida** que interpretadores AST tradicionais).
 - 📁 **Projetos Estruturados em Pastas (`import`)**: Crie softwares modulares com subpastas (`models/`, `db/`, `services/`) e caminhos relativos. Execute a aplicação inteira com um único comando: `kaz meu_projeto/`.
+- 📐 **Formatador Canônico Integrado (`kaz fmt`)**: Padronizador de código com estilo K&R/1TBS, 4 espaços de indentação, suporte a modo `--check` para pipelines de CI/CD e validação de AST de segurança para garantir integridade.
 - 🗄️ **SQLite Embutido Nativo (`db.*`)**: Motor de banco de dados relacional compilado estaticamente dentro de `kaz.exe`. Execute `db.open()`, `db.execute()` e `db.query()` sem instalar nenhum driver ou DLL externa.
 - 🔄 **Serialização & Parsing JSON (`json.*`)**: `json.parse()` e `json.stringify()` integrados nativamente com tipagem estruturada.
 - 🌐 **Rede e HTTP REST (`net.*`)**: Medição de latência TCP real (`net.ping`), clientes HTTP GET/POST e sockets de rede nativos.
@@ -108,19 +109,26 @@ kaz meu_sistema/
 
 ---
 
-## 🛠️ Instalação Rápida (1 Clique)
+## 🛠️ Compilação e Instalação
 
-A linguagem **Kaz** é distribuída como binário pré-compilado autossuficiente (*standalone executable*) de alto desempenho com SQLite e runtime integrados.  
-**Você não precisa instalar Rust, Cargo, compiladores C nem gerenciadores de pacotes de terceiros.**
+### Pré-requisitos
+- [Rust & Cargo](https://rustup.rs/) (Edição 2024 ou superior)
 
-### No Windows:
-Basta dar um duplo-clique no arquivo **`install.bat`** ou executar no PowerShell:
+### 1. Compilação a partir do Código-Fonte
+```bash
+cargo build --release
+```
+O executável otimizado estará localizado em `target/release/kaz.exe` (Windows) ou `target/release/kaz` (Linux/macOS).
+
+### 2. Instalação Automática
+
+#### No Windows (PowerShell):
 ```powershell
 .\install.ps1
 ```
-*O instalador copia o `kaz.exe` para o seu computador, configura o `PATH` do sistema automaticamente e instala a extensão oficial de coloração sintática na Lumina IDE e no VS Code.*
+*O script compila o projeto, copia o binário para o diretório de ferramentas do usuário, configura o `PATH` do sistema e instala a extensão na Lumina IDE e no VS Code automaticamente.*
 
-### No Linux / macOS:
+#### No Linux / macOS:
 ```bash
 chmod +x install.sh
 ./install.sh
@@ -151,6 +159,11 @@ kaz .
 
 # Verificar sintaxe sem executar
 kaz check programa.kaz
+
+# Formatar código no padrão canônico Kaz
+kaz fmt src/
+kaz fmt programa.kaz
+kaz fmt src/ --check      # Modo verificação para CI/CD
 
 # Iniciar o Kaz Terminal interativo
 kaz shell
@@ -190,13 +203,14 @@ Consulte o diretório [`examples/`](examples/) para explorar exemplos completos 
 
 ## 🧪 Testes Automatizados
 
-Kaz possui uma suíte rigorosa de **96 testes automatizados** cobrindo todas as áreas da linguagem com zero regressão:
+Kaz possui uma suíte rigorosa de **107 testes automatizados** cobrindo todas as áreas da linguagem com zero regressão:
 
 ```bash
 cargo test
 ```
 
 ### Áreas Cobertas:
+- Formatador canônico automático de código e integridade de AST (`fmt_tests.rs`)
 - Tratamento robusto de erros com desenrolamento de pilha (`try_catch_tests.rs`)
 - Testes unitários integrados e asserções nativas (`native_test_runner_tests.rs`)
 - Criptografia padrão SHA256, MD5 e Base64 (`crypto_tests.rs`)

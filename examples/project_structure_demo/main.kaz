@@ -26,9 +26,9 @@ function Main() {
 
     // 3. Consulta de dados relacionais
     runoff("\n→ [3/4] Consultando registros do SQLite...");
-    array[any] linhas = listar_usuarios(db_conn);
+    array [any ] linhas = listar_usuarios(db_conn);
 
-    array[Usuario] usuarios = [];
+    array [Usuario] usuarios = [];
     for (linha in linhas) {
         bool is_ativo = (linha.ativo == 1);
         Usuario u = Usuario {
@@ -36,7 +36,8 @@ function Main() {
             nome: linha.nome,
             email: linha.email,
             ativo: is_ativo
-        };
+        }
+;
         usuarios.push(u);
         runoff("  " + formatar_usuario(u));
     }

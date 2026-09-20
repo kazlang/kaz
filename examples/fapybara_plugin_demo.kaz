@@ -44,7 +44,8 @@ function executar_auditoria(Alvo alvo, Requisicao req): ResultadoScan {
         latencia_ms: 24.5,
         vulneravel: is_vulneravel,
         diagnostico: msg
-    };
+    }
+;
 }
 
 function Main() {
@@ -57,25 +58,29 @@ function Main() {
         porta: 8080,
         protocolo: "http",
         ssl: false
-    };
+    }
+;
 
     Alvo web_segura = Alvo {
         host: "auth.fapybara.dev",
         porta: 443,
         protocolo: "https",
         ssl: true
-    };
+    }
+;
 
     Requisicao ping_req = Requisicao {
         metodo: "POST",
         caminho: "/v1/health",
         headers: ["Authorization: Bearer test-token", "Content-Type: application/json"],
         payload: "{\"action\": \"audit_check\"}"
-    };
+    }
+;
 
     array alvos = [web_insegura, web_segura];
 
-    for (int i = 0; i < len(alvos); i++) {
+    for (int i = 0; i < len(alvos);
+    i++) {
         ResultadoScan res = executar_auditoria(alvos[i], ping_req);
         runoff("Resultado para " + res.alvo.host + ":");
         runoff("  Status: " + res.status_http + " | Latência: " + res.latencia_ms + "ms");

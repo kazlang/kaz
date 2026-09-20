@@ -4,7 +4,8 @@ array frutas = ["Maçã", "Banana", "Laranja", "Morango"];
 
 println("=== Lista Inicial de Frutas ===");
 println("Total de frutas: " + len(frutas));
-for (int i = 0; i < len(frutas); i++) {
+for (int i = 0; i < len(frutas);
+i++) {
     println("  [" + i + "] " + frutas[i]);
 }
 

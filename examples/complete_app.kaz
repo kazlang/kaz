@@ -16,7 +16,8 @@ function classificar_conceito(float media): string {
 
 function calcular_media(array notas): float {
     float soma = 0.0;
-    for (int i = 0; i < len(notas); i++) {
+    for (int i = 0; i < len(notas);
+    i++) {
         soma += notas[i];
     }
     if (len(notas) == 0) {
@@ -44,7 +45,8 @@ function processar_turma() {
     float soma_geral = 0.0;
     int aprovados = 0;
 
-    for (int i = 0; i < len(nomes); i++) {
+    for (int i = 0; i < len(nomes);
+    i++) {
         string aluno = nomes[i];
         array notas = todas_notas[i];
         float media = calcular_media(notas);

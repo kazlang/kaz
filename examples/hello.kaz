@@ -4,4 +4,3 @@ runoff(mensagem);
 
 string versao = "1.0.0";
 runoff("Kaz v" + versao + " em execução com sucesso!");
-

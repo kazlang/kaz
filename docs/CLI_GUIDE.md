@@ -10,9 +10,12 @@ O utilitário de linha de comando `kaz` é o coração do ecossistema da linguag
 2. [Execução de Arquivos e Projetos](#2-execução-de-arquivos-e-projetos)
 3. [Modos de Execução (VM vs AST)](#3-modos-de-execução-vm-vs-ast)
 4. [Validação de Sintaxe (Check)](#4-validação-de-sintaxe-check)
-5. [Kaz Terminal Interativo (Shell)](#5-kaz-terminal-interativo-shell)
-6. [REPL Simples](#6-repl-simples)
-7. [Referência de Opções e Códigos de Saída](#7-referência-de-opções-e-códigos-de-saída)
+5. [Formatador Canônico de Código (kaz fmt)](#5-formatador-canônico-de-código-kaz-fmt)
+6. [Kaz Terminal Interativo (Shell)](#6-kaz-terminal-interativo-shell)
+7. [Executor de Testes Nativos (kaz test)](#7-executor-de-testes-nativos-kaz-test)
+8. [Ferramentas de Diagnóstico e Debug Nativas](#8-ferramentas-de-diagnóstico-e-debug-nativas)
+9. [REPL Simples](#9-repl-simples)
+10. [Referência de Opções e Códigos de Saída](#10-referência-de-opções-e-códigos-de-saída)
 
 ---
 
@@ -85,7 +88,45 @@ Sintaxe correta: 'meu_projeto/main.kaz' verificado com sucesso!
 
 ---
 
-## 5. Kaz Terminal Interativo (Shell)
+## 5. Formatador Canônico de Código (`kaz fmt`) 📐
+
+Kaz possui um formatador de código automático integrado de nível de produção (`kaz fmt`), eliminando discussões de estilo e padronizando todo o ecossistema.
+
+### Características do Estilo Canônico Kaz:
+- **Indentação consistente**: 4 espaços por nível.
+- **Estilo de Chaves K&R / 1TBS**: Chaves de abertura na mesma linha (`function Main() {`, `if (cond) { ... } else { ... }`, `try { ... } catch (e) { ... }`).
+- **Espaçamento de Operadores**: Espaçamento uniforme em operadores binários (`+`, `-`, `*`, `/`, `%`), de atribuição (`=`, `+=`, `-=`, `*=`, `/=`, `%=`), relacionais (`==`, `!=`, `<`, `>`, `<=`, `>=`), lógicos (`&&`, `||`) e ternários (`? :`).
+- **Operadores Unários Compactos**: Operadores `+`, `-` e `!` unários aderem imediatamente ao operando (`-5`, `+3`, `!ativo`).
+- **Parâmetros e Argumentos**: Vírgula seguida de espaço uniforme (`function soma(int a, int b): int`).
+- **Colapso de Linhas em Branco**: Evita acúmulo desnecessário de quebras de linha (máximo de 1 linha em branco consecutiva entre instruções ou declarações).
+- **Preservação Total de Comentários**: Comentários de linha (`//`) e comentários em bloco (`/* ... */`) são fielmente preservados.
+- **🛡️ Garantia de Segurança por Validação de AST**: Antes de gravar qualquer alteração em disco, o compilador Kaz analisa a Árvore Sintática Abstrata (AST) do arquivo formatado e a compara com o original. Se houver qualquer divergência sintática, a formatação é abortada imediatamente com erro explicativo, garantindo que o seu código nunca será corrompido.
+
+### Modos de Uso:
+
+#### A. Formatar um Arquivo Específico
+```bash
+kaz fmt src/main.kaz
+```
+
+#### B. Formatar um Diretório ou Projeto Recursivamente
+```bash
+# Formata recursivamente todos os arquivos .kaz dentro da pasta src/
+kaz fmt src/
+
+# Formata recursivamente todo o projeto atual
+kaz fmt .
+```
+
+#### C. Modo Verificação (`--check`) para CI/CD Pipelines
+Verifica se todos os arquivos estão em conformidade com o padrão sem modificar o disco. Retorna código de saída `0` se tudo estiver perfeito ou `1` se houver arquivos precisando de formatação:
+```bash
+kaz fmt src/ --check
+```
+
+---
+
+## 6. Kaz Terminal Interativo (Shell)
 
 O **Kaz Terminal** combina os recursos de um shell de sistema operacional com o interpretador em tempo real da linguagem:
 
@@ -122,6 +163,7 @@ kaz [E:\projetos]> run main.kaz
 - `pwd`: Exibe o diretório de trabalho atual.
 - `run <arquivo>`: Executa um script Kaz diretamente na sessão ativa.
 - `check <arquivo>`: Valida a sintaxe de um script.
+- `fmt [caminho]`: Formata scripts ou diretórios no padrão canônico Kaz.
 - `env`: Exibe todas as variáveis, funções e tipos ativos no escopo do shell.
 - `clear` / `cls`: Limpa a tela do terminal.
 - `help`: Mostra o manual de comandos rápidos.
@@ -129,7 +171,7 @@ kaz [E:\projetos]> run main.kaz
 
 ---
 
-## 6. Executor de Testes Nativos (`kaz test`) 🧪
+## 7. Executor de Testes Nativos (`kaz test`) 🧪
 
 Kaz traz um executor de testes unitários integrado diretamente no compilador. Não é necessário baixar nenhuma ferramenta de terceiros:
 
@@ -155,7 +197,7 @@ test result: OK. 2 passed; 0 failed; finished in 3.54ms
 
 ---
 
-## 7. Ferramentas de Diagnóstico e Debug Nativas 🔍
+## 8. Ferramentas de Diagnóstico e Debug Nativas 🔍
 
 ### A. Rastreamento Passo a Passo da Stack VM (`kaz trace`)
 Permite inspecionar o ciclo de vida da Máquina Virtual em tempo real, exibindo o Ponteiro de Instrução (IP), a Linha do Código (L), o OpCode despachado e o estado exato da Pilha de Valores:
@@ -204,7 +246,7 @@ kaz db-cli meu_banco.db
 
 ---
 
-## 8. REPL Simples
+## 9. REPL Simples
 
 Para testes rápidos de expressões aritméticas ou snippets curtos de código:
 ```bash
@@ -213,7 +255,7 @@ kaz repl
 
 ---
 
-## 9. Referência de Opções e Códigos de Saída
+## 10. Referência de Opções e Códigos de Saída
 
 ### Tabela Geral de Comandos da CLI:
 | Comando | Descrição |
@@ -227,6 +269,7 @@ kaz repl
 | `kaz vm <caminho>` | Força execução na Bytecode VM. |
 | `kaz ast <caminho>` | Executa no interpretador clássico de AST. |
 | `kaz check <caminho>` | Valida sintaxe sem executar. |
+| `kaz fmt [caminho] [--check]` | Formata arquivos .kaz no estilo canônico (--check para CI/CD). |
 | `kaz shell` / `kaz` | Inicia o Kaz Terminal Shell interativo. |
 | `kaz repl` | Inicia o REPL simplificado. |
 | `kaz --help` / `-h` | Exibe a mensagem de ajuda e opções. |
@@ -235,6 +278,7 @@ kaz repl
 ### Códigos de Saída (Exit Codes):
 | Código | Significado |
 |---|---|
-| `0` | Execução concluída com sucesso (ou todos os testes passaram). |
-| `1` | Erro de sintaxe, asserção falha, runtime ou arquivo não encontrado. |
+| `0` | Execução concluída com sucesso (ou todos os testes passaram / formatado). |
+| `1` | Erro de sintaxe, asserção falha, runtime, arquivo não encontrado ou formatação pendente em `--check`. |
+
 

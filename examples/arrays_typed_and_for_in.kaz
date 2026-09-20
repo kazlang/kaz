@@ -2,8 +2,8 @@
 
 function Main() {
     runoff("=== 1. Arrays Tipados (Homogêneo vs Heterogêneo) ===");
-    array[string] frutas = ["maçã", "banana", "laranja"];
-    array[any] misto = ["Kaz", 2026, true, 3.14];
+    array [string ] frutas = ["maçã", "banana", "laranja"];
+    array [any ] misto = ["Kaz", 2026, true, 3.14];
 
     runoff("Total de frutas: " + frutas.len);
     runoff("Item misto[0]: " + misto[0] + " | misto[1]: " + misto[1]);

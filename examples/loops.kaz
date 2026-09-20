@@ -16,7 +16,7 @@ runoff("\n=== Uso de 'continue' e 'break' ===");
 runoff("Números pares entre 1 e 10 (interrompe se for 8):");
 for (int num = 1; num <= 10; num++) {
     if (num % 2 != 0) {
-        continue; // Pula números ímpares
+        continue;  // Pula números ímpares
     }
     if (num == 8) {
         runoff("Atingiu 8! Interrompendo com break...");

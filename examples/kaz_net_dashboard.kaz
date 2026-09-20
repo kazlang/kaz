@@ -38,7 +38,8 @@ function verificar_alvo(Servidor s): RelatorioAlvo {
         latencia_ms: is_online ? lat : 0,
         online: is_online,
         badge: badge_status
-    };
+    }
+;
 }
 
 function Main() {
@@ -48,16 +49,24 @@ function Main() {
     runoff("╚══════════════════════════════════════════════════════════════════════╝\n");
 
     // 1. Definição do catálogo de servidores e serviços
-    array[Servidor] infraestrutura = [
-        Servidor { nome: "Cloudflare DNS Primário", host: "1.1.1.1", porta: 53, categoria: "DNS / Anycast" },
-        Servidor { nome: "Google Public DNS",      host: "8.8.8.8", porta: 53, categoria: "DNS Global" },
-        Servidor { nome: "Quad9 Secure DNS",       host: "9.9.9.9", porta: 53, categoria: "DNS Seguro" },
-        Servidor { nome: "OpenDNS Home",           host: "208.67.222.222", porta: 53, categoria: "DNS Filtrado" }
-    ];
+    array [Servidor] infraestrutura = [
+    Servidor {
+        nome: "Cloudflare DNS Primário", host: "1.1.1.1", porta: 53, categoria: "DNS / Anycast"
+    }
+,     Servidor {
+        nome: "Google Public DNS", host: "8.8.8.8", porta: 53, categoria: "DNS Global"
+    }
+,     Servidor {
+        nome: "Quad9 Secure DNS", host: "9.9.9.9", porta: 53, categoria: "DNS Seguro"
+    }
+,     Servidor {
+        nome: "OpenDNS Home", host: "208.67.222.222", porta: 53, categoria: "DNS Filtrado"
+    }
+];
 
     runoff("→ Iniciando varredura de " + infraestrutura.len + " nós de infraestrutura...\n");
 
-    array[RelatorioAlvo] relatorios = [];
+    array [RelatorioAlvo] relatorios = [];
     int online_total = 0;
     int offline_total = 0;
     int soma_latencias = 0;

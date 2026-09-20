@@ -43,4 +43,3 @@ runoff("\nSequência de Fibonacci até N=8:");
 for (int i = 0; i <= 8; i++) {
     runoff("Fib(" + i + ") = " + fibonacci(i));
 }
-

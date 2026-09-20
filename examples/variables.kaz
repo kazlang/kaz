@@ -26,4 +26,3 @@ runoff("Status: ativo=" + ativo + ", verificado=" + verificado);
 // Reatribuição de variáveis mutáveis
 idade = 26;
 runoff("Idade atualizada para: " + idade);
-

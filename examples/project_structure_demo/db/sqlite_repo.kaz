@@ -13,6 +13,6 @@ function salvar_usuario(int conn, string nome, string email, bool ativo): int {
     return db.execute(conn, sql);
 }
 
-function listar_usuarios(int conn): array[any] {
+function listar_usuarios(int conn): array [any ] {
     return db.query(conn, "SELECT id, nome, email, ativo FROM usuarios ORDER BY id ASC;");
 }

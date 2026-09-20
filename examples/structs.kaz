@@ -26,7 +26,8 @@ Usuario dev = Usuario {
     idade: 25,
     cargo: "Engenheiro de Software",
     ativo: true
-};
+}
+;
 
 exibir_usuario(dev);
 
