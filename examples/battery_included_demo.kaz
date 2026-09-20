@@ -1,0 +1,81 @@
+// ==========================================================
+//  Kaz 🦅 - Demonstração de Recursos Nativos "Baterias Inclusas"
+// ==========================================================
+
+function testar_criptografia() {
+    runoff("--- 1. Criptografia Nativa (crypto.*) ---");
+    string segredo = "MinhaSenhaSuperSegura2026";
+    string hash_sha = crypto.sha256(segredo);
+    string hash_md5 = crypto.md5(segredo);
+    string b64 = crypto.base64_encode(segredo);
+    string original = crypto.base64_decode(b64);
+
+    runoff("Texto Original :", segredo);
+    runoff("SHA-256        :", hash_sha);
+    runoff("MD5            :", hash_md5);
+    runoff("Base64 Encoded :", b64);
+    runoff("Base64 Decoded :", original);
+    runoff("");
+}
+
+function testar_regex() {
+    runoff("--- 2. Expressões Regulares (regex.*) ---");
+    string email1 = "contato@kaz-lang.org";
+    string email2 = "invalido#email";
+    string padrao_email = "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$";
+
+    runoff("Validação de:", email1, "->", regex.is_match(padrao_email, email1));
+    runoff("Validação de:", email2, "->", regex.is_match(padrao_email, email2));
+
+    string texto = "Kaz compilado em 2026 com sucesso";
+    string ano = regex.find("[0-9]{4}", texto);
+    runoff("Ano extraído   :", ano);
+
+    string censurado = regex.replace("[0-9]", "Token: 123-456", "*");
+    runoff("Censurado      :", censurado);
+    runoff("");
+}
+
+function testar_fs() {
+    runoff("--- 3. Sistema de Arquivos Moderno (fs.*) ---");
+    string pasta = "temp_demo_fs";
+    fs.mkdir(pasta);
+
+    string arq = pasta + "/relatorio.txt";
+    fs.write(arq, "Relatorio gerado pela linguagem Kaz em 2026.\n");
+    fs.append(arq, "Segunda linha anexada com sucesso.\n");
+
+    runoff("Tamanho do arquivo em bytes:", fs.size(arq));
+    runoff("Arquivos na pasta:", fs.read_dir(pasta));
+
+    // Limpeza
+    fs.remove(pasta);
+    runoff("Pasta temporária removida com sucesso!");
+    runoff("");
+}
+
+function Main() {
+    runoff("==================================================");
+    runoff("  Linguagem Kaz - Demonstração dos Novos Recursos ");
+    runoff("==================================================");
+    runoff("");
+
+    testar_criptografia();
+    testar_regex();
+    testar_fs();
+
+    runoff("Tudo executado com 100% de sucesso!");
+}
+
+// ----------------------------------------------------------
+// 4. Testes Unitários Nativos (executados via 'kaz test')
+// ----------------------------------------------------------
+test "validar integridade de sha256" {
+    string h1 = crypto.sha256("kaz");
+    string h2 = crypto.sha256("kaz");
+    assert(h1 == h2, "Hashes de mesma entrada devem ser identicos");
+}
+
+test "validar regex simples" {
+    assert(regex.is_match("^[0-9]+$", "987654") == true, "Deve casar apenas numeros");
+}

@@ -87,7 +87,7 @@
             "patterns": [
                 {
                     "name": "keyword.control.kaz",
-                    "match": "\\b(if|else|for|in|while|break|continue|return)\\b"
+                    "match": "\\b(if|else|for|in|while|break|continue|return|test)\\b"
                 },
                 {
                     "name": "storage.type.function.kaz",
@@ -130,7 +130,7 @@
             "patterns": [
                 {
                     "name": "support.function.builtin.io.kaz",
-                    "match": "\\b(runoff|println|print|input|read_line)\\b"
+                    "match": "\\b(runoff|println|print|input|read_line|assert)\\b"
                 },
                 {
                     "name": "support.function.builtin.convert.kaz",
@@ -146,7 +146,7 @@
                 },
                 {
                     "name": "support.class.namespace.kaz",
-                    "match": "\\b(math|net|db|json)\\b(?=\\.)"
+                    "match": "\\b(math|net|db|json|crypto|regex|fs)\\b(?=\\.)"
                 },
                 {
                     "name": "support.function.math.kaz",
@@ -165,12 +165,24 @@
                     "match": "(?<=\\bjson\\.)(parse|stringify)\\b"
                 },
                 {
+                    "name": "support.function.crypto.kaz",
+                    "match": "(?<=\\bcrypto\\.)(sha256|md5|base64_encode|base64_decode)\\b"
+                },
+                {
+                    "name": "support.function.regex.kaz",
+                    "match": "(?<=\\bregex\\.)(is_match|find|replace)\\b"
+                },
+                {
+                    "name": "support.function.fs.kaz",
+                    "match": "(?<=\\bfs\\.)(mkdir|read_dir|remove|copy|size|read|write|append|exists)\\b"
+                },
+                {
                     "name": "support.function.method.kaz",
-
                     "match": "(?<=\\.)(len|indices|push|pop|insert|remove|join|contains|reverse|upper|lower|trim|split|replace|substring|starts_with|ends_with)\\b"
                 }
             ]
         },
+
         "function_declaration": {
             "match": "\\b(function)\\s+([a-zA-Z_][a-zA-Z0-9_]*)\\s*(\\()",
             "captures": {

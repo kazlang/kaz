@@ -20,7 +20,7 @@ Isso significa **máxima velocidade de execução e zero necessidade de instalar
 
 ---
 
-## 1. Entrada e Saída (`io`)
+## 1. Entrada, Saída & Asserções (`io`)
 
 | Função | Parâmetros | Retorno | Descrição |
 |---|---|---|---|
@@ -29,12 +29,15 @@ Isso significa **máxima velocidade de execução e zero necessidade de instalar
 | `print(...)` | `...valores: any` | `void` | Imprime valores no terminal **sem** quebra de linha no final. |
 | `input(mensagem?)` | `mensagem?: string` | `string` | Exibe mensagem opcional e aguarda o usuário digitar uma linha de texto. |
 | `read_line()` | *(nenhum)* | `string` | Lê uma linha de texto do teclado. |
+| `assert(cond, msg?)` | `cond: bool, msg?: string` | `bool` | Valida uma condição lógica. Falha com erro de asserção se for falsa. |
 
 ```kaz
 runoff("Total:", 100, "itens processados.");
 string nome = input("Digite seu nome: ");
 runoff("Olá, " + nome);
+assert(10 > 5, "10 deve ser maior que 5");
 ```
+
 
 ---
 
@@ -127,27 +130,82 @@ runoff(lista.join(" -> ")); // "maçã -> banana -> laranja"
 
 ---
 
-## 6. Sistema de Arquivos (`fs`)
+## 6. Sistema de Arquivos Moderno (`fs.*`)
+
+Kaz oferece operações síncronas completas para arquivos e diretórios:
 
 | Função | Parâmetros | Retorno | Descrição |
 |---|---|---|---|
-| `file_read(caminho)` | `caminho: string` | `string` | Lê todo o conteúdo de um arquivo de texto. |
-| `file_write(caminho, texto)` | `caminho, texto: string` | `bool` | Sobrescreve o arquivo com o texto fornecido. |
-| `file_append(caminho, texto)` | `caminho, texto: string` | `bool` | Adiciona o texto ao final do arquivo existente. |
-| `file_exists(caminho)` | `caminho: string` | `bool` | Verifica se o arquivo existe no disco. |
-| `file_delete(caminho)` | `caminho: string` | `bool` | Exclui o arquivo indicado. |
+| `fs.mkdir(caminho)` | `caminho: string` | `bool` | Cria diretórios recursivamente (`mkdir -p`). |
+| `fs.read_dir(caminho)` | `caminho: string` | `array[string]` | Lista nomes de arquivos e pastas contidos no diretório. |
+| `fs.read(caminho)` / `file_read` | `caminho: string` | `string` | Lê todo o conteúdo de um arquivo como string. |
+| `fs.write(caminho, texto)` / `file_write` | `caminho, texto: string` | `bool` | Grava conteúdo no arquivo (sobrescrevendo se existir). |
+| `fs.append(caminho, texto)` / `file_append` | `caminho, texto: string` | `bool` | Anexa conteúdo ao final do arquivo. |
+| `fs.exists(caminho)` / `file_exists` | `caminho: string` | `bool` | Verifica se o arquivo ou pasta existe no disco. |
+| `fs.remove(caminho)` / `file_delete` | `caminho: string` | `bool` | Exclui arquivo ou diretório recursivamente. |
+| `fs.copy(origem, destino)` | `origem, destino: string` | `bool` | Copia arquivo da origem para o destino. |
+| `fs.size(caminho)` | `caminho: string` | `int` | Retorna o tamanho do arquivo em bytes. |
 
 ```kaz
-if (!file_exists("log.txt")) {
-    file_write("log.txt", "Início do log\n");
-}
-file_append("log.txt", "Novo evento registrado\n");
-string conteudo = file_read("log.txt");
+fs.mkdir("backups/2026");
+fs.write("backups/2026/relatorio.txt", "Dados consolidados\n");
+fs.append("backups/2026/relatorio.txt", "Nova entrada registrada\n");
+
+int bytes = fs.size("backups/2026/relatorio.txt");
+runoff("Tamanho do arquivo:", bytes, "bytes");
+
+array[string] arquivos = fs.read_dir("backups/2026");
+runoff("Conteúdo da pasta:", arquivos);
 ```
 
 ---
 
-## 7. Rede e HTTP (`net.*`)
+## 7. Criptografia e Hashes (`crypto.*`) 🔐
+
+Módulo embutido para integridade de dados e senhas:
+
+| Função | Parâmetros | Retorno | Descrição |
+|---|---|---|---|
+| `crypto.sha256(texto)` | `texto: string` | `string` | Gera o hash criptográfico SHA-256 em formato hexadecimal (64 caracteres). |
+| `crypto.md5(texto)` | `texto: string` | `string` | Gera o hash MD5 em formato hexadecimal. |
+| `crypto.base64_encode(texto)` | `texto: string` | `string` | Converte texto para codificação Base64. |
+| `crypto.base64_decode(texto_b64)` | `texto_b64: string` | `string` | Decodifica string Base64 para texto UTF-8. |
+
+```kaz
+string senha = "admin_segredo_2026";
+string hash = crypto.sha256(senha);
+runoff("SHA-256:", hash);
+
+string token_b64 = crypto.base64_encode("usuario:token123");
+string original = crypto.base64_decode(token_b64);
+```
+
+---
+
+## 8. Expressões Regulares (`regex.*`) 🎯
+
+Módulo de validação e extração de padrões com alto desempenho:
+
+| Função | Parâmetros | Retorno | Descrição |
+|---|---|---|---|
+| `regex.is_match(padrao, texto)` | `padrao, texto: string` | `bool` | Verifica se o padrão regex ocorre no texto. |
+| `regex.find(padrao, texto)` | `padrao, texto: string` | `string` | Extrai a primeira correspondência (ou `""` se não encontrar). |
+| `regex.replace(padrao, texto, substituto)` | `padrao, texto, substituto: string` | `string` | Substitui todas as ocorrências do padrão pelo substituto. |
+
+```kaz
+bool email_valido = regex.is_match("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$", "contato@kaz.org");
+assert(email_valido == true);
+
+string ano = regex.find("[0-9]{4}", "Lancamento em 2026 com sucesso");
+runoff("Ano:", ano); // "2026"
+
+string texto_limpo = regex.replace("[0-9]", "Cartao: 1234-5678", "*");
+runoff(texto_limpo); // "Cartao: ****-****"
+```
+
+---
+
+## 9. Rede e HTTP (`net.*`)
 
 | Função | Parâmetros | Retorno | Descrição |
 |---|---|---|---|
@@ -165,7 +223,7 @@ string json_resposta = net.http_get("http://api.exemplo.com/dados");
 
 ---
 
-## 8. Banco de Dados Relacional SQLite (`db.*`)
+## 10. Banco de Dados Relacional SQLite (`db.*`)
 
 Motor relacional SQLite embutido diretamente no executável Kaz (zero dependências externas):
 
@@ -192,7 +250,7 @@ db.close(db_conn);
 
 ---
 
-## 9. Serialização e Parsing JSON (`json.*`)
+## 11. Serialização e Parsing JSON (`json.*`)
 
 | Função | Parâmetros | Retorno | Descrição |
 |---|---|---|---|
@@ -212,7 +270,7 @@ runoff("Status: " + payload.status);
 
 ---
 
-## 10. Tempo e Sistema (`time`)
+## 12. Tempo e Sistema (`time`)
 
 | Função | Parâmetros | Retorno | Descrição |
 |---|---|---|---|
@@ -226,3 +284,4 @@ sleep_ms(50);
 int decorrido = time_now_ms() - inicio;
 runoff("Operação levou " + decorrido + " ms");
 ```
+

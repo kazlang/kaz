@@ -429,3 +429,51 @@ Instrução inválida ou incompleta
    5 | int resultado = ;
      |                 ^
 ```
+
+---
+
+## 16. Testes Unitários Nativos Integrados 🧪
+
+Kaz permite escrever suítes de testes unitários diretamente nos arquivos de código-fonte usando a palavra-chave `test` e a função `assert()`:
+
+```kaz
+function somar(int a, int b): int {
+    return a + b;
+}
+
+function eh_par(int n): bool {
+    return (n % 2) == 0;
+}
+
+// --------------------------------------------------
+// Blocos de teste (ignorados na execução normal 'kaz run')
+// --------------------------------------------------
+test "validar operacao de soma" {
+    assert(somar(10, 20) == 30, "10 + 20 deve ser igual a 30");
+    assert(somar(-5, 5) == 0, "Soma de opostos deve zerar");
+}
+
+test "validar paridade de inteiros" {
+    assert(eh_par(4) == true, "4 deve ser par");
+    assert(eh_par(7) == false, "7 deve ser impar");
+}
+```
+
+### Como Executar os Testes:
+```bash
+# Executa todos os testes do diretório:
+kaz test
+
+# Executa testes de um arquivo específico:
+kaz test meu_arquivo.kaz
+```
+
+**Resultado no terminal:**
+```text
+running 2 test(s) in meu_arquivo.kaz:
+  test "validar operacao de soma"          ... ok (0.42ms)
+  test "validar paridade de inteiros"      ... ok (0.35ms)
+
+test result: OK. 2 passed; 0 failed; finished in 1.15ms
+```
+

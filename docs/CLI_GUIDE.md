@@ -129,7 +129,82 @@ kaz [E:\projetos]> run main.kaz
 
 ---
 
-## 6. REPL Simples
+## 6. Executor de Testes Nativos (`kaz test`) 🧪
+
+Kaz traz um executor de testes unitários integrado diretamente no compilador. Não é necessário baixar nenhuma ferramenta de terceiros:
+
+```bash
+# Executa todos os testes do projeto na pasta atual:
+kaz test
+
+# Executa testes em uma pasta específica:
+kaz test tests/
+
+# Executa testes contidos em um único arquivo:
+kaz test meu_arquivo.kaz
+```
+
+### Relatório Visual do Teste:
+```text
+running 2 test(s) in examples/battery_included_demo.kaz:
+  test "validar integridade de sha256"          ... ok (1.22ms)
+  test "validar regex simples"                  ... ok (1.21ms)
+
+test result: OK. 2 passed; 0 failed; finished in 3.54ms
+```
+
+---
+
+## 7. Ferramentas de Diagnóstico e Debug Nativas 🔍
+
+### A. Rastreamento Passo a Passo da Stack VM (`kaz trace`)
+Permite inspecionar o ciclo de vida da Máquina Virtual em tempo real, exibindo o Ponteiro de Instrução (IP), a Linha do Código (L), o OpCode despachado e o estado exato da Pilha de Valores:
+
+```bash
+kaz trace programa.kaz
+```
+
+**Exemplo de Saída:**
+```text
+=== Kaz Stack VM Tracer: Iniciando rastreamento de 'programa.kaz' ===
+
+[TRACE IP:0000 L002] Constant(0)               | Pilha (0): []
+[TRACE IP:0001 L002] DefGlobal(1, false, Int)  | Pilha (1): [Int(10)]
+[TRACE IP:0002 L003] GetGlobal(1)              | Pilha (0): []
+[TRACE IP:0003 L003] Constant(2)               | Pilha (1): [Int(10)]
+[TRACE IP:0004 L003] Add                       | Pilha (2): [Int(10), Int(20)]
+[TRACE IP:0005 L003] CallNative(3, 1)          | Pilha (1): [Int(30)]
+30
+[TRACE IP:0006 L003] Pop                       | Pilha (1): [Void]
+[TRACE IP:0007 L001] Halt                      | Pilha (0): []
+
+=== Rastreamento finalizado ===
+```
+
+### B. Desmontador de Bytecode & Constantes (`kaz debug`)
+Desmonta os chunks de bytecode compilados e exibe a tabela de literais e instruções sem executar o programa:
+
+```bash
+kaz debug programa.kaz
+```
+
+### C. Console SQL Interativo do SQLite (`kaz db-cli`)
+Abre um terminal interativo conectado diretamente a qualquer arquivo de banco de dados SQLite, permitindo rodar consultas e comandos de inspeção sem instalar clientes externos:
+
+```bash
+kaz db-cli meu_banco.db
+```
+
+**Comandos do `kaz db-cli`:**
+- `.tables`: Lista todas as tabelas criadas no banco de dados.
+- `.schema [tabela]`: Exibe a instrução DDL de criação da tabela.
+- `SELECT ...`: Executa consultas e exibe o resultado formatado em colunas.
+- `INSERT` / `UPDATE` / `DELETE`: Executa alterações e exibe o número de linhas afetadas.
+- `.exit` ou `.quit`: Encerra o console do banco.
+
+---
+
+## 8. REPL Simples
 
 Para testes rápidos de expressões aritméticas ou snippets curtos de código:
 ```bash
@@ -138,13 +213,17 @@ kaz repl
 
 ---
 
-## 7. Referência de Opções e Códigos de Saída
+## 9. Referência de Opções e Códigos de Saída
 
-### Tabela de Comandos da CLI:
+### Tabela Geral de Comandos da CLI:
 | Comando | Descrição |
 |---|---|
 | `kaz <caminho>` | Executa arquivo `.kaz` ou pasta de projeto na Bytecode VM. |
-| `kaz run <caminho>` | Sinônimo explícito de execução. |
+| `kaz run <caminho>` | Sinônimo explícito de execução na VM. |
+| `kaz test [caminho]` | Executa os blocos de testes unitários nativos com relatório. |
+| `kaz trace <arquivo>` | Rastreia a Stack VM passo a passo exibindo a pilha em tempo real. |
+| `kaz debug <arquivo>` | Desmonta o bytecode e exibe as tabelas de constantes e chunks. |
+| `kaz db-cli <banco.db>` | Abre o console interativo SQL para o banco SQLite embutido. |
 | `kaz vm <caminho>` | Força execução na Bytecode VM. |
 | `kaz ast <caminho>` | Executa no interpretador clássico de AST. |
 | `kaz check <caminho>` | Valida sintaxe sem executar. |
@@ -156,5 +235,6 @@ kaz repl
 ### Códigos de Saída (Exit Codes):
 | Código | Significado |
 |---|---|
-| `0` | Execução concluída com sucesso. |
-| `1` | Erro de sintaxe, tipo, runtime ou arquivo não encontrado. |
+| `0` | Execução concluída com sucesso (ou todos os testes passaram). |
+| `1` | Erro de sintaxe, asserção falha, runtime ou arquivo não encontrado. |
+
