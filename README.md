@@ -108,26 +108,19 @@ kaz meu_sistema/
 
 ---
 
-## 🛠️ Compilação e Instalação
+## 🛠️ Instalação Rápida (1 Clique)
 
-### Pré-requisitos
-- [Rust & Cargo](https://rustup.rs/) (Edição 2024 ou superior)
+A linguagem **Kaz** é distribuída como binário pré-compilado autossuficiente (*standalone executable*) de alto desempenho com SQLite e runtime integrados.  
+**Você não precisa instalar Rust, Cargo, compiladores C nem gerenciadores de pacotes de terceiros.**
 
-### 1. Compilação a partir do Código-Fonte
-```bash
-cargo build --release
-```
-O executável otimizado estará localizado em `target/release/kaz.exe` (Windows) ou `target/release/kaz` (Linux/macOS).
-
-### 2. Instalação Automática
-
-#### No Windows (PowerShell):
+### No Windows:
+Basta dar um duplo-clique no arquivo **`install.bat`** ou executar no PowerShell:
 ```powershell
 .\install.ps1
 ```
-*O script compila o projeto, copia o binário para o diretório de ferramentas do usuário, configura o `PATH` do sistema e instala a extensão na Lumina IDE e no VS Code automaticamente.*
+*O instalador copia o `kaz.exe` para o seu computador, configura o `PATH` do sistema automaticamente e instala a extensão oficial de coloração sintática na Lumina IDE e no VS Code.*
 
-#### No Linux / macOS:
+### No Linux / macOS:
 ```bash
 chmod +x install.sh
 ./install.sh

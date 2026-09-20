@@ -8,14 +8,20 @@ KAZ_BIN=""
 
 if [ -f "${SCRIPT_DIR}/bin/kaz" ]; then
     KAZ_BIN="${SCRIPT_DIR}/bin/kaz"
-elif [ -f "${SCRIPT_DIR}/target/release/kaz" ]; then
-    KAZ_BIN="${SCRIPT_DIR}/target/release/kaz"
 elif [ -f "${SCRIPT_DIR}/kaz" ]; then
     KAZ_BIN="${SCRIPT_DIR}/kaz"
-else
-    echo "Compilando Kaz com cargo..."
+elif [ -f "${SCRIPT_DIR}/target/release/kaz" ]; then
+    KAZ_BIN="${SCRIPT_DIR}/target/release/kaz"
+elif [ -f "${SCRIPT_DIR}/Cargo.toml" ]; then
+    echo "Ambiente de desenvolvimento detectado. Compilando Kaz com cargo..."
     cargo build --release
     KAZ_BIN="${SCRIPT_DIR}/target/release/kaz"
+fi
+
+if [ -z "${KAZ_BIN}" ] || [ ! -f "${KAZ_BIN}" ]; then
+    echo "ERRO: O executável 'bin/kaz' não foi encontrado nesta pasta."
+    echo "Certifique-se de extrair todos os arquivos do pacote oficial da linguagem Kaz."
+    exit 1
 fi
 
 INSTALL_DIR="${HOME}/.kaz/bin"

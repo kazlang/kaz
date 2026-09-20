@@ -8,8 +8,11 @@ Write-Host "                 Versao 1.0.0                           " -Foregroun
 Write-Host "========================================================" -ForegroundColor Cyan
 Write-Host ""
 
-# 1. Localizar ou compilar o executavel
+# 1. Localizar o executavel pre-compilado
 $scriptDir = $PSScriptRoot
+if (-not $scriptDir -and $MyInvocation.MyCommand.Path) {
+    $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+}
 if (-not $scriptDir) { $scriptDir = (Get-Location).Path }
 
 $kazExe = $null
@@ -28,22 +31,26 @@ foreach ($c in $candidates) {
     }
 }
 
+# Se nao encontrou binario pre-compilado e existe Cargo.toml (ambiente de desenvolvimento), compila
 if (-not $kazExe) {
-    Write-Host "Binario nao encontrado. Tentando compilar via cargo..." -ForegroundColor Yellow
-    if (Get-Command cargo -ErrorAction SilentlyContinue) {
-        Push-Location $scriptDir
-        cargo build --release
-        Pop-Location
-        $releaseExe = Join-Path $scriptDir "target\release\kaz.exe"
-        if (Test-Path $releaseExe) {
-            $kazExe = $releaseExe
+    $cargoToml = Join-Path $scriptDir "Cargo.toml"
+    if (Test-Path $cargoToml) {
+        Write-Host "Ambiente de desenvolvimento detectado. Compilando via cargo..." -ForegroundColor Yellow
+        if (Get-Command cargo -ErrorAction SilentlyContinue) {
+            Push-Location $scriptDir
+            cargo build --release
+            Pop-Location
+            $releaseExe = Join-Path $scriptDir "target\release\kaz.exe"
+            if (Test-Path $releaseExe) {
+                $kazExe = $releaseExe
+            }
         }
     }
 }
 
 if (-not $kazExe -or -not (Test-Path $kazExe)) {
-    Write-Host "ERRO: Nao foi possivel localizar ou gerar o arquivo 'kaz.exe'." -ForegroundColor Red
-    Write-Host "Certifique-se de executar 'cargo build --release' antes de instalar." -ForegroundColor Red
+    Write-Host "ERRO: O executavel 'bin\kaz.exe' nao foi encontrado nesta pasta." -ForegroundColor Red
+    Write-Host "Certifique-se de extrair todos os arquivos do pacote oficial da linguagem Kaz." -ForegroundColor Yellow
     exit 1
 }
 
