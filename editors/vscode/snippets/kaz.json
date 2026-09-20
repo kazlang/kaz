@@ -120,5 +120,44 @@
             "string ${1:resposta} = net.http_get(\"${2:http://exemplo.com/api}\");"
         ],
         "description": "Requisição HTTP GET com net.http_get()"
+    },
+    "Try Catch Statement": {
+        "prefix": "try",
+        "body": [
+            "try {",
+            "\t$1",
+            "} catch (${2:erro}) {",
+            "\trunoff(\"Erro capturado: \", ${2:erro});",
+            "\t$0",
+            "}"
+        ],
+        "description": "Tratamento robusto de exceções try / catch"
+    },
+    "Native Test Block": {
+        "prefix": "test",
+        "body": [
+            "test \"${1:nome do teste}\" {",
+            "\tassert(${2:condicao}, \"${3:mensagem em caso de falha}\");",
+            "\t$0",
+            "}"
+        ],
+        "description": "Bloco de teste unitário nativo da linguagem Kaz"
+    },
+    "SQLite Database Connection": {
+        "prefix": "dbopen",
+        "body": [
+            "int ${1:conn} = db.open(\"${2::memory:}\");",
+            "db.execute(${1:conn}, \"${3:CREATE TABLE tabela (id INTEGER PRIMARY KEY);}\");",
+            "$0",
+            "db.close(${1:conn});"
+        ],
+        "description": "Abertura e manipulação de banco SQLite nativo"
+    },
+    "JSON Parse": {
+        "prefix": "jsonparse",
+        "body": [
+            "any ${1:dados} = json.parse(${2:json_string});"
+        ],
+        "description": "Desserialização de JSON nativa com json.parse()"
     }
 }
