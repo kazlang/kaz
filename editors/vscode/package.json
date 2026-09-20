@@ -1,59 +1,59 @@
-﻿{
-    "name":  "kaz-language",
-    "displayName":  "Kaz Programming Language",
-    "description":  "Suporte oficial Ã  linguagem Kaz ðŸ¦…: ColoraÃ§Ã£o sintÃ¡tica (Syntax Highlighting), snippets inteligentes e configuraÃ§Ã£o de linguagem para Lumina IDE e VS Code.",
-    "version":  "1.0.1",
-    "publisher":  "Kaz-Language",
-    "repository":  {
-                       "type":  "git",
-                       "url":  "https://github.com/armandosds/Kaz"
-                   },
-    "icon":  "icon.png",
-    "engines":  {
-                    "vscode":  "^1.60.0"
-                },
-    "categories":  [
-                       "Programming Languages",
-                       "Snippets"
-                   ],
-    "keywords":  [
-                     "kaz",
-                     "lumina",
-                     "programming-language",
-                     "syntax",
-                     "highlighting",
-                     "rust"
-                 ],
-    "contributes":  {
-                        "languages":  [
-                                          {
-                                              "id":  "kaz",
-                                              "aliases":  [
-                                                              "Kaz",
-                                                              "kaz"
-                                                          ],
-                                              "extensions":  [
-                                                                 ".kaz"
-                                                             ],
-                                              "configuration":  "./language-configuration.json",
-                                              "icon":  {
-                                                           "light":  "./icon.png",
-                                                           "dark":  "./icon.png"
-                                                       }
-                                          }
-                                      ],
-                        "grammars":  [
-                                         {
-                                             "language":  "kaz",
-                                             "scopeName":  "source.kaz",
-                                             "path":  "./syntaxes/kaz.tmLanguage.json"
-                                         }
-                                     ],
-                        "snippets":  [
-                                         {
-                                             "language":  "kaz",
-                                             "path":  "./snippets/kaz.json"
-                                         }
-                                     ]
-                    }
+{
+    "name": "kaz-language",
+    "displayName": "Kaz Programming Language",
+    "description": "Suporte oficial a linguagem Kaz: Coloracao sintatica (Syntax Highlighting), snippets inteligentes e configuracao de linguagem para Lumina IDE e VS Code.",
+    "version": "1.0.1",
+    "publisher": "armandosds",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/kazlang/kaz.git"
+    },
+    "icon": "icon.png",
+    "engines": {
+        "vscode": "^1.60.0"
+    },
+    "categories": [
+        "Programming Languages",
+        "Snippets"
+    ],
+    "keywords": [
+        "kaz",
+        "lumina",
+        "programming-language",
+        "syntax",
+        "highlighting",
+        "rust"
+    ],
+    "contributes": {
+        "languages": [
+            {
+                "id": "kaz",
+                "aliases": [
+                    "Kaz",
+                    "kaz"
+                ],
+                "extensions": [
+                    ".kaz"
+                ],
+                "configuration": "./language-configuration.json",
+                "icon": {
+                    "light": "./icon.png",
+                    "dark": "./icon.png"
+                }
+            }
+        ],
+        "grammars": [
+            {
+                "language": "kaz",
+                "scopeName": "source.kaz",
+                "path": "./syntaxes/kaz.tmLanguage.json"
+            }
+        ],
+        "snippets": [
+            {
+                "language": "kaz",
+                "path": "./snippets/kaz.json"
+            }
+        ]
+    }
 }

@@ -4,7 +4,8 @@
 # ============================================================================
 
 param (
-    [string]$Version = "1.0.1"
+    [string]$Version = "1.0.1",
+    [string]$Publisher = "armandosds"
 )
 
 $ErrorActionPreference = "Stop"
@@ -21,20 +22,21 @@ if (-not (Test-Path $distDir)) {
     New-Item -ItemType Directory -Path $distDir -Force | Out-Null
 }
 
-$outputVsix = Join-Path $distDir "kaz-language-$Version.vsix"
-$outputVsixLatest = Join-Path $distDir "kaz-language-1.0.0.vsix"
+$utf8NoBom = New-Object System.Text.UTF8Encoding($false)
 
 Write-Host "========================================================" -ForegroundColor Cyan
 Write-Host "     Empacotador VSIX Kaz Language v$Version             " -ForegroundColor Cyan
+Write-Host "     Publisher: $Publisher                              " -ForegroundColor Cyan
 Write-Host "========================================================" -ForegroundColor Cyan
 
-# Atualiza versão no package.json
+# 1. Atualiza versão e publisher no package.json
 $pkgJsonPath = Join-Path $srcDir "package.json"
 if (Test-Path $pkgJsonPath) {
-    $pkg = Get-Content $pkgJsonPath -Raw | ConvertFrom-Json
-    $pkg.version = $Version
-    $pkg | ConvertTo-Json -Depth 10 | Set-Content $pkgJsonPath -Encoding UTF8
-    Write-Host "OK: package.json atualizado para v$Version" -ForegroundColor Green
+    $content = [System.IO.File]::ReadAllText($pkgJsonPath, [System.Text.Encoding]::UTF8)
+    $content = [System.Text.RegularExpressions.Regex]::Replace($content, '"version":\s*"[^"]*"', "`"version`": `"$Version`"")
+    $content = [System.Text.RegularExpressions.Regex]::Replace($content, '"publisher":\s*"[^"]*"', "`"publisher`": `"$Publisher`"")
+    [System.IO.File]::WriteAllText($pkgJsonPath, $content, $utf8NoBom)
+    Write-Host "OK: package.json atualizado (versão: $Version, publisher: $Publisher)" -ForegroundColor Green
 }
 
 $tempZip = [System.IO.Path]::GetTempFileName()
@@ -43,21 +45,21 @@ Remove-Item $tempZip -Force
 $zipStream = [System.IO.File]::Create($tempZip)
 $archive = New-Object System.IO.Compression.ZipArchive($zipStream, [System.IO.Compression.ZipArchiveMode]::Create)
 
-# 1. [Content_Types].xml
+# 2. [Content_Types].xml
 $ctContent = "<?xml version=""1.0"" encoding=""utf-8""?>`r`n<Types xmlns=""http://schemas.openxmlformats.org/package/2006/content-types""><Default Extension="".json"" ContentType=""application/json""/><Default Extension="".md"" ContentType=""text/markdown""/><Default Extension="".png"" ContentType=""image/png""/><Default Extension="".vsixmanifest"" ContentType=""text/xml""/></Types>"
 $entry = $archive.CreateEntry("[Content_Types].xml", [System.IO.Compression.CompressionLevel]::Optimal)
-$writer = New-Object System.IO.StreamWriter($entry.Open(), [System.Text.Encoding]::UTF8)
+$writer = New-Object System.IO.StreamWriter($entry.Open(), $utf8NoBom)
 $writer.Write($ctContent)
 $writer.Close()
 
-# 2. extension.vsixmanifest
+# 3. extension.vsixmanifest (Escrita pura UTF-8 sem BOM)
 $manifestTemplate = @"
 <?xml version="1.0" encoding="utf-8"?>
 <PackageManifest Version="2.0.0" xmlns="http://schemas.microsoft.com/developer/vsx-schema/2011" xmlns:d="http://schemas.microsoft.com/developer/vsx-schema-design/2011">
     <Metadata>
-        <Identity Language="en-US" Id="kaz-language" Version="$Version" Publisher="Kaz-Language" />
+        <Identity Language="en-US" Id="kaz-language" Version="$Version" Publisher="$Publisher" />
         <DisplayName>Kaz Programming Language</DisplayName>
-        <Description xml:space="preserve">Suporte oficial à linguagem Kaz 🦅: Coloração sintática (Syntax Highlighting), snippets inteligentes e configuração de linguagem para Lumina IDE e VS Code.</Description>
+        <Description xml:space="preserve">Suporte oficial a linguagem Kaz: Coloracao sintatica (Syntax Highlighting), snippets inteligentes e configuracao de linguagem para Lumina IDE e VS Code.</Description>
         <Tags>kaz,lumina,programming-language,syntax,highlighting,rust,snippet,Kaz,__ext_kaz,__web_extension</Tags>
         <Categories>Programming Languages,Snippets</Categories>
         <GalleryFlags>Public</GalleryFlags>
@@ -90,11 +92,11 @@ $manifestTemplate = @"
 </PackageManifest>
 "@
 $entry = $archive.CreateEntry("extension.vsixmanifest", [System.IO.Compression.CompressionLevel]::Optimal)
-$writer = New-Object System.IO.StreamWriter($entry.Open(), [System.Text.Encoding]::UTF8)
+$writer = New-Object System.IO.StreamWriter($entry.Open(), $utf8NoBom)
 $writer.Write($manifestTemplate)
 $writer.Close()
 
-# 3. Adiciona arquivos da extensão
+# 4. Adiciona todos os arquivos da pasta editors/vscode
 $files = Get-ChildItem -Path $srcDir -Recurse -File
 foreach ($file in $files) {
     $relPath = $file.FullName.Substring($srcDir.Length).TrimStart('\', '/')
@@ -110,10 +112,17 @@ foreach ($file in $files) {
 $archive.Dispose()
 $zipStream.Close()
 
-# Grava para a versão especificada e como padrão
-Copy-Item $tempZip $outputVsix -Force
-Move-Item $tempZip $outputVsixLatest -Force
+# 5. Salva os pacotes VSIX com nomes convenientes
+$outputVsixVersion = Join-Path $distDir "kaz-language-$Version.vsix"
+$outputVsixPublisher = Join-Path $distDir "$Publisher.kaz-language-$Version.vsix"
+$outputVsixDefault = Join-Path $distDir "kaz-language.vsix"
 
-Write-Host "OK: Pacote VSIX gerado: $outputVsix" -ForegroundColor Green
-Write-Host "OK: Pacote padrão atualizado: $outputVsixLatest" -ForegroundColor Green
-Write-Host "`nPronto para publicação no VS Code Marketplace ou instalação manual!" -ForegroundColor Cyan
+Copy-Item $tempZip $outputVsixVersion -Force
+Copy-Item $tempZip $outputVsixPublisher -Force
+Move-Item $tempZip $outputVsixDefault -Force
+
+Write-Host "`nOK: Pacotes VSIX gerados com sucesso (UTF-8 puro sem BOM):" -ForegroundColor Green
+Write-Host "  -> $outputVsixVersion" -ForegroundColor White
+Write-Host "  -> $outputVsixPublisher" -ForegroundColor White
+Write-Host "  -> $outputVsixDefault" -ForegroundColor White
+Write-Host "`nPronto para atualização no portal do VS Code Marketplace!" -ForegroundColor Cyan
