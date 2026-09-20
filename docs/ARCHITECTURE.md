@@ -14,9 +14,10 @@ Este documento detalha o pipeline completo de execução, desde o código-fonte 
 4. [Resolução de Módulos & Dependências](#4-resolução-de-módulos--dependências)
 5. [O Compilador de Bytecode](#5-o-compilador-de-bytecode)
 6. [Conjunto de Instruções (`OpCode`)](#6-conjunto-de-instruções-opcode)
-7. [A Máquina Virtual de Pilha (Kaz Stack VM)](#7-a-máquina-virtual-de-pilha-kaz-stack-vm)
-8. [Módulos Nativos Embutidos (SQLite, JSON, Rede)](#8-módulos-nativos-embutidos)
-9. [Comparativo de Desempenho: AST vs Stack VM](#9-comparativo-de-desempenho-ast-vs-stack-vm)
+7. [A Máquina Virtual de Pilha & Stack Unwinding (Kaz Stack VM)](#7-a-máquina-virtual-de-pilha--stack-unwinding-kaz-stack-vm)
+8. [Módulos Nativos Embutidos (Bateria Inclusa)](#8-módulos-nativos-embutidos-bateria-inclusa)
+9. [Ferramentas Nativas de Diagnóstico e Depuração](#9-ferramentas-nativas-de-diagnóstico-e-depuração)
+10. [Comparativo de Desempenho: AST vs Stack VM](#10-comparativo-de-desempenho-ast-vs-stack-vm)
 
 ---
 
@@ -111,31 +112,53 @@ O conjunto de instruções de Kaz (`src/vm/opcode.rs`) é compacto e focado em o
 | `Add`, `Subtract`, `Multiply`, `Divide`, `Modulo` | Operações aritméticas de topo de pilha. |
 | `Equal`, `NotEqual`, `Greater`, `Less`, etc. | Comparações relacionais. |
 | `Jump(u16)`, `JumpIfFalse(u16)`, `Loop(u16)` | Desvios incondicionais e condicionais de fluxo. |
-| `Call(u8)` / `CallNative(u16, u8)` | Chamada de funções de usuário ou da biblioteca padrão. |
-| `Return` | Retorno da chamada desempilhando o frame de execução. |
+| `PushTry(u16)` | Registra manipulador de exceção na VM com ponteiro de salto para o catch. |
+| `PopTry` | Remove o manipulador de exceção ativo ao finalizar o bloco `try` com sucesso. |
+| `Call(u8)` / `CallMethod(u16, u8)` | Chamada de funções de usuário ou métodos de tipos complexos. |
+| `CallNative(u16, u8)` | Chamada direta de funções da biblioteca padrão implementadas em Rust. |
+| `Return` | Retorno da chamada desempilhando o frame de execução e limpando handlers expirados. |
 | `Halt` | Encerramento do programa. |
 
 ---
 
-## 7. A Máquina Virtual de Pilha (Kaz Stack VM)
+## 7. A Máquina Virtual de Pilha & Stack Unwinding (Kaz Stack VM)
 
-A Stack VM (`src/vm/vm.rs`) implementa o loop de despacho das instruções:
-- **CallFrames**: Cada chamada de função aloca um frame contendo ponteiro de instrução (`ip`), chunk local e ponteiro de base da pilha (`stack_ptr`).
-- **Valores Primitivos Eficientes**: O enum `Value` armazena inteiros de 64 bits, floats, booleanos e strings com alocação mínima.
-- **Isolamento de Escopo em Loops**: Ao término de cada iteração de repetição, a VM descarta as variáveis temporárias emitindo instruções `Pop`, mantendo o tamanho da pilha estável independentemente do número de voltas.
-
----
-
-## 8. Módulos Nativos Embutidos
-
-Diferente de interpretadores que exigem instalação de pacotes C externos, Kaz incorpora em Rust:
-1. **SQLite Bundled (`src/stdlib/db.rs`)**: O código C do SQLite 3 é compilado estaticamente para dentro do binário `kaz.exe`. Suporta bancos em memória (`:memory:`) e arquivos persistentes.
-2. **Serde JSON (`src/stdlib/json.rs`)**: Parser e gerador JSON ultra-otimizados que mapeiam diretamente entre árvores JSON e structs/arrays Kaz.
-3. **Rede TCP / HTTP (`src/stdlib/net.rs`)**: Medição de ping via handshake TCP nativo e requisições HTTP RESTful com sockets padrão do sistema.
+A Stack VM (`src/vm/vm.rs`) implementa o loop de despacho das instruções em memória contígua:
+- **CallFrames**: Cada chamada de função aloca um frame contendo ponteiro de instrução (`ip`), chunk local e ponteiro de base da pilha (`stack_start`).
+- **Valores Primitivos Eficientes**: O enum `Value` armazena inteiros de 64 bits, floats, booleanos, structs e strings com alocação mínima.
+- **Tratamento de Exceções & Desenrolamento (*Stack Unwinding*)**:
+  - Quando um erro ocorre durante a execução (aritmético, I/O, SQL, asserção, limites), o método `handle_error` consulta o vetor `exception_handlers`.
+  - Os call frames são desenrolados até o frame onde o `PushTry` foi registrado.
+  - A pilha de operandos é truncada diretamente para `handler.stack_depth`, eliminando todos os valores intermediários acumulados.
+  - A mensagem de erro em `Value::String` é empilhada para ser vinculada à variável do `catch` (ou descartada via `Pop`).
+  - O ponteiro `frame.ip` é redirecionado instantaneamente para `handler.catch_ip`.
+  - **Custo Zero (*Zero-Overhead*)**: Na ausência de exceções, `PushTry` e `PopTry` são operações de custo irrisório sem nenhuma sobrecarga de captura ou checagem em cada instrução.
 
 ---
 
-## 9. Comparativo de Desempenho: AST vs Stack VM
+## 8. Módulos Nativos Embutidos (Bateria Inclusa)
+
+Diferente de interpretadores que exigem instalação de pacotes C externos ou gerenciadores de pacotes pesados, Kaz incorpora tudo em Rust:
+1. **SQLite 3 Bundled (`src/stdlib/db.rs`)**: Compilado estaticamente para dentro do binário `kaz.exe`. Suporta bancos em memória (`:memory:`) e arquivos persistentes em disco.
+2. **Criptografia & Hashes (`src/stdlib/crypto.rs`)**: Implementações nativas de SHA-256 (`sha2`), MD5 (`md-5`) e codificação/decodificação Base64 (`base64`).
+3. **Expressões Regulares (`src/stdlib/regex.rs`)**: Motor de regex de alta performance baseado na crate Rust `regex`.
+4. **Sistema de Arquivos Moderno (`src/stdlib/fs.rs`)**: Operações completas de `mkdir -p`, leitura recursiva de diretórios, cópia, verificação de tamanho e remoção segura.
+5. **Serde JSON (`src/stdlib/json.rs`)**: Parser e gerador JSON ultra-otimizados que mapeiam diretamente entre árvores JSON e structs/arrays Kaz.
+6. **Rede TCP / HTTP (`src/stdlib/net.rs`)**: Medição de ping via handshake TCP nativo e requisições HTTP RESTful com sockets padrão do sistema.
+
+---
+
+## 9. Ferramentas Nativas de Diagnóstico e Depuração
+
+Kaz não requer a instalação de ferramentas externas para inspeção ou testes:
+- **`kaz trace <arquivo.kaz>`**: Executa o programa exibindo o ciclo de despacho de cada OpCode, número de linha, Instruction Pointer (IP) e todo o conteúdo da pilha em tempo real.
+- **`kaz debug <arquivo.kaz>`**: Desmonta os chunks de bytecode, exibindo as tabelas de literais e instruções sem executar o programa.
+- **`kaz db-cli <banco.db>`**: Console interativo SQLite integrado para consultas, inspeção de esquemas e comandos DDL/DML diretamente pelo terminal.
+- **`kaz test [caminho]`**: Executor de testes unitários nativo integrado ao compilador, que ignora os blocos de teste durante `kaz run`, mas os executa com relatório de milissegundos durante `kaz test`.
+
+---
+
+## 10. Comparativo de Desempenho: AST vs Stack VM
 
 Em testes de estresse computacional (`examples/benchmark.kaz`):
 
@@ -145,3 +168,4 @@ Em testes de estresse computacional (`examples/benchmark.kaz`):
 | **Alocação de 10.000 Structs** | 890 ms | **70 ms** | **12.7x mais rápido** |
 | **Fibonacci 26 (242.785 chamadas)** | ~18.500 ms | **638 ms** | **28.9x mais rápido** |
 | **Tempo Total da Suíte** | ~19.810 ms | **729 ms** | **27x mais rápido** |
+

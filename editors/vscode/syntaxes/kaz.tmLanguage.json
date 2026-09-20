@@ -87,7 +87,7 @@
             "patterns": [
                 {
                     "name": "keyword.control.kaz",
-                    "match": "\\b(if|else|for|in|while|break|continue|return|test)\\b"
+                    "match": "\\b(if|else|for|in|while|break|continue|return|test|try|catch)\\b"
                 },
                 {
                     "name": "storage.type.function.kaz",

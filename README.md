@@ -142,6 +142,16 @@ chmod +x install.sh
 kaz programa.kaz
 kaz run programa.kaz
 
+# Executar suíte de testes unitários nativos
+kaz test
+kaz test testes/
+kaz test meu_arquivo.kaz
+
+# Ferramentas de diagnóstico e depuração nativas
+kaz trace programa.kaz    # Rastreia a Stack VM passo a passo com a pilha em tempo real
+kaz debug programa.kaz    # Desmonta o bytecode e exibe constantes e chunks
+kaz db-cli meu_banco.db   # Abre console SQL interativo para inspecionar o SQLite
+
 # Executar projeto modular em pasta (procura automaticamente main.kaz)
 kaz pasta_do_projeto/
 kaz .
@@ -173,6 +183,7 @@ Consulte o diretório [`examples/`](examples/) para explorar exemplos completos 
 
 | Arquivo de Exemplo | Conceito Demonstrado |
 |---|---|
+| [`examples/battery_included_demo.kaz`](examples/battery_included_demo.kaz) | **Bateria Inclusa Completa**: Testes nativos `test`, criptografia `crypto.*`, regex `regex.*` e arquivos `fs.*` |
 | [`examples/project_structure_demo/`](examples/project_structure_demo/) | **Aplicação Corporativa Modular** (Pastas `models/`, `db/`, `services/`, SQLite e JSON) |
 | [`examples/kaz_net_dashboard.kaz`](examples/kaz_net_dashboard.kaz) | Painel de monitoramento TCP e ping em tempo real |
 | [`examples/benchmark.kaz`](examples/benchmark.kaz) | Suíte de testes de estresse e medição de desempenho da Stack VM |
@@ -186,13 +197,18 @@ Consulte o diretório [`examples/`](examples/) para explorar exemplos completos 
 
 ## 🧪 Testes Automatizados
 
-Kaz possui uma suíte rigorosa de **79 testes automatizados** cobrindo todas as áreas da linguagem:
+Kaz possui uma suíte rigorosa de **96 testes automatizados** cobrindo todas as áreas da linguagem com zero regressão:
 
 ```bash
 cargo test
 ```
 
 ### Áreas Cobertas:
+- Tratamento robusto de erros com desenrolamento de pilha (`try_catch_tests.rs`)
+- Testes unitários integrados e asserções nativas (`native_test_runner_tests.rs`)
+- Criptografia padrão SHA256, MD5 e Base64 (`crypto_tests.rs`)
+- Expressões regulares nativas (`regex_tests.rs`)
+- Manipulação avançada de sistema de arquivos (`fs_expansion_tests.rs`)
 - Sistema de tipos e constantes (`variable_tests.rs`, `typed_array_tests.rs`)
 - Operadores e precedência (`operator_tests.rs`, `ternary_tests.rs`)
 - Estruturas de controle de fluxo (`control_flow_tests.rs`, `for_in_tests.rs`)

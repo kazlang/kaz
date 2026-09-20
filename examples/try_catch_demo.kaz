@@ -1,0 +1,66 @@
+// ====================================================================
+// Demonstração de Tratamento Robusto de Erros (try / catch) na Kaz
+// ====================================================================
+
+function calcular_desconto(int valor, int divisor): int {
+    // Operação sujeita a divisão por zero
+    return valor / divisor;
+}
+
+function processar_pagamento(string nome, int valor, int parcelas) {
+    println("-> Iniciando processamento para: " + nome);
+    int resultado = calcular_desconto(valor, parcelas);
+    println("   Valor por parcela: R$ " + resultado);
+}
+
+function Main() {
+    println("==================================================");
+    println("  Kaz - Demonstração de try / catch & Unwinding   ");
+    println("==================================================\n");
+
+    // 1. Captura de divisão por zero através de chamadas de funções
+    println("[Cenário 1] Tratamento de exceção em pilha de chamadas:");
+    try {
+        processar_pagamento("Empresa Alpha", 1500, 0);
+        println("Esta linha NÃO será impressa!");
+    } catch (err) {
+        println("   [RECUPERADO] Falha interceptada: " + err);
+    }
+    println("   Fluxo restabelecido normalmente.\n");
+
+    // 2. Captura de erro em I/O de arquivo
+    println("[Cenário 2] Tratamento de leitura de arquivo inexistente:");
+    try {
+        string conteudo = fs_read("arquivo_inexistente_12345.log");
+        println("Conteúdo lido: " + conteudo);
+    } catch (e) {
+        println("   [RECUPERADO] Erro de arquivo: " + e);
+    }
+    println("   Aplicação continuou sem crashar.\n");
+
+    // 3. Bloco try / catch aninhado
+    println("[Cenário 3] Blocos aninhados de recuperação:");
+    try {
+        println("   Entrando no bloco externo...");
+        try {
+            int falha_interna = 50 / 0;
+        } catch (erro_interno) {
+            println("   -> Interceptado no catch interno: " + erro_interno);
+        }
+        println("   Bloco externo continua após recuperação interna!");
+    } catch (erro_externo) {
+        println("   Catch externo: " + erro_externo);
+    }
+
+    // 4. Catch silencioso (sem declaração de variável)
+    println("\n[Cenário 4] Catch silencioso sem variável de erro:");
+    try {
+        int x = 10 / 0;
+    } catch {
+        println("   Erro suprimido e fluxo desviado com segurança!");
+    }
+
+    println("\n==================================================");
+    println("  Todos os testes de try / catch foram concluídos! ");
+    println("==================================================");
+}

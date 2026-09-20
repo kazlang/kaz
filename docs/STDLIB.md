@@ -7,16 +7,18 @@ Isso significa **máxima velocidade de execução e zero necessidade de instalar
 
 ## 📑 Módulos Disponíveis
 
-1. [Entrada e Saída (`io`)](#1-entrada-e-saída-io)
+1. [Entrada, Saída & Asserções (`io`)](#1-entrada-saída--asserções-io)
 2. [Conversão de Tipos (`convert`)](#2-conversão-de-tipos-convert)
 3. [Matemática (`math.*`)](#3-matemática-math)
 4. [Manipulação de Strings (`str`)](#4-manipulação-de-strings-str)
 5. [Arrays e Coleções (`arr`)](#5-arrays-e-coleções-arr)
-6. [Sistema de Arquivos (`fs`)](#6-sistema-de-arquivos-fs)
-7. [Rede e HTTP (`net.*`)](#7-rede-e-http-net)
-8. [Banco de Dados Relacional SQLite (`db.*`)](#8-banco-de-dados-relacional-sqlite-db)
-9. [Serialização e Parsing JSON (`json.*`)](#9-serialização-e-parsing-json-json)
-10. [Tempo e Sistema (`time`)](#10-tempo-e-sistema-time)
+6. [Sistema de Arquivos Moderno (`fs.*`)](#6-sistema-de-arquivos-moderno-fs)
+7. [Criptografia e Hashes (`crypto.*`)](#7-criptografia-e-hashes-crypto-)
+8. [Expressões Regulares (`regex.*`)](#8-expressões-regulares-regex-)
+9. [Rede e HTTP (`net.*`)](#9-rede-e-http-net)
+10. [Banco de Dados Relacional SQLite (`db.*`)](#10-banco-de-dados-relacional-sqlite-db)
+11. [Serialização e Parsing JSON (`json.*`)](#11-serialização-e-parsing-json-json)
+12. [Tempo e Sistema (`time`)](#12-tempo-e-sistema-time)
 
 ---
 

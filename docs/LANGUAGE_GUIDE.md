@@ -32,6 +32,8 @@ Kaz é uma linguagem moderna, tipada, expressiva e de alto desempenho projetada 
 13. [Rede e Comunicação HTTP (net.*)](#13-rede-e-comunicação-http-net)
 14. [Motor de Execução (Stack Bytecode VM)](#14-motor-de-execução-stack-bytecode-vm)
 15. [Diagnóstico de Erros](#15-diagnóstico-de-erros)
+16. [Testes Unitários Nativos Integrados (test & assert)](#16-testes-unitários-nativos-integrados-)
+17. [Tratamento Robusto de Erros (try / catch)](#17-tratamento-robusto-de-erros-try--catch-)
 
 ---
 
@@ -476,4 +478,68 @@ running 2 test(s) in meu_arquivo.kaz:
 
 test result: OK. 2 passed; 0 failed; finished in 1.15ms
 ```
+
+---
+
+## 17. Tratamento Robusto de Erros (`try / catch`) 🛡️
+
+A linguagem Kaz implementa um mecanismo de tratamento de exceções de alta performance baseado em blocos `try / catch`. Na Stack Bytecode VM, este mecanismo possui custo zero (*zero-overhead*) quando nenhum erro ocorre e utiliza desenrolamento de pilha (*call stack unwinding*) automático para recuperar a execução de forma previsível e segura.
+
+### Sintaxe Básica com Variável de Erro:
+
+```kaz
+try {
+    // Código potencialmente sujeito a erros
+    int divisor = 0;
+    int resultado = 100 / divisor;
+    println("Esta linha nunca será alcançada");
+} catch (e) {
+    // Bloco executado quando uma exceção é interceptada
+    println("[ERRO CAPTURADO] Falha na operação: " + e);
+}
+
+println("Programa continua sua execução normalmente...");
+```
+
+### Sintaxe Silenciosa (sem Variável de Erro):
+Se o conteúdo da mensagem de erro não for necessário para o tratamento, o parâmetro do `catch` pode ser omitido:
+
+```kaz
+try {
+    let dados = file_read("config_opcional.json");
+    processar(dados);
+} catch {
+    println("Arquivo opcional não encontrado. Usando valores padrão.");
+}
+```
+
+### Desenrolamento entre Funções (*Stack Unwinding*):
+O `try / catch` intercepta exceções originadas em qualquer profundidade da árvore de chamadas de funções:
+
+```kaz
+function carregar_registro(string path): string {
+    // Se o arquivo não existir, file_read lança erro em tempo de execução
+    return file_read(path);
+}
+
+function inicializar_app() {
+    string cfg = carregar_registro("sistema.conf");
+    println("Configuração lida: " + cfg);
+}
+
+// O erro disparado dentro de carregar_registro é capturado aqui no topo
+try {
+    inicializar_app();
+} catch (err) {
+    println("Falha fatal evitada: " + err);
+}
+```
+
+### Tipos de Falhas Interceptadas pelo `try / catch`:
+- **Aritméticas**: Divisão e módulo por zero.
+- **Sistema de Arquivos (fs / file)**: Leitura de arquivos inexistentes, falta de permissões ou caminhos inválidos.
+- **Banco de Dados SQLite (db)**: Instruções SQL com erro de sintaxe ou restrições de integridade violadas.
+- **Rede e HTTP (net)**: Conexões TCP recusadas, timeouts ou requisições HTTP falhas.
+- **Índices de Coleções**: Acesso a elementos de arrays fora dos limites (`out of bounds`).
+- **Asserções de Teste**: Quebras de contrato emitidas pela função `assert(condicao, mensagem)`.
 
