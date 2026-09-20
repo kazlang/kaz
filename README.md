@@ -6,12 +6,12 @@
 </p>
 
 <p align="center">
-    <a href="https://github.com/armandosds/Kaz"><img src="https://img.shields.io/badge/version-1.0.0-blue.svg" alt="Version"></a>
+    <a href="https://github.com/kazlang/kaz"><img src="https://img.shields.io/badge/version-1.0.0-blue.svg" alt="Version"></a>
     <a href="LICENSE"><img src="https://img.shields.io/badge/License-Proprietary-red.svg" alt="License: Proprietary"></a>
     <img src="https://img.shields.io/badge/build-passing-brightgreen.svg" alt="Build Status">
     <img src="https://img.shields.io/badge/Engine-Stack%20Bytecode%20VM-purple.svg" alt="Engine: Bytecode VM">
     <img src="https://img.shields.io/badge/Tests-107%20passed-success.svg" alt="Tests">
-    <a href="https://www.rust-lang.org/"><img src="https://img.shields.io/badge/Rust-2024-orange.svg" alt="Rust Edition"></a>
+    <img src="https://img.shields.io/badge/Distribution-Standalone%20Binary-blueviolet.svg" alt="Distribution: Standalone Binary">
 </p>
 
 ---
@@ -109,26 +109,19 @@ kaz meu_sistema/
 
 ---
 
-## 🛠️ Compilação e Instalação
+## 🛠️ Instalação Rápida (1 Clique)
 
-### Pré-requisitos
-- [Rust & Cargo](https://rustup.rs/) (Edição 2024 ou superior)
+A linguagem **Kaz** é distribuída como binário pré-compilado autossuficiente (*standalone executable*) de alto desempenho com SQLite e runtime integrados.  
+**Você não precisa instalar Rust, Cargo, compiladores C nem gerenciadores de pacotes de terceiros.**
 
-### 1. Compilação a partir do Código-Fonte
-```bash
-cargo build --release
-```
-O executável otimizado estará localizado em `target/release/kaz.exe` (Windows) ou `target/release/kaz` (Linux/macOS).
-
-### 2. Instalação Automática
-
-#### No Windows (PowerShell):
+### No Windows:
+Basta dar um duplo-clique no arquivo **`install.bat`** ou executar no PowerShell:
 ```powershell
 .\install.ps1
 ```
-*O script compila o projeto, copia o binário para o diretório de ferramentas do usuário, configura o `PATH` do sistema e instala a extensão na Lumina IDE e no VS Code automaticamente.*
+*O instalador copia o `kaz.exe` para o seu computador, configura o `PATH` do sistema automaticamente e instala a extensão oficial de coloração sintática na Lumina IDE e no VS Code.*
 
-#### No Linux / macOS:
+### No Linux / macOS:
 ```bash
 chmod +x install.sh
 ./install.sh
@@ -201,32 +194,33 @@ Consulte o diretório [`examples/`](examples/) para explorar exemplos completos 
 
 ---
 
-## 🧪 Testes Automatizados
+## 🧪 Testes Automatizados e Confiabilidade
 
-Kaz possui uma suíte rigorosa de **107 testes automatizados** cobrindo todas as áreas da linguagem com zero regressão:
+Kaz foi construído sob uma suíte contínua de **107 testes automatizados** com zero regressão e inclui um executor de testes unitários nativo integrado diretamente no executável `kaz`:
 
 ```bash
-cargo test
+# Executa os testes unitários nativos integrados no projeto ou exemplos:
+kaz test examples/
 ```
 
 ### Áreas Cobertas:
-- Formatador canônico automático de código e integridade de AST (`fmt_tests.rs`)
-- Tratamento robusto de erros com desenrolamento de pilha (`try_catch_tests.rs`)
-- Testes unitários integrados e asserções nativas (`native_test_runner_tests.rs`)
-- Criptografia padrão SHA256, MD5 e Base64 (`crypto_tests.rs`)
-- Expressões regulares nativas (`regex_tests.rs`)
-- Manipulação avançada de sistema de arquivos (`fs_expansion_tests.rs`)
-- Sistema de tipos e constantes (`variable_tests.rs`, `typed_array_tests.rs`)
-- Operadores e precedência (`operator_tests.rs`, `ternary_tests.rs`)
-- Estruturas de controle de fluxo (`control_flow_tests.rs`, `for_in_tests.rs`)
-- Funções, escopo léxico e recursão (`function_tests.rs`)
-- Structs e mutação de campos (`struct_tests.rs`)
-- Módulos multi-arquivos e proteção anti-ciclo (`import_tests.rs`)
-- Banco de dados relacional SQLite (`db_tests.rs`)
-- Serialização e parsing JSON (`json_tests.rs`)
-- Conectividade de rede TCP e HTTP (`net_tests.rs`)
-- Máquina Virtual de Bytecode (`vm_tests.rs`)
-- Interface de linha de comando (`cli_tests.rs`, `shell_tests.rs`)
+- Formatador canônico automático de código e validação de AST de segurança
+- Tratamento robusto de erros com desenrolamento de pilha (`try / catch`)
+- Testes unitários integrados e asserções nativas (`test "nome" { assert(...) }`)
+- Criptografia padrão SHA256, MD5 e Base64 (`crypto.*`)
+- Expressões regulares nativas (`regex.*`)
+- Manipulação avançada de sistema de arquivos (`fs.*`)
+- Sistema de tipos e constantes (`int`, `float`, `string`, `bool`, `const`, `array[T]`)
+- Operadores e precedência (`+`, `-`, `*`, `/`, `%`, `+=`, `-=`, `*=`, `/=`, `%=`, `? :`)
+- Estruturas de controle de fluxo (`if/else`, `while`, `for`, `for..in`)
+- Funções, escopo léxico e recursão
+- Structs e mutação de campos
+- Módulos multi-arquivos e proteção anti-ciclo (`import`)
+- Banco de dados relacional SQLite (`db.*`)
+- Serialização e parsing JSON (`json.*`)
+- Conectividade de rede TCP e HTTP (`net.*`)
+- Máquina Virtual de Bytecode de alta performance
+- Interface de linha de comando e Kaz Terminal Interativo
 
 ---
 
