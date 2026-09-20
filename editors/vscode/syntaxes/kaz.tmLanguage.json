@@ -103,7 +103,7 @@
                 },
                 {
                     "name": "storage.modifier.kaz",
-                    "match": "\\b(const)\\b"
+                    "match": "\\b(const|let)\\b"
                 }
             ]
         },
@@ -111,7 +111,7 @@
             "patterns": [
                 {
                     "name": "storage.type.primitive.kaz",
-                    "match": "\\b(int|float|double|string|char|bool|bol|void|any)\\b"
+                    "match": "\\b(int|float|double|string|char|bool|bol|void|any|array)\\b"
                 },
                 {
                     "match": "\\b(array)\\s*(\\[)",
