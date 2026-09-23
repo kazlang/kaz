@@ -45,8 +45,22 @@ function bench_n(int target_n, int runs) {
 }
 
 function Main() {
+    if (args_len() > 0) {
+        int n = argv_int(0);
+        int runs = 50;
+        if (n >= 32) {
+            runs = 10;
+        }
+        runoff("==================================================================");
+        runoff("   KAZ JIT - EXECUCAO DINAMICA VIA ARGV");
+        runoff("   (Argumento n = " + n + " recebido via linha de comando)");
+        runoff("==================================================================");
+        bench_n(n, runs);
+        return;
+    }
+
     runoff("==================================================================");
-    runoff("   KAZ CRANELIFT JIT - BENCHMARK RIGOROSO COM MICROSSEGUNDOS");
+    runoff("   KAZ CRANELIFT JIT - BATERIA COMPLETA DE BENCHMARKS");
     runoff("   (Entrada dinamica via clock para impedir Constant Folding)");
     runoff("==================================================================");
     
