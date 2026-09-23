@@ -20,7 +20,7 @@ fn bench_n(target_n: i64, runs: usize) {
     for _ in 0..runs {
         let n = black_box(target_n);
         let t0 = Instant::now();
-        last_res = fib(n);
+        last_res = black_box(fib(black_box(n)));
         let elapsed = t0.elapsed().as_micros();
         times.push(elapsed);
     }

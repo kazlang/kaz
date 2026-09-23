@@ -64,19 +64,33 @@ Se houvesse *Constant Folding*, o tempo seria **plano ($\le 1\ \mu\text{s}$)** p
 
 Para garantir **paridade científica estrita** (sem favorecimento metodológico ao Kaz e sem ruído de inicialização em linguagens interpretadas como Python ou compilação de constantes em Rust), o **mesmo protocolo experimental** foi implementado de forma idêntica em todas as 4 tecnologias testadas:
 
-1. **Anti-Constant Folding Rigoroso:**
+1. **Anti-Constant Folding Dinâmico:**
    - **Kaz JIT & VM:** Parâmetro $n$ derivado em runtime via clock do sistema ou recebido via linha de comando (`argv_int(0)` / `input_int()`).
    - **Rust Nativo (`-O3`):** Parâmetro $n$ passado via argumento CLI (`std::env::args()`) e isolado do compilador com `std::hint::black_box(n)`.
    - **Python 3.12:** Parâmetro $n$ recebido via argumento CLI (`sys.argv[1]`).
-2. **Ciclo de Aquecimento Idêntico (Warm-up):**
+2. **Proteção contra *Loop-Invariant Code Motion (LICM)*:**
+   - Em laços de repetição (ex: 50 execuções), um compilador agressivo como o LLVM poderia tentar aplicar *LICM* ou *Common Subexpression Elimination* — calculando `fib(n)` na primeira volta e apenas relendo o resultado nas voltas seguintes, derrubando artificialmente a média.
+   - **Prevenção no Rust (`benches/fib_native.rs`):** O `std::hint::black_box` envolve **tanto o argumento de entrada quanto o retorno da chamada**:
+     ```rust
+     for _ in 0..runs {
+         let n = black_box(target_n);
+         let t0 = Instant::now();
+         last_res = black_box(fib(black_box(n)));
+         let elapsed = t0.elapsed().as_micros();
+         times.push(elapsed);
+     }
+     ```
+   - **Comprovação pelos dados:** A prova de que nenhuma iteração foi suprimida está no intervalo Mínimo–Máximo. Para $n=26$, o Rust registrou Mínimo de **488 $\mu$s** e Máximo de **533 $\mu$s** (variação < 9%). Se houvesse hoisting, a 1ª volta custaria ~488 $\mu$s e as outras 49 custariam ~0 $\mu$s, puxando a média para ~10 $\mu$s e o mínimo para ~0. O range apertado comprova que todas as 50 recursões foram integralmente recalculadas.
+   - **Prevenção no Kaz JIT:** Cada volta reavalia `time_now_us()`, uma função externa com efeitos colaterais que impede a Stack VM e o Cranelift de tratarem a expressão como invariante.
+3. **Ciclo de Aquecimento Idêntico (Warm-up):**
    - 5 iterações completas não cronometradas antes de cada teste em todas as linguagens, aquecendo caches L1/L2 da CPU e estabilizando o *Specialized Adaptive Interpreter* (PEP 659) do Python 3.12.
-3. **Amostragem Estatística Uniforme:**
+4. **Amostragem Estatística Uniforme:**
    - 50 iterações cronometradas para $n = 20, 24, 26, 28$.
    - 20 iterações para $n = 30$.
    - 10 iterações para $n = 32$.
    - 5 iterações para $n = 34$.
-4. **Resolução de Microssegundos ($\mu$s):**
-   - **Kaz:** `time_now_us()` ancorado em contador de alta precisão monotônico.
+5. **Resolução de Microssegundos ($\mu$s):**
+   - **Kaz:** `time_now_us()` ancorado em contador de alta precisão monotônico (`QueryPerformanceCounter`).
    - **Rust:** `std::time::Instant::now().elapsed().as_micros()`.
    - **Python:** `time.perf_counter_ns() // 1000`.
 
@@ -88,13 +102,13 @@ Abaixo estão os resultados consolidados com **Média**, **Mínimo** e **Máximo
 
 | $n$ | Rust Nativo (`-O3` / LLVM) | Kaz JIT (Cranelift) | Python 3.12 (CPython) | Kaz VM (Bytecode Interpreter) | Paridade Kaz JIT vs Rust -O3 | Aceleração Kaz JIT vs Python 3.12 |
 |:---:|:---:|:---:|:---:|:---:|:---:|:---:|
-| **20** | **28 $\mu$s** <br><sub>(27 – 56)</sub> | **53 $\mu$s** <br><sub>(53 – 60)</sub> | **1.671 $\mu$s** <br><sub>(1.646 – 1.758)</sub> | **~38.000 $\mu$s** | **1,89x** | **31,5x mais rápido** |
-| **24** | **190 $\mu$s** <br><sub>(186 – 233)</sub> | **368 $\mu$s** <br><sub>(363 – 473)</sub> | **11.715 $\mu$s** <br><sub>(11.356 – 16.186)</sub> | **~268.000 $\mu$s** | **1,93x** | **31,8x mais rápido** |
-| **26** | **496 $\mu$s** <br><sub>(488 – 605)</sub> | **978 $\mu$s** <br><sub>(950 – 1.306)</sub> | **31.039 $\mu$s** <br><sub>(30.161 – 38.120)</sub> | **700.147 $\mu$s** | **1,97x** | **31,7x mais rápido** |
-| **28** | **1.402 $\mu$s** <br><sub>(1.279 – 1.838)</sub> | **2.583 $\mu$s** <br><sub>(2.495 – 3.212)</sub> | **80.051 $\mu$s** <br><sub>(78.297 – 92.776)</sub> | **1.879.148 $\mu$s** | **1,84x** | **31,0x mais rápido** |
-| **30** | **3.355 $\mu$s** <br><sub>(mínimo)</sub> | **6.623 $\mu$s** <br><sub>(6.541 – 7.089)</sub> | **217.021 $\mu$s** <br><sub>(205.174 – 251.123)</sub> | **5.011.289 $\mu$s** | **1,97x** | **32,7x mais rápido** |
-| **32** | **9.184 $\mu$s** <br><sub>(mínimo)</sub> | **17.294 $\mu$s** <br><sub>(17.185 – 17.722)</sub> | **568.552 $\mu$s** <br><sub>(541.353 – 671.256)</sub> | **13.110.141 $\mu$s** | **1,88x** | **32,8x mais rápido** |
-| **34** | **23.657 $\mu$s** <br><sub>(mínimo)</sub> | **45.407 $\mu$s** <br><sub>(44.924 – 46.034)</sub> | **1.436.202 $\mu$s** <br><sub>(1.423.582 – 1.464.599)</sub> | **31.780.849 $\mu$s** | **1,91x** | **31,6x mais rápido** |
+| **20** | **27 $\mu$s** <br><sub>(27 – 36)</sub> | **53 $\mu$s** <br><sub>(53 – 60)</sub> | **1.671 $\mu$s** <br><sub>(1.646 – 1.758)</sub> | **~38.000 $\mu$s** | **1,96x** | **31,5x mais rápido** |
+| **24** | **190 $\mu$s** <br><sub>(186 – 246)</sub> | **368 $\mu$s** <br><sub>(363 – 473)</sub> | **11.715 $\mu$s** <br><sub>(11.356 – 16.186)</sub> | **~268.000 $\mu$s** | **1,93x** | **31,8x mais rápido** |
+| **26** | **494 $\mu$s** <br><sub>(488 – 533)</sub> | **978 $\mu$s** <br><sub>(950 – 1.306)</sub> | **31.039 $\mu$s** <br><sub>(30.161 – 38.120)</sub> | **700.147 $\mu$s** | **1,97x** | **31,7x mais rápido** |
+| **28** | **1.347 $\mu$s** <br><sub>(1.278 – 1.996)</sub> | **2.583 $\mu$s** <br><sub>(2.495 – 3.212)</sub> | **80.051 $\mu$s** <br><sub>(78.297 – 92.776)</sub> | **1.879.148 $\mu$s** | **1,91x** | **31,0x mais rápido** |
+| **30** | **3.434 $\mu$s** <br><sub>(3.358 – 4.616)</sub> | **6.623 $\mu$s** <br><sub>(6.541 – 7.089)</sub> | **217.021 $\mu$s** <br><sub>(205.174 – 251.123)</sub> | **5.011.289 $\mu$s** | **1,92x** | **32,7x mais rápido** |
+| **32** | **9.143 $\mu$s** <br><sub>(8.808 – 9.772)</sub> | **17.294 $\mu$s** <br><sub>(17.185 – 17.722)</sub> | **568.552 $\mu$s** <br><sub>(541.353 – 671.256)</sub> | **13.110.141 $\mu$s** | **1,89x** | **32,8x mais rápido** |
+| **34** | **28.623 $\mu$s** <br><sub>(23.118 – 50.380)</sub> | **45.407 $\mu$s** <br><sub>(44.924 – 46.034)</sub> | **1.436.202 $\mu$s** <br><sub>(1.423.582 – 1.464.599)</sub> | **31.780.849 $\mu$s** | **1,58x** | **31,6x mais rápido** |
 
 ---
 
