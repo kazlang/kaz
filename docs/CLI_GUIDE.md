@@ -52,22 +52,49 @@ kaz .
 
 ---
 
-## 3. Modos de Execução (VM vs AST)
+## 3. Motores de Execução (JIT Nativo vs Stack VM vs AST)
 
-Kaz possui dois motores de execução internos:
+Kaz possui três motores de execução de alta fidelidade:
 
-### 1. Stack Bytecode Virtual Machine (Padrão de Alta Performance)
-O motor padrão compila o código para sequências contíguas de `OpCode` em memória e despacha instruções em alta velocidade:
+### 1. Compilador JIT Nativo via Cranelift (`kaz jit`) ⚡
+Compila o código-fonte em tempo de execução diretamente para **código de máquina AMD64 nativo**, oferecendo desempenho de até **~750x mais rápido que a interpretação em Bytecode**, e rodando a 1.9x de paridade com Rust/C compilados com otimização máxima (`-O3`):
 ```bash
-kaz programa.kaz
-# ou
-kaz vm programa.kaz
+kaz jit programa.kaz
+# Passando argumentos via linha de comando:
+kaz jit programa.kaz arg1 arg2
 ```
 
-### 2. AST Tree-Walking Evaluator (Modo Clássico / Fallback)
+### 2. Stack Bytecode Virtual Machine (Padrão Portável)
+Compila o código para sequências contíguas de `OpCode` em memória e despacha instruções em alta velocidade na VM:
+```bash
+kaz programa.kaz
+# ou explicitamente:
+kaz run programa.kaz
+```
+
+### 3. AST Tree-Walking Evaluator (Modo Clássico / Fallback)
 Modo alternativo para depuração e inspeção detalhada de nós da Árvore Sintática:
 ```bash
 kaz ast programa.kaz
+```
+
+---
+
+## 4. Compilação de Binários Autônomos (`kaz build`) 📦
+
+Kaz é capaz de compilar e empacotar scripts e projetos em **executáveis nativos autônomos** com **zero dependências externas**:
+
+### A. Gerar Executável Autônomo (.exe no Windows, ELF no Linux)
+```bash
+kaz build main.kaz -o meu_app.exe
+# Executa diretamente em qualquer máquina sem precisar do runtime instalado:
+.\meu_app.exe
+```
+
+### B. Gerar Arquivo de Objeto Nativo (.obj no Windows, .o no Linux)
+Gera arquivos de código de máquina compilados diretamente pelo Cranelift para integração com linkers externos como MSVC link.exe ou GNU ld:
+```bash
+kaz build main.kaz --emit-obj -o main.obj
 ```
 
 ---

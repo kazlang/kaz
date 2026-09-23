@@ -1,0 +1,15 @@
+function fib(int n): int {
+    if (n <= 1) {
+        return n;
+    }
+    return fib(n - 1) + fib(n - 2);
+}
+
+function Main(): int {
+    int t0 = time_now_ms();
+    int r = fib(32);
+    int elapsed = time_now_ms() - t0;
+    runoff(r);
+    runoff(elapsed);
+    return 0;
+}

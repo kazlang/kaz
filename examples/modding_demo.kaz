@@ -1,0 +1,73 @@
+// ============================================================================
+// Kaz 🦅 - Demonstração do Framework de Mods & Hooks (100% Nativo e Seguro)
+// ============================================================================
+// Mostra como uma aplicação Kaz pode ser estendida por mods de terceiros
+// com ISOLAMENTO TOTAL de memória, sem depender de WebAssembly ou libs externas!
+// ============================================================================
+
+// ----------------------------------------------------------------------------
+// MOD 1: Mod de Bônus de Pontuação (Escrito por terceiros em Kaz puro)
+// ----------------------------------------------------------------------------
+function ModBonus_OnPontuar(string jogador): string {
+    return "[ModBonus] " + jogador + " ganhou +100 XP bônus!";
+}
+
+// ----------------------------------------------------------------------------
+// MOD 2: Adaptador de Integração Externa (R / Python / Analytics)
+// Mostra como falar com outros softwares via IPC/JSON sem carregar DLLs perigosas!
+// ----------------------------------------------------------------------------
+function ModAnalytics_OnEvento(string evento): string {
+    // Em produção, usa net.tcp_send ou net.http_post para enviar ao R ou Python
+    string pacote = "{\"evento\": \"" + evento + "\", \"timestamp\": " + time_now_ms() + "}";
+    return "[ModAnalytics -> R/Python IPC]: " + pacote;
+}
+
+// ----------------------------------------------------------------------------
+// MOD 3: Mod com Bug Crítico (Tentativa de quebrar a aplicação)
+// ----------------------------------------------------------------------------
+function ModBuggy_OnFalha(string payload): string {
+    // Um erro comum: índice fora dos limites ou divisão por zero
+    int crash = 100 / 0;
+    return "Nunca chega aqui";
+}
+
+// ----------------------------------------------------------------------------
+// HOST APPLICATION (O Sistema Principal)
+// ----------------------------------------------------------------------------
+function DispararEventoSeguro(string nome_evento, string payload) {
+    runoff("→ Disparando evento do sistema: '" + nome_evento + "'...");
+    
+    array handlers = hook.list(nome_evento);
+    for (handler in handlers) {
+        try {
+            // Invocação dinâmica protegida pela VM do Kaz
+            string resposta = handler(payload);
+            runoff("  ✔ " + resposta);
+        } catch (erro) {
+            // Se o mod de terceiros falhar, o host captura e segue 100% vivo!
+            runoff("  ⚠ [ERRO DE MOD CAPTURADO] O mod '" + handler + "' falhou: " + erro);
+            runoff("  🛡 O sistema principal isolou o erro e continua operando!");
+        }
+    }
+}
+
+function Main() {
+    runoff("╔══════════════════════════════════════════════════════════════════╗");
+    runoff("║       KAZ EXTENSION & MODDING SYSTEM - DEMO OFICIAL 🦅           ║");
+    runoff("╚══════════════════════════════════════════════════════════════════╝");
+    runoff("");
+
+    // 1. Registro de hooks pelos mods
+    hook.clear("player_action");
+    hook.register("player_action", "ModBonus_OnPontuar");
+    hook.register("player_action", "ModAnalytics_OnEvento");
+    hook.register("player_action", "ModBuggy_OnFalha");
+
+    // 2. O Host dispara o evento para todos os mods registrados
+    DispararEventoSeguro("player_action", "Jogador_Armando");
+
+    runoff("");
+    runoff("====================================================================");
+    runoff("  STATUS FINAL DO SISTEMA: OPERANDO COM 100% DE SAÚDE E ESTABILIDADE");
+    runoff("====================================================================");
+}

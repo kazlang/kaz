@@ -28,6 +28,9 @@ Construída do zero com uma **Máquina Virtual de Bytecode baseada em Pilha (Sta
 
 ## ✨ Destaques & Diferenciais
 
+- ⚡ **Compilador JIT Nativo via Cranelift (`kaz jit`)**: Compilação de código de máquina AMD64 em tempo de execução com aceleração de até **750x mais rápido que Bytecode** e paridade de 1.9x com Rust `-O3`. Confira o relatório detalhado em [BENCHMARKS.md](BENCHMARKS.md).
+- 📦 **Geração de Executáveis Autônomos (`kaz build`)**: Empacotamento de scripts e projetos em binários nativos autônomos (`.exe` no Windows, ELF no Linux) com **zero dependências externas**, ou geração de código objeto (`--emit-obj`).
+- 🧩 **Sistema de Extensões & Modding Nativo (`hook.*`)**: Registro e despacho dinâmico de eventos em runtime com isolamento de memória na Stack VM, sem necessidade de runtimes externos pesados.
 - ⚡ **Stack Bytecode Virtual Machine**: Código compilado diretamente para sequências lineares de `OpCode`, com variáveis locais mapeadas em offsets de memória fixos (até **27x mais rápida** que interpretadores AST tradicionais).
 - 📁 **Projetos Estruturados em Pastas (`import`)**: Crie softwares modulares com subpastas (`models/`, `db/`, `services/`) e caminhos relativos. Execute a aplicação inteira com um único comando: `kaz meu_projeto/`.
 - 📐 **Formatador Canônico Integrado (`kaz fmt`)**: Padronizador de código com estilo K&R/1TBS, 4 espaços de indentação, suporte a modo `--check` para pipelines de CI/CD e validação de AST de segurança para garantir integridade.

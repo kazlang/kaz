@@ -1,0 +1,44 @@
+function fib(int n): int {
+    if (n <= 1) {
+        return n;
+    }
+    return fib(n - 1) + fib(n - 2);
+}
+
+function Main() {
+    runoff("==================================================================");
+    runoff("   KAZ FIBONACCI RECURSIVO COM N DINAMICO (ARGV OU INPUT)");
+    runoff("   (Impossibilita 100% qualquer Constant Folding no compilador)");
+    runoff("==================================================================");
+    
+    int n = 0;
+    if (args_len() > 0) {
+        n = argv_int(0);
+        runoff("Parametro 'n' recebido via argv[0]: " + n);
+    } else {
+        runoff("Nenhum argv fornecido. Lendo de stdin / input_int()...");
+        n = input_int();
+        runoff("Parametro 'n' lido via input: " + n);
+    }
+    
+    if (n <= 0) {
+        runoff("Aviso: 'n' menor ou igual a zero. Usando fallback n = 26.");
+        n = 26;
+    }
+    
+    // Warm-up de 5 iterações
+    int w = 0;
+    while (w < 5) {
+        int dummy = fib(n);
+        w = w + 1;
+    }
+    
+    // Execução medida com precisão de microssegundos
+    int t0 = time_now_us();
+    int res = fib(n);
+    int t1 = time_now_us();
+    
+    int elapsed_us = t1 - t0;
+    runoff("RESULTADO: fib(" + n + ") = " + res);
+    runoff("TEMPO DE EXECUCAO REAL: " + elapsed_us + " us (" + (elapsed_us / 1000) + " ms)");
+}

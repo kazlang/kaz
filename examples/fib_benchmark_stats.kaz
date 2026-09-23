@@ -1,0 +1,60 @@
+function fib(int n): int {
+    if (n <= 1) {
+        return n;
+    }
+    return fib(n - 1) + fib(n - 2);
+}
+
+function bench_n(int target_n, int runs) {
+    // Warm-up de 5 iterações para estabilizar cache L1/L2 de instruções da CPU
+    int w = 0;
+    while (w < 5) {
+        int base = (time_now_us() % 2);
+        int nw = target_n + base - base;
+        int dummy = fib(nw);
+        w = w + 1;
+    }
+
+    int total_us = 0;
+    int min_us = 999999999;
+    int max_us = 0;
+    int i = 0;
+    int last_res = 0;
+
+    while (i < runs) {
+        int base = (time_now_us() % 2);
+        int n = target_n + base - base;
+        
+        int t0 = time_now_us();
+        last_res = fib(n);
+        int t1 = time_now_us();
+        
+        int elapsed = t1 - t0;
+        total_us = total_us + elapsed;
+        if (elapsed < min_us) {
+            min_us = elapsed;
+        }
+        if (elapsed > max_us) {
+            max_us = elapsed;
+        }
+        i = i + 1;
+    }
+
+    int mean_us = total_us / runs;
+    runoff("fib(" + target_n + ") = " + last_res + " | Media: " + mean_us + " us | Min: " + min_us + " us | Max: " + max_us + " us (" + runs + " repeticoes)");
+}
+
+function Main() {
+    runoff("==================================================================");
+    runoff("   KAZ CRANELIFT JIT - BENCHMARK RIGOROSO COM MICROSSEGUNDOS");
+    runoff("   (Entrada dinamica via clock para impedir Constant Folding)");
+    runoff("==================================================================");
+    
+    bench_n(20, 50);
+    bench_n(24, 50);
+    bench_n(26, 50);
+    bench_n(28, 50);
+    bench_n(30, 20);
+    bench_n(32, 10);
+    bench_n(34, 5);
+}

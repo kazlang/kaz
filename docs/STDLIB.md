@@ -30,7 +30,11 @@ Isso significa **máxima velocidade de execução e zero necessidade de instalar
 | `println(...)` | `...valores: any` | `void` | Sinônimo padrão de `runoff`. |
 | `print(...)` | `...valores: any` | `void` | Imprime valores no terminal **sem** quebra de linha no final. |
 | `input(mensagem?)` | `mensagem?: string` | `string` | Exibe mensagem opcional e aguarda o usuário digitar uma linha de texto. |
+| `input_int(mensagem?)` | `mensagem?: string` | `int` | Exibe mensagem opcional e lê um número inteiro de stdin. |
 | `read_line()` | *(nenhum)* | `string` | Lê uma linha de texto do teclado. |
+| `argv(index)` | `index: int` | `string` | Retorna o argumento de linha de comando na posição `index` como texto. |
+| `argv_int(index)` | `index: int` | `int` | Retorna o argumento de linha de comando na posição `index` convertido para inteiro. |
+| `args_len()` | *(nenhum)* | `int` | Retorna o número total de argumentos passados via CLI para o script. |
 | `assert(cond, msg?)` | `cond: bool, msg?: string` | `bool` | Valida uma condição lógica. Falha com erro de asserção se for falsa. |
 
 ```kaz
@@ -276,14 +280,40 @@ runoff("Status: " + payload.status);
 
 | Função | Parâmetros | Retorno | Descrição |
 |---|---|---|---|
+| `time_now_us()` | *(nenhum)* | `int` | Timestamp de alta resolução com precisão de microssegundos (monotônico). |
 | `time_now_ms()` | *(nenhum)* | `int` | Timestamp UNIX atual em milissegundos. |
 | `time_now_secs()` / `time_now()` | *(nenhum)* | `float` | Timestamp UNIX atual em segundos com precisão fracionária. |
 | `sleep_ms(ms)` / `sleep(ms)` | `ms: int` | `void` | Pausa a execução pelo número especificado de milissegundos. |
 
 ```kaz
-int inicio = time_now_ms();
-sleep_ms(50);
-int decorrido = time_now_ms() - inicio;
-runoff("Operação levou " + decorrido + " ms");
+int inicio = time_now_us();
+sleep_ms(5);
+int decorrido = time_now_us() - inicio;
+runoff("Operação levou " + decorrido + " us");
+```
+
+---
+
+## 13. Extensões e Modding Nativo (`hook`)
+
+O sistema de hooks permite registrar e despachar eventos dinamicamente para plugins e mods isolados na Stack VM sem dependências externas.
+
+| Função | Parâmetros | Retorno | Descrição |
+|---|---|---|---|
+| `hook.register(evento, handler)` | `evento: string, handler: string` | `void` | Registra a função `handler` como ouvinte do evento. |
+| `hook.has(evento)` | `evento: string` | `bool` | Retorna `true` se existem handlers registrados para o evento. |
+| `hook.list(evento)` | `evento: string` | `array` | Retorna a lista com os nomes dos handlers registrados para o evento. |
+| `hook.clear(evento)` | `evento: string` | `void` | Remove todos os handlers registrados para o evento. |
+
+```kaz
+function MeuHandler(string payload) {
+    runoff("[MOD] Evento recebido: " + payload);
+}
+
+hook.register("on_player_hit", "MeuHandler");
+
+if (hook.has("on_player_hit")) {
+    MeuHandler("dano: 50");
+}
 ```
 

@@ -1,0 +1,43 @@
+function fib(int n): int {
+    if (n <= 1) {
+        return n;
+    }
+    return fib(n - 1) + fib(n - 2);
+}
+
+function Main() {
+    runoff("--- TESTE DE SCALING RECURSIVO REAL (SEM CONSTANT FOLDING) ---");
+    
+    // Valor derivado em runtime para impedir qualquer chance de constant folding
+    int base = (time_now_us() % 2);
+    
+    int n26 = 26 + base - base;
+    int t0 = time_now_us();
+    int r26 = fib(n26);
+    int t1 = time_now_us();
+    runoff("fib(26) = " + r26 + " em " + (t1 - t0) + " us (" + ((t1 - t0) / 1000) + " ms)");
+    
+    int n28 = 28 + base - base;
+    int t2 = time_now_us();
+    int r28 = fib(n28);
+    int t3 = time_now_us();
+    runoff("fib(28) = " + r28 + " em " + (t3 - t2) + " us (" + ((t3 - t2) / 1000) + " ms)");
+    
+    int n30 = 30 + base - base;
+    int t4 = time_now_us();
+    int r30 = fib(n30);
+    int t5 = time_now_us();
+    runoff("fib(30) = " + r30 + " em " + (t5 - t4) + " us (" + ((t5 - t4) / 1000) + " ms)");
+
+    int n32 = 32 + base - base;
+    int t6 = time_now_us();
+    int r32 = fib(n32);
+    int t7 = time_now_us();
+    runoff("fib(32) = " + r32 + " em " + (t7 - t6) + " us (" + ((t7 - t6) / 1000) + " ms)");
+
+    int n34 = 34 + base - base;
+    int t8 = time_now_us();
+    int r34 = fib(n34);
+    int t9 = time_now_us();
+    runoff("fib(34) = " + r34 + " em " + (t9 - t8) + " us (" + ((t9 - t8) / 1000) + " ms)");
+}
