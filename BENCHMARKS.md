@@ -2,6 +2,8 @@
 
 Este documento estabelece a metodologia de benchmark oficial da linguagem **Kaz**, respondendo com rigor estatístico, resolução de microssegundos e transparência metodológica a questões da comunidade sobre otimizações de compilação, mitigação de *Constant Folding* e paridade com backends nativos (*LLVM* e *Cranelift*).
 
+> 🐧 **Relatório Oficial Linux x86_64:** Para conferir a replicação experimental completa realizada no **Linux com Python 3.14**, medições com o novo alocador ARC + Slab e a suíte integrada, consulte o **[Relatório de Benchmarks no Linux (BENCHMARKS_LINUX.md)](BENCHMARKS_LINUX.md)**.
+
 ---
 
 ## 1. Ambiente de Testes & Especificações de Hardware

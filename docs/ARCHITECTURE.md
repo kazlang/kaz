@@ -169,3 +169,41 @@ Em testes de estresse computacional (`examples/benchmark.kaz`):
 | **Fibonacci 26 (242.785 chamadas)** | ~18.500 ms | **638 ms** | **28.9x mais rápido** |
 | **Tempo Total da Suíte** | ~19.810 ms | **729 ms** | **27x mais rápido** |
 
+---
+
+## 11. Backend Nativo Cranelift JIT & Compilador AOT (`kaz jit` e `kaz build`)
+
+Além da Bytecode VM, Kaz incorpora um gerador de código de máquina nativo baseado em **Cranelift** (`src/jit/`):
+- **Cranelift JIT (`kaz jit`)**: Compila funções diretamente em tempo de execução para assembly x86_64, alcançando paridade de ~1,8x a 2,1x com binários compilados por Rust (`rustc -O3`) e superando interpretadores tradicionais em mais de 25x.
+- **AOT ELF Generator (`kaz build`)**: Empacota o pipeline em executáveis autônomos sem dependências externas.
+- **Instruções Intrínsecas de CPU**: Operações matemáticas como `math.sqrt` emitem opcodes de máquina diretos (`sqrtsd %xmm0, %xmm0`) sem overhead de FFI.
+
+---
+
+## 12. Modelo de Segurança de Extensões & Mods: Sandbox VM vs Acelerador JIT
+
+> [!CAUTION]
+> **REGRA DE ISOLAMENTO DE EXTENSÕES & SCRIPTS DE TERCEIROS:**
+> Por diretriz arquitetural estrita, **todos os scripts de terceiros, plugins e mods devem ser executados exclusivamente na Kaz Bytecode VM (`kaz vm`)**.
+> 
+> O Cranelift JIT opera como acelerador computacional com ponteiros de máquina diretos (`*mut u8`). Enquanto o modelo de posse e contagem de referências (ARC) estiver em homologação, a garantia de segurança contra Use-After-Free, buffer overflow e corrupção de memória do host é fornecida **exclusivamente pela sandbox da Bytecode VM**, gerenciada pelas garantias de RAII do Rust.
+
+---
+
+## 13. Modelo de Gerenciamento de Memória Nativo: ARC & Concorrência
+
+Para o runtime JIT e código compilado, Kaz adota **Contagem Automática de Referências (ARC - Automatic Reference Counting)** determinística:
+
+1. **Cabeçalho Padronizado de Objeto (16 bytes):**
+   - Offset `-16`: `ref_count` (contagem de referências ativas).
+   - Offset `-8`: `type_id` (identificador para despacho de destrutor recursivo).
+   - Offset `0`: Início do payload da struct/dados.
+2. **Salvaguarda de Threading e Não-Atomicidade:**
+   - O contador de referências inicial é otimizado para execução unithread (`usize` não-atômico, eliminando travas e barreiras de memória na CPU).
+   - **Regra:** Nenhuma struct Kaz gerenciada por ARC pode atravessar fronteiras de threads do SO (ex: callbacks assíncronos ou workers em segundo plano) sem isolamento de canal/mensagem (*deep-copy*) até que o runtime introduza contadores atômicos (`AtomicUsize` com `fetch_add`/`fetch_sub`).
+3. **Regra de Ingestão (Sink Rule) para Coleções:**
+   - Funções que retêm ou persistem ponteiros além da chamada (ex: `array.push(item)`, atribuição a campo de struct `p.filho = outro`, registro em tabelas globais) **emitem `retain` obrigatório** antes de armazenar o endereço.
+4. **Tabela de Destrutores Recursivos (Drop Registry):**
+   - Structs que contêm campos que são referências dinâmicas possuem uma Drop VTable gerada pelo compilador para liberar recursivamente campos filhos antes de devolver a memória do objeto pai.
+
+

@@ -28,7 +28,9 @@ Construída do zero com uma **Máquina Virtual de Bytecode baseada em Pilha (Sta
 
 ## ✨ Destaques & Diferenciais
 
-- ⚡ **Compilador JIT Nativo via Cranelift (`kaz jit`)**: Compilação de código de máquina AMD64 em tempo de execução com aceleração de até **750x mais rápido que Bytecode** e paridade de 1.9x com Rust `-O3`. Confira o relatório detalhado em [BENCHMARKS.md](BENCHMARKS.md).
+- ⚡ **Compilador JIT Nativo via Cranelift (`kaz jit`)**: Compilação de código de máquina AMD64 em tempo de execução com paridade direta de **~1,9x do Rust Nativo (-O3)** no Linux e **~2,5x** no Windows, superando interpretadores em até **39x**.
+- 🧠 **Gerenciamento de Memória Nativo (ARC + Slab Free-List)**: Alocação com Bump Arena e reciclagem instantânea de structs em cache L1 através de Free-List segmentada, eliminando pausas de Garbage Collector e sobrecarga de `malloc`.
+- ⚡ **Intrínsecos de CPU**: Funções matemáticas de alta frequência (como `math.sqrt`) emitem diretamente a instrução de hardware da FPU (`sqrtsd`) sem overhead de FFI.
 - 📦 **Geração de Executáveis Autônomos (`kaz build`)**: Empacotamento de scripts e projetos em binários nativos autônomos (`.exe` no Windows, ELF no Linux) com **zero dependências externas**, ou geração de código objeto (`--emit-obj`).
 - 🧩 **Sistema de Extensões & Modding Nativo (`hook.*`)**: Registro e despacho dinâmico de eventos em runtime com isolamento de memória na Stack VM, sem necessidade de runtimes externos pesados.
 - ⚡ **Stack Bytecode Virtual Machine**: Código compilado diretamente para sequências lineares de `OpCode`, com variáveis locais mapeadas em offsets de memória fixos (até **27x mais rápida** que interpretadores AST tradicionais).
@@ -176,6 +178,31 @@ kaz ast programa.kaz
 kaz --help
 kaz --version
 ```
+
+---
+
+## 📊 Benchmarks Oficiais & Comparativo de Desempenho
+
+Kaz possui backend nativo de alta performance baseado em **Cranelift JIT** (`kaz jit`) e **AOT ELF** (`kaz build`), alcançando paridade direta com binários compilados em **Rust (-O3)** e superando interpretadores dinâmicos como **Python 3.14** em até **39x**.
+
+### Resumo Comparativo: Linux vs Windows (Suíte Geral Integrada)
+
+Medições em microssegundos ($\mu$s) no mesmo hardware Intel @ 2.60 GHz:
+
+| Teste / Operação | Rust Nativo (-O3) [Linux] | **Kaz JIT [Linux]** | Python 3.14 [Linux] | Rust Nativo (-O3) [Windows] | **Kaz JIT [Windows]** | Python 3.12 [Windows] |
+|---|:---:|:---:|:---:|:---:|:---:|:---:|
+| **1. Recursão (Fibonacci 26)** | 537 $\mu$s | **995 $\mu$s** | 38.083 $\mu$s | 492 $\mu$s | **1.197 $\mu$s** | 38.422 $\mu$s |
+| **2. Loop Aritmético (50k ops)** | 111 $\mu$s | **171 $\mu$s** | 8.714 $\mu$s | 94 $\mu$s | **145 $\mu$s** | 8.454 $\mu$s |
+| **3. Structs & Sqrt (10k instâncias)** | 98 $\mu$s | **234 $\mu$s** | 9.068 $\mu$s | 55 $\mu$s | **280 $\mu$s** | 6.350 $\mu$s |
+| **TEMPO TOTAL DA SUÍTE** | **747 $\mu$s** (0,75 ms) | **1.419 $\mu$s** (1,4 ms) | **55.870 $\mu$s** (55,9 ms) | **642 $\mu$s** (0,64 ms) | **1.622 $\mu$s** (1,6 ms) | **53.226 $\mu$s** (53,2 ms) |
+| **Paridade Geral com Rust** | — | **~1,9x do Rust** | — | — | **~2,5x do Rust** | — |
+| **Aceleração vs Python** | — | **~39x mais rápido** | — | — | **~33x mais rápido** | — |
+
+### Relatórios Completos e Verificações Teóricas:
+- 🐧 **[Relatório de Benchmarks no Linux x86_64](BENCHMARKS_LINUX.md)**: Paridade simétrica com Python 3.14, Rust -O3 e Kaz VM.
+- 🪟 **[Relatório de Benchmarks no Windows 11](BENCHMARKS.md)**: Prova assintótica anti-constant folding $O(\phi^n)$ e mitigação de LICM.
+- ⚡ **[Relatório Técnico de Otimizações & ARC](benches/RELATORIO_OTIMIZACOES_PERFORMANCE.md)**: Detalhamento do Bump Arena, Slab Free-List e opcode nativo `sqrtsd`.
+- 📁 **[Código-Fonte dos Benchmarks & Reprodução](benches/)**: Scripts em Kaz, Rust e Python para auditoria e replicação independente.
 
 ---
 
