@@ -26,9 +26,9 @@ Isso significa **máxima velocidade de execução e zero necessidade de instalar
 
 | Função | Parâmetros | Retorno | Descrição |
 |---|---|---|---|
-| `runoff(...)` | `...valores: any` | `void` | Imprime um ou mais valores no terminal seguidos de quebra de linha. |
-| `println(...)` | `...valores: any` | `void` | Sinônimo padrão de `runoff`. |
-| `print(...)` | `...valores: any` | `void` | Imprime valores no terminal **sem** quebra de linha no final. |
+| `runoff(...)` | `...valores: any` | `void` | Função canônica de saída do Kaz: imprime um ou mais valores no terminal seguidos de quebra de linha. |
+| `println(...)` | `...valores: any` | `void` | *(Compatibilidade legada)* Alias para `runoff`. |
+| `print(...)` | `...valores: any` | `void` | *(Compatibilidade legada)* Imprime valores no terminal sem quebra de linha no final. |
 | `input(mensagem?)` | `mensagem?: string` | `string` | Exibe mensagem opcional e aguarda o usuário digitar uma linha de texto. |
 | `input_int(mensagem?)` | `mensagem?: string` | `int` | Exibe mensagem opcional e lê um número inteiro de stdin. |
 | `read_line()` | *(nenhum)* | `string` | Lê uma linha de texto do teclado. |

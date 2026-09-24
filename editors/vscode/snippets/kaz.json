@@ -37,6 +37,29 @@
         ],
         "description": "Definição de estrutura de dados (struct)"
     },
+    "Enum Definition": {
+        "prefix": "enum",
+        "body": [
+            "enum ${1:NomeEnum} {",
+            "\t${2:Variante},",
+            "\t$0",
+            "}"
+        ],
+        "description": "Definição de Enum com dados (Tagged Union) em Kaz"
+    },
+    "Match Statement": {
+        "prefix": "match",
+        "body": [
+            "match (${1:expressao}) {",
+            "\t${2:Padrao} => {",
+            "\t\t$0",
+            "\t},",
+            "\t_ => {",
+            "\t}",
+            "}"
+        ],
+        "description": "Correspondência de padrões (match) em Kaz"
+    },
     "For Loop": {
         "prefix": "for",
         "body": [

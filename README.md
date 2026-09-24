@@ -10,7 +10,7 @@
     <a href="LICENSE"><img src="https://img.shields.io/badge/License-Proprietary-red.svg" alt="License: Proprietary"></a>
     <img src="https://img.shields.io/badge/build-passing-brightgreen.svg" alt="Build Status">
     <img src="https://img.shields.io/badge/Engine-Stack%20Bytecode%20VM-purple.svg" alt="Engine: Bytecode VM">
-    <img src="https://img.shields.io/badge/Tests-107%20passed-success.svg" alt="Tests">
+    <img src="https://img.shields.io/badge/Tests-125%2B%20passed-success.svg" alt="Tests">
     <img src="https://img.shields.io/badge/Distribution-Standalone%20Binary-blueviolet.svg" alt="Distribution: Standalone Binary">
 </p>
 
@@ -28,8 +28,11 @@ Construída do zero com uma **Máquina Virtual de Bytecode baseada em Pilha (Sta
 
 ## ✨ Destaques & Diferenciais
 
+- 🎯 **Enums com Dados (Tagged Unions) & Pattern Matching (`match`)**: Variantes com payload tipado (`Variant(Type1, Type2)`), casamento de padrões seguro com desestruturação em branches, suporte a wildcards (`_`) e execução balanceada na Stack VM.
 - ⚡ **Compilador JIT Nativo via Cranelift (`kaz jit`)**: Compilação de código de máquina AMD64 em tempo de execução com paridade direta de **~1,9x do Rust Nativo (-O3)** no Linux e **~2,5x** no Windows, superando interpretadores em até **39x**.
 - 🧠 **Gerenciamento de Memória Nativo (ARC + Slab Free-List)**: Alocação com Bump Arena e reciclagem instantânea de structs em cache L1 através de Free-List segmentada, eliminando pausas de Garbage Collector e sobrecarga de `malloc`.
+- 🔢 **Operadores Bitwise & Literais Hex/Bin/Null**: Suporte completo a operações de bits (`&`, `|`, `^`, `~`, `<<`, `>>`), atribuições compostas (`&=`, `|=`, etc.), literais hexadecimais (`0x...`), binários (`0b...`) e o literal `null`.
+- 📚 **4 Pilares da Biblioteca Padrão**: Coleção rica de funções matemáticas absolutas e arredondamentos (`abs`, `floor`, `ceil`, `round`, `min`, `max`, `sqrt`, `pow`), fatiamento e manipulação de coleções (`slice`, `join`, `size`), transformações de texto e pesquisa/filtro (`indexOf`, `includes`, `startsWith`, `endsWith`).
 - ⚡ **Intrínsecos de CPU**: Funções matemáticas de alta frequência (como `math.sqrt`) emitem diretamente a instrução de hardware da FPU (`sqrtsd`) sem overhead de FFI.
 - 📦 **Geração de Executáveis Autônomos (`kaz build`)**: Empacotamento de scripts e projetos em binários nativos autônomos (`.exe` no Windows, ELF no Linux) com **zero dependências externas**, ou geração de código objeto (`--emit-obj`).
 - 🧩 **Sistema de Extensões & Modding Nativo (`hook.*`)**: Registro e despacho dinâmico de eventos em runtime com isolamento de memória na Stack VM, sem necessidade de runtimes externos pesados.
@@ -39,8 +42,9 @@ Construída do zero com uma **Máquina Virtual de Bytecode baseada em Pilha (Sta
 - 🗄️ **SQLite Embutido Nativo (`db.*`)**: Motor de banco de dados relacional compilado estaticamente dentro de `kaz.exe`. Execute `db.open()`, `db.execute()` e `db.query()` sem instalar nenhum driver ou DLL externa.
 - 🔄 **Serialização & Parsing JSON (`json.*`)**: `json.parse()` e `json.stringify()` integrados nativamente com tipagem estruturada.
 - 🌐 **Rede e HTTP REST (`net.*`)**: Medição de latência TCP real (`net.ping`), clientes HTTP GET/POST e sockets de rede nativos.
-- 🔒 **Sistema de Tipagem Seguro**: Tipos primitivos (`int`, `float`, `string`, `char`, `bool`), estruturas compostas (`struct`), arrays dinâmicos tipados (`array[string]`, `array[int]`, `array[any]`) e constantes imutáveis (`const`).
-- 🔄 **Loops Modernos**: Iteração de alta produtividade com `for (item in colecao)` e por índices `for (i in colecao.indices)`.
+- 🔒 **Sistema de Tipagem Seguro**: Tipos primitivos (`int`, `float`, `string`, `char`, `bool`), estruturas compostas (`struct`), união de enums (`enum`), arrays dinâmicos tipados (`array[string]`, `array[int]`, `array[any]`) e constantes imutáveis (`const`).
+- 🔄 **Loops Modernos & Aninhados**: Suporte nativo a laços aninhados profundos, iteração com `for (item in colecao)`, `for (i in colecao.indices)`, `while` e `for` clássico de 3 cláusulas.
+- 🖋️ **Padrão Idiomático camelCase & Saída Canônica**: Sintaxe padronizada com variáveis e funções em `camelCase` e saída oficial via `runoff()`.
 - 🔀 **Operador Ternário (`? :`)**: Expressões condicionais compactas com suporte a aninhamento.
 - 🖥️ **Kaz Terminal Interativo & REPL**: Shell de comando que emula o terminal do sistema operacional (`ls`, `cd`, `run`, `env`) ao mesmo tempo em que executa comandos Kaz em tempo real.
 - 🎨 **Extensão Oficial para IDEs**: Pacote VSIX com suporte a sintaxe, escopos TextMate e snippets inteligentes para a **Lumina IDE** e o **VS Code**.
@@ -212,6 +216,9 @@ Consulte o diretório [`examples/`](examples/) para explorar exemplos completos 
 
 | Arquivo de Exemplo | Conceito Demonstrado |
 |---|---|
+| [`examples/enums_and_match.kaz`](examples/enums_and_match.kaz) | **Enums & Pattern Matching**: Tagged Unions, variantes com dados, literais e `match` |
+| [`examples/test_four_pillars.kaz`](examples/test_four_pillars.kaz) | **4 Pilares da Stdlib**: Matemática absoluta, fatiamento de arrays, texto e busca |
+| [`examples/test_bitwise_null.kaz`](examples/test_bitwise_null.kaz) | **Operadores Bitwise & Null**: Bitwise (`&`, `|`, `^`, `~`, `<<`, `>>`) e literais hex/bin/null |
 | [`examples/battery_included_demo.kaz`](examples/battery_included_demo.kaz) | **Bateria Inclusa Completa**: Testes nativos `test`, criptografia `crypto.*`, regex `regex.*` e arquivos `fs.*` |
 | [`examples/project_structure_demo/`](examples/project_structure_demo/) | **Aplicação Corporativa Modular** (Pastas `models/`, `db/`, `services/`, SQLite e JSON) |
 | [`examples/kaz_net_dashboard.kaz`](examples/kaz_net_dashboard.kaz) | Painel de monitoramento TCP e ping em tempo real |
@@ -226,7 +233,7 @@ Consulte o diretório [`examples/`](examples/) para explorar exemplos completos 
 
 ## 🧪 Testes Automatizados e Confiabilidade
 
-Kaz foi construído sob uma suíte contínua de **107 testes automatizados** com zero regressão e inclui um executor de testes unitários nativo integrado diretamente no executável `kaz`:
+Kaz foi construído sob uma suíte contínua de **125+ testes automatizados** com zero regressão e inclui um executor de testes unitários nativo integrado diretamente no executável `kaz`:
 
 ```bash
 # Executa os testes unitários nativos integrados no projeto ou exemplos:
@@ -234,6 +241,9 @@ kaz test examples/
 ```
 
 ### Áreas Cobertas:
+- Enums com dados (Tagged Unions) e Pattern Matching (`match`)
+- Operadores bitwise (`&`, `|`, `^`, `~`, `<<`, `>>`), atribuições compostas e literal `null`
+- Os 4 Pilares da biblioteca padrão (matemática absoluta, fatiamento de coleções, transformações e buscas)
 - Formatador canônico automático de código e validação de AST de segurança
 - Tratamento robusto de erros com desenrolamento de pilha (`try / catch`)
 - Testes unitários integrados e asserções nativas (`test "nome" { assert(...) }`)
@@ -242,7 +252,7 @@ kaz test examples/
 - Manipulação avançada de sistema de arquivos (`fs.*`)
 - Sistema de tipos e constantes (`int`, `float`, `string`, `bool`, `const`, `array[T]`)
 - Operadores e precedência (`+`, `-`, `*`, `/`, `%`, `+=`, `-=`, `*=`, `/=`, `%=`, `? :`)
-- Estruturas de controle de fluxo (`if/else`, `while`, `for`, `for..in`)
+- Estruturas de controle de fluxo (`if/else`, `while`, `for`, `for..in`) e laços aninhados
 - Funções, escopo léxico e recursão
 - Structs e mutação de campos
 - Módulos multi-arquivos e proteção anti-ciclo (`import`)

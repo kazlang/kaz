@@ -2,28 +2,28 @@
 
 int nota = 85;
 
-println("=== Classificação de Desempenho ===");
-println("Nota do estudante: " + nota);
+runoff("=== Classificação de Desempenho ===");
+runoff("Nota do estudante: " + nota);
 
 if (nota >= 90) {
-    println("Conceito: A (Excelente!)");
+    runoff("Conceito: A (Excelente!)");
 } else if (nota >= 80) {
-    println("Conceito: B (Muito Bom!)");
+    runoff("Conceito: B (Muito Bom!)");
 } else if (nota >= 70) {
-    println("Conceito: C (Bom)");
+    runoff("Conceito: C (Bom)");
 } else if (nota >= 60) {
-    println("Conceito: D (Regular)");
+    runoff("Conceito: D (Regular)");
 } else {
-    println("Conceito: F (Reprovado)");
+    runoff("Conceito: F (Reprovado)");
 }
 
 // Comparações lógicas compostas
 int temperatura = 26;
 bol esta_chovendo = false;
 
-println("\n=== Avaliação de Clima ===");
+runoff("\n=== Avaliação de Clima ===");
 if (temperatura > 20 && !esta_chovendo) {
-    println("O clima está perfeito para passear no parque!");
+    runoff("O clima está perfeito para passear no parque!");
 } else if (temperatura <= 20 || esta_chovendo) {
-    println("Melhor levar um agasalho ou guarda-chuva!");
+    runoff("Melhor levar um agasalho ou guarda-chuva!");
 }

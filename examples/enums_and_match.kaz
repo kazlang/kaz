@@ -1,0 +1,54 @@
+// Demonstração de Enums com Dados (Tagged Unions) e Pattern Matching (match)
+// Padrão de código: camelCase para variáveis/funções, PascalCase para Enums/Structs.
+// Saída padrão: runoff(...)
+
+enum StatusTransacao {
+    Pendente,
+    Processada(int),
+    Falha(string),
+}
+
+function processarStatus(StatusTransacao statusAtual): string {
+    string mensagemRetorno = "";
+    match (statusAtual) {
+        StatusTransacao::Pendente => {
+            mensagemRetorno = "Transacao aguardando confirmacao na rede...";
+        }
+        StatusTransacao::Processada(codigoAutorizacao) => {
+            mensagemRetorno = "Sucesso! Autorizada com codigo: " + codigoAutorizacao;
+        }
+        StatusTransacao::Falha(motivoFalha) => {
+            mensagemRetorno = "Falha ao processar: " + motivoFalha;
+        }
+    }
+    return mensagemRetorno;
+}
+
+// 1. Instanciação e correspondência de variante simples (unit)
+StatusTransacao transacaoPendente = StatusTransacao::Pendente;
+runoff(processarStatus(transacaoPendente));
+
+// 2. Instanciação e correspondência de variante com payload numérico
+StatusTransacao transacaoConcluida = StatusTransacao::Processada(984521);
+runoff(processarStatus(transacaoConcluida));
+
+// 3. Instanciação e correspondência de variante com mensagem de erro
+StatusTransacao transacaoFalha = StatusTransacao::Falha("Saldo insuficiente na conta");
+runoff(processarStatus(transacaoFalha));
+
+// 4. Pattern matching com literais e curinga (wildcard)
+function classificarCodigoHttp(int codigoHttp): string {
+    string descricaoStatus = "";
+    match (codigoHttp) {
+        200 => descricaoStatus = "200: OK",
+        400 => descricaoStatus = "400: Requisicao Invalida",
+        404 => descricaoStatus = "404: Nao Encontrado",
+        500 => descricaoStatus = "500: Erro Interno",
+        _ => descricaoStatus = "Codigo desconhecido",
+    }
+    return descricaoStatus;
+}
+
+runoff(classificarCodigoHttp(200));
+runoff(classificarCodigoHttp(404));
+runoff(classificarCodigoHttp(999));

@@ -1,0 +1,19 @@
+int hex_val = 0xFF;
+int bin_val = 0b1010;
+runoff("Hex: " + hex_val + ", Bin: " + bin_val);
+
+int a = 12;
+int b = 10;
+runoff("a & b: " + (a & b));
+runoff("a | b: " + (a | b));
+runoff("a ^ b: " + (a ^ b));
+runoff("~a: " + (~a));
+runoff("1 << 4: " + (1 << 4));
+runoff("32 >> 2: " + (32 >> 2));
+
+any n = null;
+if (n == null) {
+    runoff("Null verificado com sucesso!");
+}
+
+runoff("Finalizado com sucesso.");

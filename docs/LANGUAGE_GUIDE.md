@@ -25,6 +25,7 @@ Kaz é uma linguagem moderna, tipada, expressiva e de alto desempenho projetada 
    - [Execução Automática de Main()](#ponto-de-entrada-main)
    - [Recursão Profunda](#recursão)
 8. [Estruturas de Dados Personalizadas (struct)](#8-estruturas-de-dados-personalizadas-struct)
+   - [Enums com Dados e Pattern Matching (match)](#81-enums-com-dados-tagged-unions-e-pattern-matching-match)
 9. [Arrays, Tipagem e Métodos Nativos](#9-arrays-tipagem-e-métodos-nativos)
 10. [Sistema Modular Multi-Arquivos (import)](#10-sistema-modular-multi-arquivos-import)
 11. [Banco de Dados Relacional SQLite Embutido (db.*)](#11-banco-de-dados-relacional-sqlite-embutido-db)
@@ -255,6 +256,50 @@ Servidor srv = Servidor {
 runoff("Conectando a " + srv.ip + ":" + srv.porta);
 srv.porta = 9000;
 srv.ativo = false;
+```
+
+### 8.1 Enums com Dados (Tagged Unions) e Pattern Matching (`match`)
+
+Kaz suporta Uniões Etiquetadas (Tagged Unions / Enums Algébricos) com carga útil (payload) opcional e desestruturação segura através de `match`.
+
+#### Definição e Instanciação
+```kaz
+enum StatusConexao {
+    Conectado,
+    Reconectando(int),
+    Falha(string),
+}
+
+StatusConexao statusOk = StatusConexao::Conectado;
+StatusConexao statusTentativa = StatusConexao::Reconectando(3);
+StatusConexao statusErro = StatusConexao::Falha("Tempo esgotado");
+```
+
+#### Desestruturação com `match`
+A instrução `match` permite inspecionar variantes com vinculação automática de variáveis, literais e curinga de fallback (`_`):
+
+```kaz
+function processarConexao(StatusConexao statusAtual): string {
+    string mensagemRetorno = "";
+    match (statusAtual) {
+        StatusConexao::Conectado => {
+            mensagemRetorno = "Conexao ativa";
+        }
+        StatusConexao::Reconectando(tentativa) => {
+            mensagemRetorno = "Tentativa numero: " + tentativa;
+        }
+        StatusConexao::Falha(motivo) => {
+            mensagemRetorno = "Erro: " + motivo;
+        }
+        _ => {
+            mensagemRetorno = "Estado desconhecido";
+        }
+    }
+    return mensagemRetorno;
+}
+
+runoff(processarConexao(statusOk));
+runoff(processarConexao(statusTentativa));
 ```
 
 ---
@@ -492,13 +537,13 @@ try {
     // Código potencialmente sujeito a erros
     int divisor = 0;
     int resultado = 100 / divisor;
-    println("Esta linha nunca será alcançada");
+    runoff("Esta linha nunca será alcançada");
 } catch (e) {
     // Bloco executado quando uma exceção é interceptada
-    println("[ERRO CAPTURADO] Falha na operação: " + e);
+    runoff("[ERRO CAPTURADO] Falha na operação: " + e);
 }
 
-println("Programa continua sua execução normalmente...");
+runoff("Programa continua sua execução normalmente...");
 ```
 
 ### Sintaxe Silenciosa (sem Variável de Erro):
@@ -509,7 +554,7 @@ try {
     let dados = file_read("config_opcional.json");
     processar(dados);
 } catch {
-    println("Arquivo opcional não encontrado. Usando valores padrão.");
+    runoff("Arquivo opcional não encontrado. Usando valores padrão.");
 }
 ```
 
@@ -524,14 +569,14 @@ function carregar_registro(string path): string {
 
 function inicializar_app() {
     string cfg = carregar_registro("sistema.conf");
-    println("Configuração lida: " + cfg);
+    runoff("Configuração lida: " + cfg);
 }
 
 // O erro disparado dentro de carregar_registro é capturado aqui no topo
 try {
     inicializar_app();
 } catch (err) {
-    println("Falha fatal evitada: " + err);
+    runoff("Falha fatal evitada: " + err);
 }
 ```
 

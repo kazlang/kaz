@@ -25,7 +25,11 @@ fn main() {
     let t_fib = t0.elapsed();
     println!("→ Teste 1: Recursão Profunda - Fibonacci(26)");
     println!("  • Resultado: fib(26) = {}", res_fib);
-    println!("  • Tempo decorrido: {:.3} ms ({:.1} us)\n", t_fib.as_secs_f64() * 1000.0, t_fib.as_micros() as f64);
+    println!(
+        "  • Tempo decorrido: {:.3} ms ({:.1} us)\n",
+        t_fib.as_secs_f64() * 1000.0,
+        t_fib.as_micros() as f64
+    );
 
     // 2. Loop 50.000 iterações
     let t0 = Instant::now();
@@ -37,7 +41,11 @@ fn main() {
     let t_loop = t0.elapsed();
     println!("→ Teste 2: Loop Aritmético (50.000 iterações)");
     println!("  • Acumulador final: {}", acumulador);
-    println!("  • Tempo decorrido:  {:.3} ms ({:.1} us)\n", t_loop.as_secs_f64() * 1000.0, t_loop.as_micros() as f64);
+    println!(
+        "  • Tempo decorrido:  {:.3} ms ({:.1} us)\n",
+        t_loop.as_secs_f64() * 1000.0,
+        t_loop.as_micros() as f64
+    );
 
     // 3. Structs 10.000 instâncias
     let t0 = Instant::now();
@@ -54,14 +62,30 @@ fn main() {
     let t_struct = t0.elapsed();
     println!("→ Teste 3: Criação e Manipulação de Structs (10.000 instâncias)");
     println!("  • Soma das distâncias: {}", soma_distancias);
-    println!("  • Tempo decorrido:     {:.3} ms ({:.1} us)\n", t_struct.as_secs_f64() * 1000.0, t_struct.as_micros() as f64);
+    println!(
+        "  • Tempo decorrido:     {:.3} ms ({:.1} us)\n",
+        t_struct.as_secs_f64() * 1000.0,
+        t_struct.as_micros() as f64
+    );
 
     let t_total = t_fib + t_loop + t_struct;
     println!("========================================================================");
     println!("  RESULTADOS CONSOLIDADOS - RUST NATIVO (-O3) 🦀");
-    println!("  • Recursão de CallFrames (Fib 26): {:.3} ms", t_fib.as_secs_f64() * 1000.0);
-    println!("  • Dispatch de Loop (50k ops):      {:.3} ms", t_loop.as_secs_f64() * 1000.0);
-    println!("  • Heap & Structs (10k instâncias): {:.3} ms", t_struct.as_secs_f64() * 1000.0);
-    println!("  • TEMPO TOTAL DA SUÍTE:            {:.3} ms", t_total.as_secs_f64() * 1000.0);
+    println!(
+        "  • Recursão de CallFrames (Fib 26): {:.3} ms",
+        t_fib.as_secs_f64() * 1000.0
+    );
+    println!(
+        "  • Dispatch de Loop (50k ops):      {:.3} ms",
+        t_loop.as_secs_f64() * 1000.0
+    );
+    println!(
+        "  • Heap & Structs (10k instâncias): {:.3} ms",
+        t_struct.as_secs_f64() * 1000.0
+    );
+    println!(
+        "  • TEMPO TOTAL DA SUÍTE:            {:.3} ms",
+        t_total.as_secs_f64() * 1000.0
+    );
     println!("========================================================================\n");
 }

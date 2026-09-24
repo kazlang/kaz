@@ -17,7 +17,7 @@ bool verificado = false;
 string const autor = "Armando Soares";
 const int ano_criacao = 2026;
 
-println("=== Demonstração de Variáveis ===");
+runoff("=== Demonstração de Variáveis ===");
 runoff("Linguagem: " + linguagem + " (" + inicial + ")");
 runoff("Criador: " + autor + " em " + ano_criacao);
 runoff("Idade: " + idade + " anos | Altura: " + altura + "m");

@@ -2,24 +2,23 @@
 
 array frutas = ["Maçã", "Banana", "Laranja", "Morango"];
 
-println("=== Lista Inicial de Frutas ===");
-println("Total de frutas: " + len(frutas));
-for (int i = 0; i < len(frutas);
-i++) {
-    println("  [" + i + "] " + frutas[i]);
+runoff("=== Lista Inicial de Frutas ===");
+runoff("Total de frutas: " + len(frutas));
+for (int i = 0; i < len(frutas); i++) {
+    runoff("  [" + i + "] " + frutas[i]);
 }
 
-println("\n=== Modificando elementos por índice ===");
+runoff("\n=== Modificando elementos por índice ===");
 frutas[1] = "Manga";
-println("Elemento no índice 1 alterado para: " + frutas[1]);
+runoff("Elemento no índice 1 alterado para: " + frutas[1]);
 
-println("\n=== Adicionando e Removendo Elementos ===");
+runoff("\n=== Adicionando e Removendo Elementos ===");
 frutas = push(frutas, "Abacaxi");
-println("Após push(\"Abacaxi\"): " + arr_join(frutas, " -> "));
+runoff("Após push(\"Abacaxi\"): " + arr_join(frutas, " -> "));
 
 frutas = pop(frutas);
-println("Após pop(): " + arr_join(frutas, " -> "));
+runoff("Após pop(): " + arr_join(frutas, " -> "));
 
-println("\n=== Invertendo Array ===");
+runoff("\n=== Invertendo Array ===");
 array invertido = arr_reverse(frutas);
-println("Invertido: " + arr_join(invertido, " | "));
+runoff("Invertido: " + arr_join(invertido, " | "));

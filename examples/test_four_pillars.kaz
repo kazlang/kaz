@@ -1,0 +1,53 @@
+runoff("=== PILAR 1: MATEMÁTICA ABSOLUTA ===");
+int a = abs(-50);
+int b = math.abs(-100);
+float fl = math.floor(4.9);
+float cl = math.ceil(4.1);
+float rd = math.round(4.5);
+int mn = min(15, 30);
+int mx = max(15, 30);
+float sq = sqrt(49.0);
+float pw = pow(3.0, 3.0);
+runoff("abs(-50) = " + a);
+runoff("math.abs(-100) = " + b);
+runoff("math.floor(4.9) = " + fl);
+runoff("math.ceil(4.1) = " + cl);
+runoff("math.round(4.5) = " + rd);
+runoff("min(15, 30) = " + mn);
+runoff("max(15, 30) = " + mx);
+runoff("sqrt(49.0) = " + sq);
+runoff("pow(3.0, 3.0) = " + pw);
+
+runoff("\n=== PILAR 2: MANIPULAÇÃO E FATIAMENTO ===");
+array numeros = [10, 20, 30, 40, 50, 60];
+runoff("Array inicial: " + numeros.join(", "));
+runoff("Tamanho via size(): " + numeros.size());
+runoff("Fatiamento [1..4]: " + numeros.slice(1, 4).join(", "));
+runoff("Fatiamento negativo slice(-3): " + numeros.slice(-3).join(", "));
+
+runoff("\n=== PILAR 3: TRANSFORMAÇÕES DE TEXTO ===");
+string frase = "   Linguagem Kaz é Incrível!   ";
+string limpa = frase.trim();
+runoff("Original: '" + frase + "'");
+runoff("Trim: '" + limpa + "'");
+runoff("Maiúsculas: " + limpa.toUpperCase());
+runoff("Minúsculas: " + limpa.toLowerCase());
+runoff("Replace Kaz -> Kaz-VM: " + limpa.replace("Kaz", "Kaz-VM"));
+runoff("Fatiamento string slice(0, 9): '" + limpa.slice(0, 9) + "'");
+runoff("Fatiamento string negativo slice(-10): '" + limpa.slice(-10) + "'");
+
+runoff("\n=== PILAR 4: BUSCA E FILTRO ===");
+array devs = ["Armando", "Gemini", "KazDev", "Rustacean"];
+runoff("indexOf('Gemini'): " + devs.indexOf("Gemini"));
+runoff("find('KazDev'): " + devs.find("KazDev"));
+runoff("indexOf('Python'): " + devs.indexOf("Python"));
+runoff("includes('Armando'): " + devs.includes("Armando"));
+runoff("contains('C++'): " + devs.contains("C++"));
+
+string doc = "kaz-lang-compiler";
+runoff("doc.indexOf('lang'): " + doc.indexOf("lang"));
+runoff("doc.includes('compiler'): " + doc.includes("compiler"));
+runoff("doc.startsWith('kaz'): " + doc.startsWith("kaz"));
+runoff("doc.endsWith('compiler'): " + doc.endsWith("compiler"));
+
+runoff("\n[SUCESSO] Todos os 4 Pilares Fundamentais Validados na VM!");

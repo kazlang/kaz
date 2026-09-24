@@ -36,8 +36,10 @@ fn bench_n(target_n: i64, runs: usize) {
         (times[runs / 2 - 1] + times[runs / 2]) / 2
     };
 
-    println!("fib({}) = {} | Media: {} us | Mediana: {} us | Min: {} us | Max: {} us ({} repeticoes)",
-        target_n, last_res, mean_us, median_us, min_us, max_us, runs);
+    println!(
+        "fib({}) = {} | Media: {} us | Mediana: {} us | Min: {} us | Max: {} us ({} repeticoes)",
+        target_n, last_res, mean_us, median_us, min_us, max_us, runs
+    );
 }
 
 fn main() {
