@@ -136,6 +136,21 @@ chmod +x install.sh
 ./install.sh
 ```
 
+### Desinstalação Limpa (Clean Uninstall):
+Para remover completamente a linguagem Kaz, os binários, o registro no `PATH` e as extensões de IDEs do sistema:
+
+#### No Windows:
+Dê um duplo-clique em **`uninstall.bat`** ou execute no PowerShell:
+```powershell
+.\uninstall.ps1
+```
+
+#### No Linux / macOS:
+```bash
+chmod +x uninstall.sh
+./uninstall.sh
+```
+
 ---
 
 ## 📖 Como Usar a CLI

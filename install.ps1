@@ -1,4 +1,7 @@
-# Instalador Oficial da Linguagem Kaz para Windows
+# ============================================================================
+#   Instalador Oficial da Linguagem Kaz para Windows
+#   Propriedade Intelectual (c) 2026 Armando Soares
+# ============================================================================
 
 $ErrorActionPreference = "Stop"
 
@@ -8,7 +11,7 @@ Write-Host "                 Versao 1.1.0                           " -Foregroun
 Write-Host "========================================================" -ForegroundColor Cyan
 Write-Host ""
 
-# 1. Localizar o executavel pre-compilado
+# 1. Localizar o script e o executavel
 $scriptDir = $PSScriptRoot
 if (-not $scriptDir -and $MyInvocation.MyCommand.Path) {
     $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
@@ -62,29 +65,42 @@ if (-not (Test-Path $targetDir)) {
     New-Item -ItemType Directory -Path $targetDir -Force | Out-Null
 }
 
-# 3. Copiar executavel
+# 3. Encerrar processo kaz caso esteja em execucao para permitir sobreescrita
+try {
+    $runningProcesses = Get-Process kaz -ErrorAction SilentlyContinue
+    if ($runningProcesses) {
+        Write-Host "Encerrando processo kaz ativo para atualizacao..." -ForegroundColor Yellow
+        $runningProcesses | Stop-Process -Force -ErrorAction SilentlyContinue
+        Start-Sleep -Milliseconds 300
+    }
+} catch {
+    # Ignora caso nao tenha permissao ou processo ja tenha saido
+}
+
+# 4. Copiar executavel
 $installedExe = Join-Path $targetDir "kaz.exe"
-Copy-Item $kazExe $installedExe -Force
+Copy-Item -Path $kazExe -Destination $installedExe -Force
 Write-Host "OK: Executavel copiado para: $installedExe" -ForegroundColor Green
 
-# 4. Configurar PATH do Usuario de forma permanente
+# 5. Configurar PATH do Usuario de forma permanente no Registro
 $userPath = [Environment]::GetEnvironmentVariable("Path", [EnvironmentVariableTarget]::User)
 if (-not $userPath) { $userPath = "" }
 
 $paths = $userPath.Split(';', [System.StringSplitOptions]::RemoveEmptyEntries)
-if ($paths -notcontains $targetDir) {
-    Write-Host "Adicionando $targetDir ao PATH do Usuario..." -ForegroundColor White
-    $newPath = ($paths + $targetDir) -join ';'
-    [Environment]::SetEnvironmentVariable("Path", $newPath, [EnvironmentVariableTarget]::User)
-    Write-Host "OK: PATH atualizado permanentemente no Registro do Windows." -ForegroundColor Green
-} else {
-    Write-Host "OK: Diretorio ja esta presente no PATH do Usuario." -ForegroundColor Green
+$cleanPaths = $paths | Where-Object {
+    $p = $_.TrimEnd('\', '/')
+    $p -ne $targetDir -and $p -ne (Join-Path $env:LOCALAPPDATA "Kaz")
 }
+
+Write-Host "Atualizando PATH do Usuario..." -ForegroundColor White
+$newPath = ($cleanPaths + $targetDir) -join ';'
+[Environment]::SetEnvironmentVariable("Path", $newPath, [EnvironmentVariableTarget]::User)
+Write-Host "OK: PATH atualizado permanentemente no Registro do Windows." -ForegroundColor Green
 
 # Atualiza a sessao atual do terminal
 $env:Path = "$env:Path;$targetDir"
 
-# 5. Testar execucao
+# 6. Testar execucao do binario instalado
 Write-Host ""
 Write-Host "Testando instalacao..." -ForegroundColor White
 try {
@@ -94,14 +110,13 @@ try {
     Write-Host "Aviso: Falha ao invocar executavel instalado." -ForegroundColor Yellow
 }
 
-# 6. Instalar Extensão para Lumina IDE & VS Code
-$extInstaller = Join-Path $PSScriptRoot "scripts\install_extension.ps1"
+# 7. Instalar Extensao para Lumina IDE & VS Code
+$extInstaller = Join-Path $scriptDir "scripts\install_extension.ps1"
 if (Test-Path $extInstaller) {
     try {
-        & powershell -ExecutionPolicy Bypass -File $extInstaller | Out-Null
-        Write-Host "OK: Extensão de coloração sintática instalada na Lumina IDE / VS Code!" -ForegroundColor Green
+        & powershell -NoProfile -ExecutionPolicy Bypass -File $extInstaller
     } catch {
-        Write-Host "Aviso: Não foi possível instalar a extensão automaticamente." -ForegroundColor Yellow
+        Write-Host "Aviso: Nao foi possivel instalar a extensao automaticamente via script." -ForegroundColor Yellow
     }
 }
 
@@ -112,8 +127,6 @@ Write-Host "  Voce pode abrir qualquer terminal e digitar:" -ForegroundColor Whi
 Write-Host "    kaz --help" -ForegroundColor Yellow
 Write-Host "    kaz repl" -ForegroundColor Yellow
 Write-Host "    kaz programa.kaz" -ForegroundColor Yellow
-Write-Host "  Lumina IDE e VS Code agora suportam coloração sintática Kaz!" -ForegroundColor Cyan
+Write-Host "  Lumina IDE e VS Code agora suportam coloracao sintatica Kaz!" -ForegroundColor Cyan
 Write-Host "========================================================" -ForegroundColor Cyan
 Write-Host ""
-
-
