@@ -2,5 +2,5 @@
 string mensagem = "Olá, Mundo! Bem-vindo à linguagem Kaz 🦅";
 runoff(mensagem);
 
-string versao = "1.0.0";
+string versao = "1.1.0";
 runoff("Kaz v" + versao + " em execução com sucesso!");

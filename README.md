@@ -6,7 +6,7 @@
 </p>
 
 <p align="center">
-    <a href="https://github.com/kazlang/kaz"><img src="https://img.shields.io/badge/version-1.0.0-blue.svg" alt="Version"></a>
+    <a href="https://github.com/kazlang/kaz"><img src="https://img.shields.io/badge/version-1.1.0-blue.svg" alt="Version"></a>
     <a href="LICENSE"><img src="https://img.shields.io/badge/License-Proprietary-red.svg" alt="License: Proprietary"></a>
     <img src="https://img.shields.io/badge/build-passing-brightgreen.svg" alt="Build Status">
     <img src="https://img.shields.io/badge/Engine-Stack%20Bytecode%20VM-purple.svg" alt="Engine: Bytecode VM">

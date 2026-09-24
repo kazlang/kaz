@@ -4,7 +4,7 @@ $ErrorActionPreference = "Stop"
 
 Write-Host "========================================================" -ForegroundColor Cyan
 Write-Host "     Instalador Oficial da Linguagem Kaz                " -ForegroundColor Cyan
-Write-Host "                 Versao 1.0.0                           " -ForegroundColor Cyan
+Write-Host "                 Versao 1.1.0                           " -ForegroundColor Cyan
 Write-Host "========================================================" -ForegroundColor Cyan
 Write-Host ""
 
