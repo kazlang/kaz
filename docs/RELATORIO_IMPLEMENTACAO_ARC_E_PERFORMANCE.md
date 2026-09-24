@@ -145,9 +145,30 @@ Conforme formalizado na documentação de arquitetura (`docs/ARCHITECTURE.md`):
 
 ---
 
+---
+
 ## 7. Status e Validação Final
 
-- **Testes Unitários:** 112/112 testes aprovados (`cargo test`).
+- **Testes Unitários:** 125+ testes aprovados (`cargo test`).
 - **Build de Produção:** `cargo build --release` concluído com sucesso.
 - **Stress Test de Alocação:** 1.000.000 de structs com ARC Free-List completados em **10 milissegundos**.
 - **Performance Geral:** Kaz JIT opera na mesma ordem de grandeza de código C e Rust otimizado em operações aritméticas, recursivas e alocações de structs, mantendo semântica de linguagem de alto nível com tipagem estática e segurança de memória.
+
+---
+
+## 8. Diretrizes Críticas de Segurança & Roadmap de Refinamento do ARC
+
+### 8.1. Invariante de Concorrência: Ref Count Monothread vs. AtomicUsize
+* **O Risco:** A contagem atual de referências opera via `usize` simples (`*header -= 1` e `*header += 1`). Sem instruções atômicas (`AtomicUsize` com `fetch_add` / `fetch_sub` ou `atomic_rmw` no Cranelift), dois descartes simultâneos em threads distintas do SO podem avaliar o contador como zero ao mesmo tempo, gerando *Double-Free* ou corrupção silenciosa.
+* **Regra Mandatória da Fase 1:** O ARC do Kaz é estritamente **monothread**. Nenhuma struct ou referência Kaz pode atravessar fronteiras de threads do sistema operacional até que a contagem seja formalmente migrada para operações atômicas.
+
+### 8.2. Regra da Coleção/Sumidouro (Storage Retention em `push` e Coleções)
+* **O Risco:** A convenção de empréstimo (*borrowed*) assume que a função chamada apenas inspeciona o ponteiro e o descarta ao retornar. No entanto, funções como `array.push(item)`, atribuição de campo `obj.field = item` ou registro em coleções armazenam o ponteiro além do escopo da chamada. Se o chamador sair de escopo e emitir `release(item)`, o contador zera e o objeto é reciclado, deixando a array com um **ponteiro pendurado (*dangling pointer*)** e gerando *Use-After-Free*.
+* **Regra Mandatória de Codegen:** Toda operação ou função nativa que armazene uma referência para além da duração da chamada é **estritamente obrigada a emitir um `retain` interno** no momento do armazenamento.
+
+### 8.3. Codegen de Descarte Recursivo por `type_id` (Destructor Dispatch)
+* **O Risco:** Tratar a liberação de campos filhos como uma cláusula genérica no destrutor gera vazamento de nós ou chamadas de `release` inválidas em campos primitivos (`int`, `float`, `bool`).
+* **Especificação de Engenharia:** A geração da tabela de metadados/vtable de destrutores é tratada como **item independente de Codegen da Fase 2**, mapeando para cada `type_id` exatamente quais offsets de memória contêm referências gerenciadas que necessitam de `release` recursivo.
+
+### 8.4. Isolamento Estrito de Mods: Somente Bytecode VM
+* **Garantia de Sandbox:** Enquanto o modelo ARC e o codegen de destrutores não estiverem 100% homologados e submetidos a testes de estresse em todos os fluxos, **todo e qualquer código de terceiros (mods, plugins, hooks) roda obrigatoriamente sob a sandbox da Kaz Bytecode VM**, onde o RAII do Rust garante que nenhum ponteiro bruto possa corromper o processo hospedeiro.
