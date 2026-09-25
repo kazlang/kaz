@@ -6,12 +6,12 @@
 </p>
 
 <p align="center">
-    <a href="https://github.com/kazlang/kaz"><img src="https://img.shields.io/badge/version-1.1.0-blue.svg" alt="Version"></a>
+    <a href="https://github.com/armandosds/Kaz"><img src="https://img.shields.io/badge/version-1.1.0-blue.svg" alt="Version"></a>
     <a href="LICENSE"><img src="https://img.shields.io/badge/License-Proprietary-red.svg" alt="License: Proprietary"></a>
     <img src="https://img.shields.io/badge/build-passing-brightgreen.svg" alt="Build Status">
     <img src="https://img.shields.io/badge/Engine-Stack%20Bytecode%20VM-purple.svg" alt="Engine: Bytecode VM">
     <img src="https://img.shields.io/badge/Tests-125%2B%20passed-success.svg" alt="Tests">
-    <img src="https://img.shields.io/badge/Distribution-Standalone%20Binary-blueviolet.svg" alt="Distribution: Standalone Binary">
+    <a href="https://www.rust-lang.org/"><img src="https://img.shields.io/badge/Rust-2024-orange.svg" alt="Rust Edition"></a>
 </p>
 
 ---
@@ -28,15 +28,14 @@ Construída do zero com uma **Máquina Virtual de Bytecode baseada em Pilha (Sta
 
 ## ✨ Destaques & Diferenciais
 
-- 🎯 **Enums com Dados (Tagged Unions) & Pattern Matching (`match`)**: Variantes com payload tipado (`Variant(Type1, Type2)`), casamento de padrões seguro com desestruturação em branches, suporte a wildcards (`_`) e execução balanceada na Stack VM.
-- ⚡ **Compilador JIT Nativo via Cranelift (`kaz jit`)**: Compilação de código de máquina AMD64 em tempo de execução com paridade direta de **~1,9x do Rust Nativo (-O3)** no Linux e **~2,5x** no Windows, superando interpretadores em até **39x**.
-- 🧠 **Gerenciamento de Memória Nativo (ARC + Slab Free-List)**: Alocação com Bump Arena e reciclagem instantânea de structs em cache L1 através de Free-List segmentada, eliminando pausas de Garbage Collector e sobrecarga de `malloc`.
-- 🔢 **Operadores Bitwise & Literais Hex/Bin/Null**: Suporte completo a operações de bits (`&`, `|`, `^`, `~`, `<<`, `>>`), atribuições compostas (`&=`, `|=`, etc.), literais hexadecimais (`0x...`), binários (`0b...`) e o literal `null`.
-- 📚 **4 Pilares da Biblioteca Padrão**: Coleção rica de funções matemáticas absolutas e arredondamentos (`abs`, `floor`, `ceil`, `round`, `min`, `max`, `sqrt`, `pow`), fatiamento e manipulação de coleções (`slice`, `join`, `size`), transformações de texto e pesquisa/filtro (`indexOf`, `includes`, `startsWith`, `endsWith`).
-- ⚡ **Intrínsecos de CPU**: Funções matemáticas de alta frequência (como `math.sqrt`) emitem diretamente a instrução de hardware da FPU (`sqrtsd`) sem overhead de FFI.
-- 📦 **Geração de Executáveis Autônomos (`kaz build`)**: Empacotamento de scripts e projetos em binários nativos autônomos (`.exe` no Windows, ELF no Linux) com **zero dependências externas**, ou geração de código objeto (`--emit-obj`).
-- 🧩 **Sistema de Extensões & Modding Nativo (`hook.*`)**: Registro e despacho dinâmico de eventos em runtime com isolamento de memória na Stack VM, sem necessidade de runtimes externos pesados.
 - ⚡ **Stack Bytecode Virtual Machine**: Código compilado diretamente para sequências lineares de `OpCode`, com variáveis locais mapeadas em offsets de memória fixos (até **27x mais rápida** que interpretadores AST tradicionais).
+- 🏷️ **Enums com Dados (Tagged Unions) & Pattern Matching (`match`)**: Modelagem de tipos algébricos com dados associados (`enum Resultado { Sucesso(int), Falha(string) }`) e desestruturação de alta performance via `match` com vinculação de variáveis, literais e curinga (`_`).
+- 🔢 **Operadores Bitwise & Literais Hex/Bin/Null**: Operações de baixo nível (`&`, `|`, `^`, `~`, `<<`, `>>`), atribuições compostas (`&=`, `|=`, `^=`, `<<=`, `>>=`), literais hexadecimais (`0x...`), binários (`0b...`) e literal `null`.
+- 📚 **4 Pilares Fundamentais da Stdlib**: Matemática absoluta (`abs`, `floor`, `ceil`, `round`, `min`, `max`, `sqrt`, `pow`), fatiamento e manipulação de arrays (`slice`, `join`, `size()`, índices negativos), transformações de texto (`trim`, `toUpperCase`, `toLowerCase`, `replace`) e busca/filtro (`indexOf`, `find`, `includes`, `contains`, `startsWith`, `endsWith`).
+- ✍️ **Convenção camelCase & Saída runoff()**: Padronização canônica da linguagem (`camelCase` para funções e variáveis, `PascalCase` para enums/structs) e saída oficial `runoff(...)`.
+- 🚀 **Compilador Nativo Cranelift JIT & AOT (`kaz jit` / `kaz build`)**: Compilação direta para código de máquina x86_64, alcançando paridade de **~1,9x do Rust Nativo (-O3)** no Linux e **~2,5x** no Windows, superando interpretadores em até **39x**.
+- 🧠 **Gerenciamento de Memória Nativo (ARC + Slab Free-List)**: Alocação com Bump Arena e reciclagem instantânea de structs em cache L1 através de Free-List segmentada, eliminando pausas de Garbage Collector e sobrecarga de `malloc`.
+- ⚡ **Intrínsecos de CPU**: Funções matemáticas de alta frequência (como `math.sqrt`) emitem diretamente a instrução de hardware da FPU (`sqrtsd`) sem overhead de FFI.
 - 📁 **Projetos Estruturados em Pastas (`import`)**: Crie softwares modulares com subpastas (`models/`, `db/`, `services/`) e caminhos relativos. Execute a aplicação inteira com um único comando: `kaz meu_projeto/`.
 - 📐 **Formatador Canônico Integrado (`kaz fmt`)**: Padronizador de código com estilo K&R/1TBS, 4 espaços de indentação, suporte a modo `--check` para pipelines de CI/CD e validação de AST de segurança para garantir integridade.
 - 🗄️ **SQLite Embutido Nativo (`db.*`)**: Motor de banco de dados relacional compilado estaticamente dentro de `kaz.exe`. Execute `db.open()`, `db.execute()` e `db.query()` sem instalar nenhum driver ou DLL externa.
@@ -44,7 +43,6 @@ Construída do zero com uma **Máquina Virtual de Bytecode baseada em Pilha (Sta
 - 🌐 **Rede e HTTP REST (`net.*`)**: Medição de latência TCP real (`net.ping`), clientes HTTP GET/POST e sockets de rede nativos.
 - 🔒 **Sistema de Tipagem Seguro**: Tipos primitivos (`int`, `float`, `string`, `char`, `bool`), estruturas compostas (`struct`), união de enums (`enum`), arrays dinâmicos tipados (`array[string]`, `array[int]`, `array[any]`) e constantes imutáveis (`const`).
 - 🔄 **Loops Modernos & Aninhados**: Suporte nativo a laços aninhados profundos, iteração com `for (item in colecao)`, `for (i in colecao.indices)`, `while` e `for` clássico de 3 cláusulas.
-- 🖋️ **Padrão Idiomático camelCase & Saída Canônica**: Sintaxe padronizada com variáveis e funções em `camelCase` e saída oficial via `runoff()`.
 - 🔀 **Operador Ternário (`? :`)**: Expressões condicionais compactas com suporte a aninhamento.
 - 🖥️ **Kaz Terminal Interativo & REPL**: Shell de comando que emula o terminal do sistema operacional (`ls`, `cd`, `run`, `env`) ao mesmo tempo em que executa comandos Kaz em tempo real.
 - 🎨 **Extensão Oficial para IDEs**: Pacote VSIX com suporte a sintaxe, escopos TextMate e snippets inteligentes para a **Lumina IDE** e o **VS Code**.
@@ -64,6 +62,14 @@ function Main() {
 ### 2. Executar:
 ```bash
 kaz ola.kaz
+```
+
+### 3. Criar um projeto completo estruturado:
+```bash
+kaz new meusistema
+cd meusistema
+kaz run .
+kaz test
 ```
 
 ---
@@ -118,25 +124,32 @@ kaz meu_sistema/
 
 ---
 
-## 🛠️ Instalação Rápida (1 Clique)
+## 🛠️ Compilação e Instalação
 
-A linguagem **Kaz** é distribuída como binário pré-compilado autossuficiente (*standalone executable*) de alto desempenho com SQLite e runtime integrados.  
-**Você não precisa instalar Rust, Cargo, compiladores C nem gerenciadores de pacotes de terceiros.**
+### Pré-requisitos
+- [Rust & Cargo](https://rustup.rs/) (Edição 2024 ou superior)
 
-### No Windows:
-Basta dar um duplo-clique no arquivo **`install.bat`** ou executar no PowerShell:
+### 1. Compilação a partir do Código-Fonte
+```bash
+cargo build --release
+```
+O executável otimizado estará localizado em `target/release/kaz.exe` (Windows) ou `target/release/kaz` (Linux/macOS).
+
+### 2. Instalação Automática
+
+#### No Windows (PowerShell):
 ```powershell
 .\install.ps1
 ```
-*O instalador copia o `kaz.exe` para o seu computador, configura o `PATH` do sistema automaticamente e instala a extensão oficial de coloração sintática na Lumina IDE e no VS Code.*
+*O script compila o projeto, copia o binário para o diretório de ferramentas do usuário, configura o `PATH` do sistema e instala a extensão na Lumina IDE e no VS Code automaticamente.*
 
-### No Linux / macOS:
+#### No Linux / macOS:
 ```bash
 chmod +x install.sh
 ./install.sh
 ```
 
-### Desinstalação Limpa (Clean Uninstall):
+### 3. Desinstalação Limpa (Clean Uninstall)
 Para remover completamente a linguagem Kaz, os binários, o registro no `PATH` e as extensões de IDEs do sistema:
 
 #### No Windows:
@@ -246,36 +259,35 @@ Consulte o diretório [`examples/`](examples/) para explorar exemplos completos 
 
 ---
 
-## 🧪 Testes Automatizados e Confiabilidade
+## 🧪 Testes Automatizados
 
-Kaz foi construído sob uma suíte contínua de **125+ testes automatizados** com zero regressão e inclui um executor de testes unitários nativo integrado diretamente no executável `kaz`:
+Kaz possui uma suíte rigorosa de **125+ testes automatizados** cobrindo todas as áreas da linguagem com zero regressão:
 
 ```bash
-# Executa os testes unitários nativos integrados no projeto ou exemplos:
-kaz test examples/
+cargo test
 ```
 
 ### Áreas Cobertas:
-- Enums com dados (Tagged Unions) e Pattern Matching (`match`)
-- Operadores bitwise (`&`, `|`, `^`, `~`, `<<`, `>>`), atribuições compostas e literal `null`
-- Os 4 Pilares da biblioteca padrão (matemática absoluta, fatiamento de coleções, transformações e buscas)
-- Formatador canônico automático de código e validação de AST de segurança
-- Tratamento robusto de erros com desenrolamento de pilha (`try / catch`)
-- Testes unitários integrados e asserções nativas (`test "nome" { assert(...) }`)
-- Criptografia padrão SHA256, MD5 e Base64 (`crypto.*`)
-- Expressões regulares nativas (`regex.*`)
-- Manipulação avançada de sistema de arquivos (`fs.*`)
-- Sistema de tipos e constantes (`int`, `float`, `string`, `bool`, `const`, `array[T]`)
-- Operadores e precedência (`+`, `-`, `*`, `/`, `%`, `+=`, `-=`, `*=`, `/=`, `%=`, `? :`)
-- Estruturas de controle de fluxo (`if/else`, `while`, `for`, `for..in`) e laços aninhados
-- Funções, escopo léxico e recursão
-- Structs e mutação de campos
-- Módulos multi-arquivos e proteção anti-ciclo (`import`)
-- Banco de dados relacional SQLite (`db.*`)
-- Serialização e parsing JSON (`json.*`)
-- Conectividade de rede TCP e HTTP (`net.*`)
-- Máquina Virtual de Bytecode de alta performance
-- Interface de linha de comando e Kaz Terminal Interativo
+- Enums com dados (Tagged Unions) e Pattern Matching (`enum_match_tests.rs`)
+- Operadores bitwise e literal null (`bitwise_null_tests.rs`)
+- Os 4 Pilares da biblioteca padrão (`method_tests.rs`)
+- Formatador canônico automático de código e integridade de AST (`fmt_tests.rs`)
+- Tratamento robusto de erros com desenrolamento de pilha (`try_catch_tests.rs`)
+- Testes unitários integrados e asserções nativas (`native_test_runner_tests.rs`)
+- Criptografia padrão SHA256, MD5 e Base64 (`crypto_tests.rs`)
+- Expressões regulares nativas (`regex_tests.rs`)
+- Manipulação avançada de sistema de arquivos (`fs_expansion_tests.rs`)
+- Sistema de tipos e constantes (`variable_tests.rs`, `typed_array_tests.rs`)
+- Operadores e precedência (`operator_tests.rs`, `ternary_tests.rs`)
+- Estruturas de controle de fluxo (`control_flow_tests.rs`, `for_in_tests.rs`)
+- Funções, escopo léxico e recursão (`function_tests.rs`)
+- Structs e mutação de campos (`struct_tests.rs`)
+- Módulos multi-arquivos e proteção anti-ciclo (`import_tests.rs`)
+- Banco de dados relacional SQLite (`db_tests.rs`)
+- Serialização e parsing JSON (`json_tests.rs`)
+- Conectividade de rede TCP e HTTP (`net_tests.rs`)
+- Máquina Virtual de Bytecode (`vm_tests.rs`)
+- Interface de linha de comando (`cli_tests.rs`, `shell_tests.rs`)
 
 ---
 

@@ -50,6 +50,39 @@ kaz meu_sistema/
 kaz .
 ```
 
+### C. Criar um Novo Projeto Estruturado (`kaz new` ou `kaz create`)
+Para iniciar um novo projeto com a arquitetura padrão recomendada (com banco SQLite embutido, modelos, testes automatizados e manifesto `kaz.json`):
+
+```bash
+kaz new meusistema
+# ou equivalentemente:
+kaz create meusistema
+```
+
+O comando gera a seguinte árvore:
+```text
+meusistema/
+├── kaz.json             # Manifesto de configuração do projeto
+├── README.md            # Documentação e instruções de execução
+├── .gitignore           # Ignora *.db, bin/, dist/ e temporários
+├── data/
+│   └── schema.sql       # Script DDL com a estrutura do banco SQLite
+├── src/
+│   ├── main.kaz         # Ponto de entrada do sistema
+│   ├── database.kaz     # Funções utilitárias de conexão e migração SQLite
+│   └── models/
+│       └── usuario.kaz  # Modelos de domínio (structs)
+└── tests/
+    └── main_test.kaz    # Testes unitários automatizados nativos
+```
+
+Para rodar e testar imediatamente:
+```bash
+cd meusistema
+kaz run .
+kaz test
+```
+
 ---
 
 ## 3. Motores de Execução (JIT Nativo vs Stack VM vs AST)
