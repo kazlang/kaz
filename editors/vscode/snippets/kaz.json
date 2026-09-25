@@ -169,18 +169,35 @@
     "SQLite Database Connection": {
         "prefix": "dbopen",
         "body": [
-            "int ${1:conn} = db.open(\"${2::memory:}\");",
-            "db.execute(${1:conn}, \"${3:CREATE TABLE tabela (id INTEGER PRIMARY KEY);}\");",
+            "int ${1:conn} = db_open(\"${2:data/app.db}\");",
+            "db_execute(${1:conn}, \"${3:CREATE TABLE IF NOT EXISTS tabela (id INTEGER PRIMARY KEY, nome TEXT);}\");",
             "$0",
-            "db.close(${1:conn});"
+            "db_close(${1:conn});"
         ],
-        "description": "Abertura e manipulação de banco SQLite nativo"
+        "description": "Abertura e manipulação de banco SQLite nativo (db_open)"
+    },
+    "SQLite Query": {
+        "prefix": "dbquery",
+        "body": [
+            "array ${1:linhas} = db_query(${2:conn}, \"${3:SELECT * FROM tabela;}\");",
+            "for (${4:linha} in ${1:linhas}) {",
+            "\t$0",
+            "}"
+        ],
+        "description": "Consulta SQL retornando array de registros com db_query()"
     },
     "JSON Parse": {
         "prefix": "jsonparse",
         "body": [
-            "any ${1:dados} = json.parse(${2:json_string});"
+            "any ${1:dados} = json_parse(${2:json_string});"
         ],
-        "description": "Desserialização de JSON nativa com json.parse()"
+        "description": "Desserialização de JSON nativa com json_parse()"
+    },
+    "JSON Stringify": {
+        "prefix": "jsonstringify",
+        "body": [
+            "string ${1:jsonStr} = json_stringify(${2:objeto});"
+        ],
+        "description": "Serialização de JSON nativa com json_stringify()"
     }
 }

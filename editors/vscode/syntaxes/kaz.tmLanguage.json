@@ -158,6 +158,22 @@
                     "match": "\\b(file_read|file_write|file_append|file_exists|file_delete)\\b"
                 },
                 {
+                    "name": "support.function.db.kaz",
+                    "match": "\\b(db_open|db_execute|db_query|db_close)\\b"
+                },
+                {
+                    "name": "support.function.json.kaz",
+                    "match": "\\b(json_parse|json_stringify)\\b"
+                },
+                {
+                    "name": "support.function.fs.kaz",
+                    "match": "\\b(fs_mkdir|fs_read|fs_write|fs_append|fs_exists|fs_remove|fs_read_dir|fs_copy|fs_size)\\b"
+                },
+                {
+                    "name": "support.function.net.kaz",
+                    "match": "\\b(net_ping|net_http_get|net_http_post|net_tcp_send)\\b"
+                },
+                {
                     "name": "support.class.namespace.kaz",
                     "match": "\\b(math|net|db|json|crypto|regex|fs)\\b(?=\\.)"
                 },

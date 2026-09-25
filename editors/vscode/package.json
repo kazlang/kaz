@@ -2,7 +2,7 @@
     "name": "kaz-language",
     "displayName": "Kaz Programming Language",
     "description": "Suporte oficial a linguagem Kaz: Coloracao sintatica (Syntax Highlighting), snippets inteligentes e configuracao de linguagem para Lumina IDE e VS Code.",
-    "version": "1.1.0",
+    "version": "1.1.1",
     "publisher": "Kaz-Language",
     "repository": {
         "type": "git",
