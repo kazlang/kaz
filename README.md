@@ -7,6 +7,7 @@
 
 <p align="center">
     <a href="https://github.com/armandosds/Kaz"><img src="https://img.shields.io/badge/version-1.1.0-blue.svg" alt="Version"></a>
+    <a href="CHANGELOG.md"><img src="https://img.shields.io/badge/changelog-v1.1.0-informational.svg" alt="Changelog"></a>
     <a href="LICENSE"><img src="https://img.shields.io/badge/License-Proprietary-red.svg" alt="License: Proprietary"></a>
     <img src="https://img.shields.io/badge/build-passing-brightgreen.svg" alt="Build Status">
     <img src="https://img.shields.io/badge/Engine-Stack%20Bytecode%20VM-purple.svg" alt="Engine: Bytecode VM">
@@ -28,6 +29,7 @@ Construída do zero com uma **Máquina Virtual de Bytecode baseada em Pilha (Sta
 
 ## ✨ Destaques & Diferenciais
 
+- 🏗️ **Scaffolding de Projetos Automatizado (`kaz new` / `kaz create`)**: Criação instantânea de sistemas completos com arquitetura padrão em pastas, banco de dados SQLite embutido, modelos tipados com convenção `camelCase`, testes automatizados nativos e manifesto `kaz.json`.
 - ⚡ **Stack Bytecode Virtual Machine**: Código compilado diretamente para sequências lineares de `OpCode`, com variáveis locais mapeadas em offsets de memória fixos (até **27x mais rápida** que interpretadores AST tradicionais).
 - 🏷️ **Enums com Dados (Tagged Unions) & Pattern Matching (`match`)**: Modelagem de tipos algébricos com dados associados (`enum Resultado { Sucesso(int), Falha(string) }`) e desestruturação de alta performance via `match` com vinculação de variáveis, literais e curinga (`_`).
 - 🔢 **Operadores Bitwise & Literais Hex/Bin/Null**: Operações de baixo nível (`&`, `|`, `^`, `~`, `<<`, `>>`), atribuições compostas (`&=`, `|=`, `^=`, `<<=`, `>>=`), literais hexadecimais (`0x...`), binários (`0b...`) e literal `null`.
@@ -51,20 +53,8 @@ Construída do zero com uma **Máquina Virtual de Bytecode baseada em Pilha (Sta
 
 ## ⚡ Começando em 60 Segundos
 
-### 1. Criar o primeiro arquivo:
-Crie um arquivo chamado `ola.kaz`:
-```kaz
-function Main() {
-    runoff("Olá, mundo! Kaz está funcionando com força total 🦅");
-}
-```
-
-### 2. Executar:
-```bash
-kaz ola.kaz
-```
-
-### 3. Criar um projeto completo estruturado:
+### Opção 1: Criar um projeto completo estruturado (Recomendado) 🚀
+O jeito mais rápido e profissional de iniciar um sistema em Kaz com banco de dados SQLite, modelos de dados e testes nativos:
 ```bash
 kaz new meusistema
 cd meusistema
@@ -72,54 +62,115 @@ kaz run .
 kaz test
 ```
 
----
-
-## 🧩 Exemplo de Software Modular em Kaz
-
-Kaz permite organizar softwares corporativos reais em pastas. Abaixo um exemplo de projeto estruturado com banco de dados SQLite e JSON:
-
-```text
-meu_sistema/
-├── models/
-│   └── usuario.kaz       # Estruturas de dados tipadas
-├── db/
-│   └── sqlite_repo.kaz   # Conexão e queries SQL
-└── main.kaz              # Ponto de entrada do sistema
+### Opção 2: Executar um script individual
+Crie um arquivo chamado `ola.kaz`:
+```kaz
+function main() {
+    runoff("Olá, mundo! Kaz está funcionando com força total 🦅");
+}
+```
+E execute:
+```bash
+kaz ola.kaz
 ```
 
-#### `models/usuario.kaz`:
+---
+
+## 🏗️ Projetos Estruturados & Scaffold (`kaz new` / `kaz create`)
+
+Ao executar `kaz new meusistema` (ou `kaz create meusistema`), Kaz gera automaticamente a estrutura de pastas recomendada pela comunidade, já integrada com banco de dados SQLite, modelos tipados e testes:
+
+```text
+meusistema/
+├── kaz.json             # Manifesto de configuração do projeto
+├── README.md            # Documentação e instruções de execução
+├── .gitignore           # Ignora *.db, bin/, dist/ e temporários
+├── data/
+│   └── schema.sql       # Script DDL com a estrutura das tabelas SQLite
+├── src/
+│   ├── main.kaz         # Ponto de entrada do sistema
+│   ├── database.kaz     # Módulo utilitário de conexão e migração SQLite
+│   └── models/
+│       └── usuario.kaz  # Modelos de domínio (structs)
+└── tests/
+    └── main_test.kaz    # Testes unitários automatizados nativos
+```
+
+### Código Gerado no Projeto
+
+#### `src/models/usuario.kaz`:
 ```kaz
 struct Usuario {
     int id;
     string nome;
-    bool ativo;
+    string email;
+}
+
+function criarUsuario(int id, string nome, string email): Usuario {
+    return Usuario {
+        id: id,
+        nome: nome,
+        email: email
+    };
+}
+
+function formatarUsuario(any u): string {
+    return "[" + u.id + "] " + u.nome + " <" + u.email + ">";
 }
 ```
 
-#### `main.kaz`:
+#### `src/database.kaz`:
 ```kaz
 import "models/usuario.kaz";
 
-function Main() {
-    // Abre banco SQLite em memória ou em arquivo
-    int conn = db.open(":memory:");
-    db.execute(conn, "CREATE TABLE usuarios (id INTEGER PRIMARY KEY, nome TEXT, ativo INTEGER);");
-    db.execute(conn, "INSERT INTO usuarios (nome, ativo) VALUES ('Armando Soares', 1);");
+function inicializarBanco(string caminhoDb): int {
+    fs_mkdir("data");
+    int conn = db_open(caminhoDb);
+    db_execute(conn, "CREATE TABLE IF NOT EXISTS usuarios (id INTEGER PRIMARY KEY AUTOINCREMENT, nome TEXT NOT NULL, email TEXT NOT NULL UNIQUE);");
+    return conn;
+}
 
-    // Consulta SQL e mapeia diretamente para os campos
-    array[any] linhas = db.query(conn, "SELECT id, nome, ativo FROM usuarios;");
-    for (linha in linhas) {
-        string status = (linha.ativo == 1) ? "ATIVO ✔" : "INATIVO ❌";
-        runoff("Usuário [" + linha.id + "]: " + linha.nome + " - " + status);
-    }
+function inserirUsuario(int conn, string nome, string email): int {
+    return db_execute(conn, "INSERT OR IGNORE INTO usuarios (nome, email) VALUES (?, ?);", [nome, email]);
+}
 
-    db.close(conn);
+function listarUsuarios(int conn): array {
+    return db_query(conn, "SELECT id, nome, email FROM usuarios ORDER BY id ASC;");
 }
 ```
 
-Para executar o projeto inteiro:
+#### `src/main.kaz`:
+```kaz
+import "database.kaz";
+import "models/usuario.kaz";
+
+function main() {
+    runoff("============================================");
+    runoff("  🦅 Bem-vindo ao sistema em Kaz!");
+    runoff("============================================");
+
+    string caminhoDb = "data/app.db";
+    int conn = inicializarBanco(caminhoDb);
+
+    inserirUsuario(conn, "Kaz Dev", "dev@kazlang.org");
+    inserirUsuario(conn, "Ada Lovelace", "ada@computing.org");
+
+    array usuarios = listarUsuarios(conn);
+    runoff("-> Total de usuarios: " + len(usuarios));
+
+    for (u in usuarios) {
+        runoff("   " + formatarUsuario(u));
+    }
+
+    db_close(conn);
+}
+```
+
+Para rodar o projeto inteiro:
 ```bash
-kaz meu_sistema/
+kaz run .
+# ou a partir de qualquer pasta:
+kaz meusistema/
 ```
 
 ---
