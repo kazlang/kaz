@@ -190,20 +190,30 @@ Além da Bytecode VM, Kaz incorpora um gerador de código de máquina nativo bas
 
 ---
 
-## 13. Modelo de Gerenciamento de Memória Nativo: ARC & Concorrência
+## 13. Modelo de Gerenciamento de Memória Nativo: ARC Atômico & Concorrência Thread-Safe
 
-Para o runtime JIT e código compilado, Kaz adota **Contagem Automática de Referências (ARC - Automatic Reference Counting)** determinística:
+Para o runtime JIT e código compilado, Kaz adota **Contagem Automática de Referências Atômica (ARC - Automatic Reference Counting)** determinística:
 
 1. **Cabeçalho Padronizado de Objeto (16 bytes):**
-   - Offset `-16`: `ref_count` (contagem de referências ativas).
-   - Offset `-8`: `type_id` (identificador para despacho de destrutor recursivo).
+   - Offset `-16`: `ref_count` gerenciado com `AtomicUsize` (`fetch_add`/`fetch_sub` com ordenação `AcqRel`/`Release`).
+   - Offset `-8`: `type_id` (`u64` para despacho de destrutor recursivo).
    - Offset `0`: Início do payload da struct/dados.
-2. **Salvaguarda de Threading e Não-Atomicidade:**
-   - O contador de referências inicial é otimizado para execução unithread (`usize` não-atômico, eliminando travas e barreiras de memória na CPU).
-   - **Regra:** Nenhuma struct Kaz gerenciada por ARC pode atravessar fronteiras de threads do SO (ex: callbacks assíncronos ou workers em segundo plano) sem isolamento de canal/mensagem (*deep-copy*) até que o runtime introduza contadores atômicos (`AtomicUsize` com `fetch_add`/`fetch_sub`).
+2. **Salvaguarda de Threading e Atomicidade Homologada:**
+   - O contador de referências foi blindado com `AtomicUsize`, permitindo passagem segura e retenção/liberação concorrente entre múltiplas threads do SO sem corrupção ou corrida de dados.
 3. **Regra de Ingestão (Sink Rule) para Coleções:**
-   - Funções que retêm ou persistem ponteiros além da chamada (ex: `array.push(item)`, atribuição a campo de struct `p.filho = outro`, registro em tabelas globais) **emitem `retain` obrigatório** antes de armazenar o endereço.
-4. **Tabela de Destrutores Recursivos (Drop Registry):**
-   - Structs que contêm campos que são referências dinâmicas possuem uma Drop VTable gerada pelo compilador para liberar recursivamente campos filhos antes de devolver a memória do objeto pai.
+   - Funções que retêm ou persistem ponteiros além da chamada (ex: `array.push(item)`, atribuição a campo de struct `p.filho = outro`, registro em tabelas globais) emitem `retain` obrigatório antes de armazenar o endereço.
+4. **Tabela Dinâmica de Destrutores Recursivos (Dynamic Drop Registry):**
+   - Tabela protegida por `RwLock` com crescimento sob demanda que suporta milhares de structs (`type_id` dinâmico sem limite rígido de 256), com liberação recursiva de campos gerenciados (managed offsets).
+
+---
+
+## 14. Compilador Self-Hosted (`compiler/`)
+
+A linguagem Kaz possui seu próprio compilador escrito integralmente em Kaz puro (`compiler/`):
+- **Lexer (`compiler/lexer.kaz`)**: Tokenizador completo sem dependência de geradores externos.
+- **Pratt Parser (`compiler/parser.kaz`)**: Analisador de precedência e árvores sintáticas baseadas em arenas contíguas (`compiler/ast.kaz`).
+- **Bytecode CodeGen (`compiler/codegen.kaz`)**: Emissor de instruções lineares compatíveis com o formato binário e a Stack VM Kaz (`compiler/bytecode.kaz`).
+- **Driver CLI (`compiler/main.kaz`)**: Orquestrador e gerador de disassembly nativo.
+
 
 

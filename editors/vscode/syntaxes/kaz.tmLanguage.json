@@ -124,7 +124,7 @@
             "patterns": [
                 {
                     "name": "storage.type.primitive.kaz",
-                    "match": "\\b(int|float|double|string|char|bool|bol|void|any|array|null)\\b"
+                    "match": "\\b(int|float|double|string|char|bool|bol|void|any|array|map|dict|null)\\b"
                 },
                 {
                     "match": "\\b(array)\\s*(\\[)",
