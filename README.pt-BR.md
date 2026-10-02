@@ -230,6 +230,12 @@ chmod +x uninstall.sh
 kaz programa.kaz
 kaz run programa.kaz
 
+# Compilar para bytecode binário portátil (.kzc)
+kaz compile programa.kaz -o saida.kzc
+
+# Executar bytecode binário compilado diretamente na Stack VM
+kaz run saida.kzc
+
 # Executar suíte de testes unitários nativos
 kaz test
 kaz test testes/

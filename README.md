@@ -231,6 +231,12 @@ chmod +x uninstall.sh
 kaz program.kaz
 kaz run program.kaz
 
+# Compile to portable binary bytecode (.kzc)
+kaz compile program.kaz -o output.kzc
+
+# Execute precompiled binary bytecode directly on the Stack VM
+kaz run output.kzc
+
 # Run the native unit test suite
 kaz test
 kaz test tests/

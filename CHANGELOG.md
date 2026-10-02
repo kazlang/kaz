@@ -7,6 +7,25 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ---
 
+## [1.2.0] - 2026-10-02
+
+### 🚀 Adicionado
+- **Compilação e Execução de Bytecode Serializado (`.kzc`)**:
+  - Novo comando `kaz compile arquivo.kaz -o saida.kzc` para gerar binários portáteis de bytecode compactos e autocontidos.
+  - O comando `kaz run arquivo.kzc` detecta o cabeçalho mágico `KAZC` e despacha para a VM com inicialização instantânea sub-milissegundo.
+  - Implementação de serialização e deserialização contígua de OpCodes e tabela de constantes em `src/vm/chunk.rs`.
+- **Compilador Self-Hosted (Etapa 2 do Bootstrap)**:
+  - Implementação do compilador auto-hospedado em `compiler/` puramente em Kaz (Lexer, Pratt Parser, Codegen e Bytecode Serializer).
+  - Capacidade da linguagem Kaz de compilar programas e emitir arquivos binários `.kzc` diretamente.
+- **Novas Funções Nativas de Conversão**:
+  - `to_char_code(ch)` e `ord(ch)` registradas no runtime e compilador da VM.
+
+### 🐛 Corrigido
+- **Ambiguidade de Tipos na Gramática Pest (`src/grammar.pest`)**:
+  - Adicionado delimitador atômico (`!(ASCII_ALPHANUMERIC | "_")`) para tipos primitivos (`int`, `char`, `float`, etc.), arrays e maps, prevenindo que atribuições iniciadas por prefixos de tipos (como `char_idx = ...`) fossem desambiguadas como declarações inválidas.
+
+---
+
 ## [1.1.0] - 2026-09-25
 
 ### 🚀 Adicionado
