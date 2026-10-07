@@ -362,6 +362,7 @@ Para aprofundar-se em cada aspecto da linguagem, consulte os manuais especializa
 - 📚 **[Referência da Biblioteca Padrão (Stdlib)](docs/STDLIB.md)**: Catálogo com todas as funções nativas de E/S, matemática, strings, SQLite, JSON e rede.
 - 🖥️ **[Manual da CLI e Kaz Terminal](docs/CLI_GUIDE.md)**: Comandos de terminal, flags de execução e recursos do shell interativo.
 - 🏛️ **[Arquitetura Interna do Compilador e VM](docs/ARCHITECTURE.md)**: Detalhes do pipeline de compilação, Pratt parser, opcodes e motor de despacho da VM.
+- 🦅 **[Milestone 3: Relatório do Compilador Self-Hosted](docs/RELATORIO_MILESTONE_3_SELF_HOSTED.md)**: Detalhamento técnico, verificação de bootstrap e guia Windows.
 
 ---
 

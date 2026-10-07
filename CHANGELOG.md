@@ -7,6 +7,29 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ---
 
+## [1.3.0] - 2026-10-06
+
+### 🚀 Adicionado & Concluído (Milestone 3 - Self-Hosting Completo)
+- **Compilador Self-Hosted Totalmente Operacional (`kazc.kzc`)**:
+  - Compilação do compilador Kaz escrito puramente em Kaz (`compiler/*.kaz`), gerando o binário `kazc.kzc` (103.277 bytes, 84 funções de usuário).
+  - Execução bem-sucedida da **Compilação Triangular (Milestone 3.4)**: `kazc.kzc compiler/main.kaz kazc_v2.kzc`.
+  - Validação bit a bit: `sha256sum kazc.kzc kazc_v2.kzc` idêntico (`06cd8e2ce981ace55927ed8ad6fcd05528713da5618a708fdbbd5b8a8bb99750`).
+- **Serialização Completa de Funções de Usuário em Bytecode `.kzc`**:
+  - Extensão do formato binário `.kzc` com `serialize_program_to_bytes` e `deserialize_program_from_bytes` em Rust e em Kaz (`program_serialize_bytes`).
+  - Suporte a inspeção e desmontagem direta de arquivos `.kzc` pelo comando `kaz debug arquivo.kzc`.
+- **Otimização O(1) de Arenas e OpCodes de Acesso Rápido**:
+  - Novos opcodes de alto desempenho: `PushLocal`, `PushGlobal`, `GetIndexLocal`, `GetIndexGlobal`, `GetFieldLocal`, `GetFieldGlobal`, `SetNested` e `DupNested`.
+
+### 🐛 Corrigido
+- **Dessincronização de Pilha por Literais Booleanos no Codegen**:
+  - Implementação de `chunk_add_bool`, `chunk_find_bool` e suporte nativo a `LiteralBool`, `LiteralNull` e `LiteralChar` no `codegen.kaz` e `bytecode.kaz`, corrigindo desempilhamento indevido no `continue`.
+- **Passagem de Array por Valor em Atribuições Aninhadas**:
+  - Desacoplamento do acumulador de caminho em `parser_extract_assign_path` para o vetor global `g_assign_path`, corrigindo corrupção de variáveis de estado no `parser.kaz`.
+- **Desacoplamento de Estado do Pratt Parser**:
+  - Eliminação de cópias de structs pesadas por valor na recursão do parser, reduzindo tempo de compilação em 99%.
+
+---
+
 ## [1.2.0] - 2026-10-02
 
 ### 🚀 Adicionado
