@@ -113,21 +113,32 @@ kaz ast programa.kaz
 
 ---
 
-## 4. Compilação de Binários Autônomos (`kaz build`) 📦
+## 4. Compilação de Binários Nativos Autônomos (`kaz build`) 📦
 
-Kaz é capaz de compilar e empacotar scripts e projetos em **executáveis nativos autônomos** com **zero dependências externas**:
+Kaz possui um compilador nativo AOT (Ahead-of-Time) de alta performance que traduz o código diretamente para **código de máquina x86-64 estático**, gerando binários ELF64 autônomos sem necessidade de máquinas virtuais, libc ou runtimes intermediários:
 
-### A. Gerar Executável Autônomo (.exe no Windows, ELF no Linux)
+### A. Compilação Nativa AOT Direta (Padrão)
+Compila o programa Kaz diretamente para assembly x86-64, montando com NASM e linkando com GNU LD em um binário executável estático (~10 KB):
 ```bash
-kaz build main.kaz -o meu_app.exe
-# Executa diretamente em qualquer máquina sem precisar do runtime instalado:
-.\meu_app.exe
+kaz build main.kaz -o meu_app
+# Executa diretamente em bare-metal com inicialização instantânea:
+./meu_app
 ```
 
-### B. Gerar Arquivo de Objeto Nativo (.obj no Windows, .o no Linux)
-Gera arquivos de código de máquina compilados diretamente pelo Cranelift para integração com linkers externos como MSVC link.exe ou GNU ld:
+Opções suportadas:
+* `--native` / `-n`: Força explicitamente a compilação nativa AOT pura (comportamento padrão).
+* `-o <saida>`: Define o nome ou caminho do binário de saída gerado.
+
+### B. Modo Empacotado (Bundle com Runtime)
+Caso deseje empacotar todo o runtime padrão da linguagem em um arquivo único:
 ```bash
-kaz build main.kaz --emit-obj -o main.obj
+kaz build main.kaz --bundle -o meu_app
+```
+
+### C. Gerar Arquivo de Objeto Nativo (.obj no Windows, .o no Linux)
+Gera arquivos de código de máquina compilados diretamente para integração com linkers externos:
+```bash
+kaz build main.kaz --emit-obj -o main.o
 ```
 
 ---

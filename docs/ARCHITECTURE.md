@@ -214,6 +214,67 @@ A linguagem Kaz possui seu próprio compilador escrito integralmente em Kaz puro
 - **Pratt Parser (`compiler/parser.kaz`)**: Analisador de precedência e árvores sintáticas baseadas em arenas contíguas (`compiler/ast.kaz`).
 - **Bytecode CodeGen (`compiler/codegen.kaz`)**: Emissor de instruções lineares compatíveis com o formato binário e a Stack VM Kaz (`compiler/bytecode.kaz`).
 - **Driver CLI (`compiler/main.kaz`)**: Orquestrador e gerador de disassembly nativo.
+---
 
+## 15. Arquitetura do Compilador Nativo AOT x86-64 (`src/aot/`) ⚙️
 
+O subsistema AOT do Kaz traduz código Kaz para **código de máquina nativo x86-64 autônomo**, gerando binários estáticos ELF64 com zero dependências de libc ou VM:
+
+```
+  ┌───────────────────────────────────────────────────────────┐
+  │                 Código-Fonte Kaz (.kaz)                   │
+  └─────────────────────────────┬─────────────────────────────┘
+                                │
+                                ▼
+  ┌───────────────────────────────────────────────────────────┐
+  │       Frontend Kaz (AST & Compilador de Bytecode)         │
+  └─────────────────────────────┬─────────────────────────────┘
+                                │
+                                ▼
+  ┌───────────────────────────────────────────────────────────┐
+  │         Backend AOT Nativo (`src/aot/mod.rs`)             │
+  │   - Inferência estática de tipos via pilha abstrata       │
+  │   - Mapeamento direto de registradores e slots RBP        │
+  │   - Emissão de Assembly x86-64 limpo (sintaxe Intel)      │
+  └─────────────────────────────┬─────────────────────────────┘
+                                │
+                                ▼
+  ┌───────────────────────────────────────────────────────────┐
+  │                 NASM Assembler (elf64)                    │
+  └─────────────────────────────┬─────────────────────────────┘
+                                │
+                                ▼
+  ┌───────────────────────────────────────────────────────────┐
+  │               GNU LD (Linker Estático ELF64)              │
+  └─────────────────────────────┬─────────────────────────────┘
+                                │
+                                ▼
+  ┌───────────────────────────────────────────────────────────┐
+  │        Executável Nativo Autônomo (~10-12 KB)             │
+  │   - Syscalls Linux diretas (sys_write, sys_exit)          │
+  │   - Bump Allocator de Heap integrado (kaz_alloc)          │
+  │   - Zero dependências de runtime ou interpretadores       │
+  └───────────────────────────────────────────────────────────┘
+```
+
+### Layout de Memória e Estruturas no Heap Nativo:
+1. **Arena de Heap (`kaz_alloc`)**:
+   - Alocador contíguo *bump allocator* em `.bss` com alinhamento rigoroso a 8 bytes.
+2. **Structs**:
+   - `Offset 0`: Quantidade de campos (`field_count`).
+   - `Offset 8`: Ponteiro para string com nome da struct.
+   - `Offset 16 + i*16`: Chave do campo (`key_ptr`).
+   - `Offset 24 + i*16`: Valor do campo (`val_qword`).
+3. **Arrays**:
+   - `Offset 0`: Comprimento (`len`).
+   - `Offset 8`: Capacidade (`cap`).
+   - `Offset 16 + i*8`: Elementos contíguos de 64 bits.
+4. **Enums (Tagged Unions com Payloads)**:
+   - `Offset 0`: Ponteiro para nome do enum (`enum_name`).
+   - `Offset 8`: Ponteiro para nome da variante (`variant_name`).
+   - `Offset 16`: Quantidade de campos de dados (`payload_count`).
+   - `Offset 24 + p*8`: Valores dos payloads ordenados.
+5. **Strings & Concatenação**:
+   - Literais estáticos são emitidos como bytes UTF-8 terminados em nulo na seção `.rodata`.
+   - Concatenação dinâmica (`kaz_str_concat`) aloca o buffer total no heap e realiza cópia sequencial preservando terminação nula.
 

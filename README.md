@@ -6,8 +6,8 @@
 </p>
 
 <p align="center">
-    <a href="https://github.com/armandosds/Kaz"><img src="https://img.shields.io/badge/version-1.1.0-blue.svg" alt="Version"></a>
-    <a href="CHANGELOG.md"><img src="https://img.shields.io/badge/changelog-v1.1.0-informational.svg" alt="Changelog"></a>
+    <a href="https://github.com/armandosds/Kaz"><img src="https://img.shields.io/badge/version-1.4.0-blue.svg" alt="Version"></a>
+    <a href="CHANGELOG.md"><img src="https://img.shields.io/badge/changelog-v1.4.0-informational.svg" alt="Changelog"></a>
     <a href="LICENSE"><img src="https://img.shields.io/badge/License-Proprietary-red.svg" alt="License: Proprietary"></a>
     <img src="https://img.shields.io/badge/build-passing-brightgreen.svg" alt="Build Status">
     <img src="https://img.shields.io/badge/Engine-Stack%20Bytecode%20VM-purple.svg" alt="Engine: Bytecode VM">
@@ -42,7 +42,7 @@ Built from scratch with a **Stack-based Bytecode Virtual Machine (Stack VM)**, K
 - 🔢 **Bitwise Operators & Hex/Bin/Null Literals**: Low-level bitwise operations (`&`, `|`, `^`, `~`, `<<`, `>>`), compound assignments (`&=`, `|=`, `^=`, `<<=`, `>>=`), hexadecimal (`0x...`), binary (`0b...`), and `null` literals.
 - 📚 **The 4 Fundamental Pillars of the Stdlib**: Absolute math (`abs`, `floor`, `ceil`, `round`, `min`, `max`, `sqrt`, `pow`), array slicing & manipulation (`slice`, `join`, `size()`, negative indices), text transformations (`trim`, `toUpperCase`, `toLowerCase`, `replace`), and search/filtering (`indexOf`, `find`, `includes`, `contains`, `startsWith`, `endsWith`).
 - ✍️ **camelCase Standard & runoff() Output**: Canonical language conventions (`camelCase` for functions and variables, `PascalCase` for structs/enums) and official output via `runoff(...)`.
-- 🚀 **Native Cranelift JIT & AOT Compiler (`kaz jit` / `kaz build`)**: Direct machine code generation for x86_64, reaching **~1.9x Native Rust (-O3)** parity on Linux and **~2.5x** on Windows, outperforming dynamic interpreters like Python 3.14 by up to **39x**.
+- 🚀 **Native AOT Compiler (`kaz build`) & Cranelift JIT (`kaz jit`)**: Direct x86-64 machine code generation producing compact, standalone ELF64 binaries (~10 KB) with zero runtime dependencies, and JIT reaching **~1.9x Native Rust (-O3)** parity on Linux and **~2.5x** on Windows, outperforming dynamic interpreters like Python 3.14 by up to **39x**.
 - 🧠 **Native Memory Architecture (ARC + Slab Free-List)**: Bump Arena allocation and instant struct recycling in L1 cache via segmented Free-Lists, eliminating garbage collection pauses and `malloc` overhead.
 - ⚡ **Direct CPU Intrinsics**: High-frequency mathematical functions (such as `math.sqrt`) emit hardware FPU instructions (`sqrtsd`) directly with zero FFI overhead.
 - 📁 **Folder-Based Modular Projects (`import`)**: Build structured applications with subfolders (`models/`, `db/`, `services/`) and relative imports. Run an entire multi-file project with a single command: `kaz my_project/`.
@@ -396,7 +396,7 @@ Construída do zero com uma **Máquina Virtual de Bytecode baseada em Pilha (Sta
 - 🔢 **Operadores Bitwise & Literais Hex/Bin/Null**: Operações de baixo nível (`&`, `|`, `^`, `~`, `<<`, `>>`), atribuições compostas (`&=`, `|=`, `^=`, `<<=`, `>>=`), literais hexadecimais (`0x...`), binários (`0b...`) e literal `null`.
 - 📚 **4 Pilares Fundamentais da Stdlib**: Matemática absoluta (`abs`, `floor`, `ceil`, `round`, `min`, `max`, `sqrt`, `pow`), fatiamento e manipulação de arrays (`slice`, `join`, `size()`, índices negativos), transformações de texto (`trim`, `toUpperCase`, `toLowerCase`, `replace`) e busca/filtro (`indexOf`, `find`, `includes`, `contains`, `startsWith`, `endsWith`).
 - ✍️ **Convenção camelCase & Saída runoff()**: Padronização canônica da linguagem (`camelCase` para funções e variáveis, `PascalCase` para enums/structs) e saída oficial `runoff(...)`.
-- 🚀 **Compilador Nativo Cranelift JIT & AOT (`kaz jit` / `kaz build`)**: Compilação direta para código de máquina x86_64, alcançando paridade de **~1,9x do Rust Nativo (-O3)** no Linux e **~2,5x** no Windows, superando interpretadores em até **39x**.
+- 🚀 **Compilador Nativo AOT Direto (`kaz build`) & JIT (`kaz jit`)**: Geração direta de código de máquina x86-64 produzindo executáveis ELF64 estáticos e autônomos (~10 KB) com zero dependências de runtime, e JIT alcançando paridade de **~1,9x do Rust Nativo (-O3)** no Linux e **~2,5x** no Windows, superando interpretadores em até **39x**.
 - 🧠 **Gerenciamento de Memória Nativo (ARC + Slab Free-List)**: Alocação com Bump Arena e reciclagem instantânea de structs em cache L1 através de Free-List segmentada, eliminando pausas de Garbage Collector e sobrecarga de `malloc`.
 - ⚡ **Intrínsecos de CPU**: Funções matemáticas de alta frequência (como `math.sqrt`) emitem diretamente a instrução de hardware da FPU (`sqrtsd`) sem overhead de FFI.
 - 📁 **Projetos Estruturados em Pastas (`import`)**: Crie softwares modulares com subpastas (`models/`, `db/`, `services/`) e caminhos relativos. Execute a aplicação inteira com um único comando: `kaz meu_projeto/`.

@@ -7,6 +7,25 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ---
 
+## [1.4.0] - 2026-10-12
+
+### 🚀 Adicionado & Concluído (Milestone 4 - Compilador Nativo AOT x86-64 Completo)
+- **Compilador Nativo AOT Direto (`kaz build`)**:
+  - O comando `kaz build <arquivo.kaz> [-o saida]` agora compila diretamente programas Kaz para binários executáveis **ELF64 x86-64 estáticos, puros e autônomos (~10 KB)** com montagem via NASM e linkagem via GNU LD.
+  - Binários gerados rodam diretamente em bare-metal com **zero dependências** de runtime, libc ou máquinas virtuais intermediárias.
+  - Módulo nativo implementado em Rust puro em [`src/aot/mod.rs`](file:///home/armando/Projetos/kaz/src/aot/mod.rs) e utilitário autônomo em [`tools/kazaot.py`](file:///home/armando/Projetos/kaz/tools/kazaot.py).
+- **Suporte Abrangente a Toda a Linguagem Kaz no Backend Nativo**:
+  - **Aritmética, Variáveis & Controle**: Operações de 64 bits (`Add`, `Sub`, `Mul`, `Div`, `Mod`), comparações relacionais e condicionais, laços `while` e variáveis locais indexadas em pilha de hardware `[rbp - 8*(slot+1)]`.
+  - **Funções de Usuário & Recursão Profunda**: Convenção de chamada nativa com prólogo/epílogo `rbp/rsp` e passagem de parâmetros em pilha. Fibonacci recursivo (`fib(25) = 75025`) executa em apenas **4ms** (55x mais rápido que na Stack VM).
+  - **Structs no Heap**: Alocação via Bump Allocator (`kaz_alloc`), inicialização de campos com `BuildStruct`, leitura com `GetField` via `kaz_strcmp` e mutação de campos aninhados com `SetNested`.
+  - **Arrays Nativos**: Alocação de arrays dinâmicos no heap com cabeçalhos de tamanho e capacidade (`BuildArray`), indexação direta SIB scale `*8` (`GetIndexLocal`, `GetIndexGlobal`, `GetIndex`) e mutação (`SetIndex`).
+  - **Strings & Concatenação Nativas**: Mapeamento de literais terminados em nulo na seção `.rodata`, rotina de concatenação em hardware (`kaz_str_concat`) com inferência estática de tipos de operandos e impressão formatada via chamadas diretas de sistema `sys_write` (`kaz_builtin_print_str`, `kaz_builtin_print_cstr`).
+  - **Enums com Dados & Pattern Matching**: Alocação contígua de variantes com múltiplos payloads (`BuildEnum`), checagem condicional com `CheckEnum` e desestruturação tipada com `GetEnumField`.
+- **Suíte de Testes Nativos AOT**:
+  - Testes unitários cobrindo todo o pipeline em `tests/test_aot_*.kaz` (simples, loops, fibonacci recursivo, structs, arrays, strings e enums com pattern matching) validados com 100% de sucesso.
+
+---
+
 ## [1.3.0] - 2026-10-06
 
 ### 🚀 Adicionado & Concluído (Milestone 3 - Self-Hosting Completo)

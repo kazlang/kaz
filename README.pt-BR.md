@@ -6,8 +6,8 @@
 </p>
 
 <p align="center">
-    <a href="https://github.com/armandosds/Kaz"><img src="https://img.shields.io/badge/versão-1.1.0-blue.svg" alt="Versão"></a>
-    <a href="CHANGELOG.md"><img src="https://img.shields.io/badge/changelog-v1.1.0-informational.svg" alt="Changelog"></a>
+    <a href="https://github.com/armandosds/Kaz"><img src="https://img.shields.io/badge/versão-1.4.0-blue.svg" alt="Versão"></a>
+    <a href="CHANGELOG.md"><img src="https://img.shields.io/badge/changelog-v1.4.0-informational.svg" alt="Changelog"></a>
     <a href="LICENSE"><img src="https://img.shields.io/badge/Licença-Proprietária-red.svg" alt="Licença: Proprietária"></a>
     <img src="https://img.shields.io/badge/build-passando-brightgreen.svg" alt="Status da Build">
     <img src="https://img.shields.io/badge/Motor-Stack%20Bytecode%20VM-purple.svg" alt="Motor: Bytecode VM">
@@ -41,7 +41,7 @@ Construída do zero com uma **Máquina Virtual de Bytecode baseada em Pilha (Sta
 - 🔢 **Operadores Bitwise & Literais Hex/Bin/Null**: Operações de baixo nível (`&`, `|`, `^`, `~`, `<<`, `>>`), atribuições compostas (`&=`, `|=`, `^=`, `<<=`, `>>=`), literais hexadecimais (`0x...`), binários (`0b...`) e literal `null`.
 - 📚 **4 Pilares Fundamentais da Stdlib**: Matemática absoluta (`abs`, `floor`, `ceil`, `round`, `min`, `max`, `sqrt`, `pow`), fatiamento e manipulação de arrays (`slice`, `join`, `size()`, índices negativos), transformações de texto (`trim`, `toUpperCase`, `toLowerCase`, `replace`) e busca/filtro (`indexOf`, `find`, `includes`, `contains`, `startsWith`, `endsWith`).
 - ✍️ **Convenção camelCase & Saída runoff()**: Padronização canônica da linguagem (`camelCase` para funções e variáveis, `PascalCase` para enums/structs) e saída oficial `runoff(...)`.
-- 🚀 **Compilador Nativo Cranelift JIT & AOT (`kaz jit` / `kaz build`)**: Compilação direta para código de máquina x86_64, alcançando paridade de **~1,9x do Rust Nativo (-O3)** no Linux e **~2,5x** no Windows, superando interpretadores em até **39x**.
+- 🚀 **Compilador Nativo AOT Direto (`kaz build`) & JIT (`kaz jit`)**: Geração direta de código de máquina x86-64 produzindo executáveis ELF64 estáticos e autônomos (~10 KB) com zero dependências de runtime, e JIT alcançando paridade de **~1,9x do Rust Nativo (-O3)** no Linux e **~2,5x** no Windows, superando interpretadores em até **39x**.
 - 🧠 **Gerenciamento de Memória Nativo (ARC + Slab Free-List)**: Alocação com Bump Arena e reciclagem instantânea de structs em cache L1 através de Free-List segmentada, eliminando pausas de Garbage Collector e sobrecarga de `malloc`.
 - ⚡ **Intrínsecos de CPU**: Funções matemáticas de alta frequência (como `math.sqrt`) emitem diretamente a instrução de hardware da FPU (`sqrtsd`) sem overhead de FFI.
 - 📁 **Projetos Estruturados em Pastas (`import`)**: Crie softwares modulares com subpastas (`models/`, `db/`, `services/`) e caminhos relativos. Execute a aplicação inteira com um único comando: `kaz meu_projeto/`.
