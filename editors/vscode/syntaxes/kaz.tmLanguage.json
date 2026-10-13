@@ -143,19 +143,19 @@
             "patterns": [
                 {
                     "name": "support.function.builtin.io.kaz",
-                    "match": "\\b(runoff|println|print|input|read_line|assert)\\b"
+                    "match": "\\b(runoff|println|print|input|input_int|read_line|argv|argv_int|args_len|assert)\\b"
                 },
                 {
                     "name": "support.function.builtin.convert.kaz",
-                    "match": "\\b(to_int|to_float|to_string|to_bool|type_of)\\b"
+                    "match": "\\b(to_int|to_float|to_string|to_bool|type_of|to_char|chr|to_char_code|ord|map_new)\\b"
                 },
                 {
                     "name": "support.function.builtin.system.kaz",
-                    "match": "\\b(time_now|time_now_ms|time_now_secs|sleep|sleep_ms)\\b"
+                    "match": "\\b(time_now|time_now_us|time_now_ms|time_now_secs|sleep|sleep_ms)\\b"
                 },
                 {
                     "name": "support.function.builtin.fs.kaz",
-                    "match": "\\b(file_read|file_write|file_append|file_exists|file_delete)\\b"
+                    "match": "\\b(file_read|file_write|file_append|file_exists|file_delete|file_read_bytes|file_write_bytes)\\b"
                 },
                 {
                     "name": "support.function.db.kaz",
@@ -167,15 +167,35 @@
                 },
                 {
                     "name": "support.function.fs.kaz",
-                    "match": "\\b(fs_mkdir|fs_read|fs_write|fs_append|fs_exists|fs_remove|fs_read_dir|fs_copy|fs_size)\\b"
+                    "match": "\\b(fs_mkdir|fs_read|fs_write|fs_append|fs_exists|fs_remove|fs_read_dir|fs_copy|fs_size|fs_read_bytes|fs_write_bytes)\\b"
                 },
                 {
                     "name": "support.function.net.kaz",
                     "match": "\\b(net_ping|net_http_get|net_http_post|net_tcp_send)\\b"
                 },
                 {
+                    "name": "support.function.crypto.kaz",
+                    "match": "\\b(crypto_sha256|crypto_md5|crypto_base64_encode|crypto_base64_decode)\\b"
+                },
+                {
+                    "name": "support.function.regex.kaz",
+                    "match": "\\b(regex_is_match|regex_find|regex_replace)\\b"
+                },
+                {
+                    "name": "support.function.hook.kaz",
+                    "match": "\\b(hook_register|hook_has|hook_list|hook_clear)\\b"
+                },
+                {
+                    "name": "support.function.builtin.string.kaz",
+                    "match": "\\b(str_len|str_upper|str_lower|str_trim|str_split|str_replace|str_substring|str_slice|str_contains|str_index_of|str_char_at|str_starts_with|str_ends_with)\\b"
+                },
+                {
+                    "name": "support.function.builtin.array.kaz",
+                    "match": "\\b(arr_len|arr_push|arr_pop|arr_insert|arr_remove|arr_join|arr_contains|arr_reverse|arr_slice|arr_index_of)\\b"
+                },
+                {
                     "name": "support.class.namespace.kaz",
-                    "match": "\\b(math|net|db|json|crypto|regex|fs)\\b(?=\\.)"
+                    "match": "\\b(math|net|db|json|crypto|regex|fs|hook)\\b(?=\\.)"
                 },
                 {
                     "name": "support.function.math.kaz",
@@ -203,7 +223,7 @@
                 },
                 {
                     "name": "support.function.fs.kaz",
-                    "match": "(?<=\\bfs\\.)(mkdir|read_dir|remove|copy|size|read|write|append|exists)\\b"
+                    "match": "(?<=\\bfs\\.)(mkdir|read_dir|remove|copy|size|read|write|append|exists|read_bytes|write_bytes)\\b"
                 },
                 {
                     "name": "support.function.method.kaz",
