@@ -7,7 +7,7 @@ $ErrorActionPreference = "Stop"
 
 Write-Host "========================================================" -ForegroundColor Cyan
 Write-Host "     Instalador Oficial da Linguagem Kaz                " -ForegroundColor Cyan
-Write-Host "                 Versao 1.1.0                           " -ForegroundColor Cyan
+Write-Host "                 Versao 1.4.0                           " -ForegroundColor Cyan
 Write-Host "========================================================" -ForegroundColor Cyan
 Write-Host ""
 
@@ -22,9 +22,7 @@ $kazExe = $null
 
 $candidates = @(
     (Join-Path $scriptDir "bin\kaz.exe"),
-    (Join-Path $scriptDir "kaz.exe"),
-    (Join-Path $scriptDir "target\release\kaz.exe"),
-    (Join-Path $scriptDir "target\debug\kaz.exe")
+    (Join-Path $scriptDir "kaz.exe")
 )
 
 foreach ($c in $candidates) {
@@ -38,7 +36,7 @@ foreach ($c in $candidates) {
 if (-not $kazExe) {
     $cargoToml = Join-Path $scriptDir "Cargo.toml"
     if (Test-Path $cargoToml) {
-        Write-Host "Ambiente de desenvolvimento detectado. Compilando via cargo..." -ForegroundColor Yellow
+        Write-Host "Ambiente com código-fonte detectado. Verificando compilação via cargo..." -ForegroundColor Yellow
         if (Get-Command cargo -ErrorAction SilentlyContinue) {
             Push-Location $scriptDir
             cargo build --release
@@ -47,6 +45,19 @@ if (-not $kazExe) {
             if (Test-Path $releaseExe) {
                 $kazExe = $releaseExe
             }
+        }
+    }
+}
+
+if (-not $kazExe) {
+    $targetCandidates = @(
+        (Join-Path $scriptDir "target\release\kaz.exe"),
+        (Join-Path $scriptDir "target\debug\kaz.exe")
+    )
+    foreach ($c in $targetCandidates) {
+        if (Test-Path $c) {
+            $kazExe = $c
+            break
         }
     }
 }

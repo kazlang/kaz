@@ -4,7 +4,7 @@
 # ============================================================================
 
 param (
-    [string]$Version = "1.1.2",
+    [string]$Version = "1.4.0",
     [string]$Publisher = "Kaz-Language"
 )
 

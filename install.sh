@@ -8,29 +8,31 @@ set -e
 
 echo "========================================================"
 echo "     Instalador Oficial da Linguagem Kaz                "
-echo "                 Versao 1.1.0                           "
+echo "                 Versao 1.4.0                           "
 echo "========================================================"
 echo ""
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 KAZ_BIN=""
 
-# 1. Localizar executavel pre-compilado
+# 1. Localizar executavel pre-compilado ou compilar no ambiente de desenvolvimento
 if [ -f "${SCRIPT_DIR}/bin/kaz" ]; then
     KAZ_BIN="${SCRIPT_DIR}/bin/kaz"
 elif [ -f "${SCRIPT_DIR}/kaz" ]; then
     KAZ_BIN="${SCRIPT_DIR}/kaz"
-elif [ -f "${SCRIPT_DIR}/target/release/kaz" ]; then
-    KAZ_BIN="${SCRIPT_DIR}/target/release/kaz"
 elif [ -f "${SCRIPT_DIR}/Cargo.toml" ]; then
-    echo "Ambiente de desenvolvimento detectado. Compilando com cargo..."
+    echo "Ambiente com código-fonte detectado. Verificando compilação..."
     if command -v cargo >/dev/null 2>&1; then
         (cd "${SCRIPT_DIR}" && cargo build --release)
+        KAZ_BIN="${SCRIPT_DIR}/target/release/kaz"
+    elif [ -f "${SCRIPT_DIR}/target/release/kaz" ]; then
         KAZ_BIN="${SCRIPT_DIR}/target/release/kaz"
     else
         echo "ERRO: O compilador 'cargo' nao foi encontrado no sistema."
         exit 1
     fi
+elif [ -f "${SCRIPT_DIR}/target/release/kaz" ]; then
+    KAZ_BIN="${SCRIPT_DIR}/target/release/kaz"
 fi
 
 if [ -z "${KAZ_BIN}" ] || [ ! -f "${KAZ_BIN}" ]; then
