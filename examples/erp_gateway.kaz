@@ -1,0 +1,175 @@
+// ==============================================================================
+// 🦅 Kaz ERP Gateway - Microserviço Local de Alta Performance
+// Consulta de CEP & CNPJ com Cache Persistente em SQLite Nativo
+// Ideal para ERPs (C#, Delphi, Desktop, Web) com resposta em sub-milissegundos
+// ==============================================================================
+
+function extrair_path(string req): string {
+    // Exemplo: GET /cep/01001000 HTTP/1.1
+    int espaco1 = str_index_of(req, " ");
+    if (espaco1 < 0) { return "/"; }
+    string resto = str_substring(req, espaco1 + 1, str_len(req));
+    int espaco2 = str_index_of(resto, " ");
+    if (espaco2 < 0) { return resto; }
+    return str_substring(resto, 0, espaco2);
+}
+
+function limpar_documento(string doc): string {
+    string limpo = "";
+    int i = 0;
+    while (i < doc.len) {
+        string ch = str_substring(doc, i, i + 1);
+        if (ch != "." && ch != "/" && ch != "-" && ch != " ") {
+            limpo = limpo + ch;
+        }
+        i = i + 1;
+    }
+    return limpo;
+}
+
+function limpar_json(string raw): string {
+    int idx1 = str_index_of(raw, "{");
+    if (idx1 < 0) { return raw; }
+    string s = str_substring(raw, idx1, str_len(raw));
+    int i = str_len(s) - 1;
+    while (i > 0) {
+        if (str_substring(s, i, i + 1) == "}") {
+            return str_substring(s, 0, i + 1);
+        }
+        i = i - 1;
+    }
+    return s;
+}
+
+function responder_http(int client, int status_code, string content_type, string body) {
+    string status_texto = status_code == 200 ? "OK" : "Not Found";
+    string cabecalho = "HTTP/1.1 " + to_string(status_code) + " " + status_texto + "\r\n";
+    cabecalho = cabecalho + "Content-Type: " + content_type + "\r\n";
+    cabecalho = cabecalho + "Access-Control-Allow-Origin: *\r\n";
+    cabecalho = cabecalho + "Access-Control-Allow-Methods: GET, OPTIONS\r\n";
+    cabecalho = cabecalho + "Connection: close\r\n\r\n";
+    
+    net_write(client, cabecalho + body);
+}
+
+function main() {
+    println("======================================================================");
+    println("     🦅 KAZ ERP GATEWAY - CONSULTA DE CEP & CNPJ COM CACHE SQLITE     ");
+    println("======================================================================");
+
+    // 1. Inicializa o Banco de Dados SQLite Local
+    int db = db_open("erp_cache.db");
+    db_execute(db, "CREATE TABLE IF NOT EXISTS ceps (cep TEXT PRIMARY KEY, json TEXT, criado_em DATETIME DEFAULT CURRENT_TIMESTAMP);");
+    db_execute(db, "CREATE TABLE IF NOT EXISTS cnpjs (cnpj TEXT PRIMARY KEY, json TEXT, criado_em DATETIME DEFAULT CURRENT_TIMESTAMP);");
+    println("[+] Banco de dados SQLite 'erp_cache.db' sincronizado com sucesso.");
+
+    // 2. Inicia o Servidor TCP na porta 5000
+    int porta = 5000;
+    int server = net_listen(porta);
+    println("[+] Servidor HTTP ativo em: http://127.0.0.1:" + to_string(porta));
+    println("[+] Rotas disponíveis:");
+    println("    - GET /cep/{numero}    -> Ex: http://localhost:5000/cep/01001000");
+    println("    - GET /cnpj/{numero}   -> Ex: http://localhost:5000/cnpj/27865757000102");
+    println("    - GET /stats           -> Estatísticas de cache no SQLite");
+    println("    - GET /                -> Dashboard Web embutido");
+    println("----------------------------------------------------------------------");
+    println("Aguardando requisições do ERP (C# / Delphi / Web)... (Ctrl+C para parar)");
+
+    while (true) {
+        int client = net_accept(server);
+        if (client < 0) {
+            continue;
+        }
+
+        string raw_req = net_read(client);
+        if (raw_req.len == 0) {
+            net_close(client);
+            continue;
+        }
+
+        string path = extrair_path(raw_req);
+
+        // ROTA 1: Consulta de CEP (/cep/{numero})
+        if (str_starts_with(path, "/cep/")) {
+            string raw_cep = str_substring(path, 5, str_len(path));
+            string cep = limpar_documento(raw_cep);
+
+            // Verifica Cache no SQLite
+            array[map] rows = db_query(db, "SELECT json FROM ceps WHERE cep = '" + cep + "';");
+            if (rows.len > 0) {
+                println("  [⚡ CACHE HIT SQLite] CEP " + cep + " servido em sub-milissegundo!");
+                var row = rows[0];
+                responder_http(client, 200, "application/json; charset=utf-8", row.json);
+            } else {
+                println("  [🌐 CACHE MISS] Buscando CEP " + cep + " na API remota...");
+                string url = "http://viacep.com.br/ws/" + cep + "/json/";
+                string raw_resp = net_http_get(url);
+                string json_resp = limpar_json(raw_resp);
+                if (json_resp.len > 0 && str_starts_with(json_resp, "{")) {
+                    db_execute(db, "INSERT OR REPLACE INTO ceps (cep, json) VALUES ('" + cep + "', '" + json_resp + "');");
+                    println("  [💾 SALVO NO SQLITE] CEP " + cep + " armazenado para as próximas consultas.");
+                    responder_http(client, 200, "application/json; charset=utf-8", json_resp);
+                } else {
+                    responder_http(client, 404, "application/json", "{\"erro\": true, \"mensagem\": \"CEP nao localizado\"}");
+                }
+            }
+        }
+        // ROTA 2: Consulta de CNPJ (/cnpj/{numero})
+        else if (str_starts_with(path, "/cnpj/")) {
+            string raw_cnpj = str_substring(path, 6, str_len(path));
+            string cnpj = limpar_documento(raw_cnpj);
+
+            // Verifica Cache no SQLite
+            array[map] rows = db_query(db, "SELECT json FROM cnpjs WHERE cnpj = '" + cnpj + "';");
+            if (rows.len > 0) {
+                println("  [⚡ CACHE HIT SQLite] CNPJ " + cnpj + " servido em sub-milissegundo!");
+                var row = rows[0];
+                responder_http(client, 200, "application/json; charset=utf-8", row.json);
+            } else {
+                println("  [🌐 CACHE MISS] Buscando CNPJ " + cnpj + " na ReceitaWS...");
+                string url = "http://www.receitaws.com.br/v1/cnpj/" + cnpj;
+                string raw_resp = net_http_get(url);
+                string json_resp = limpar_json(raw_resp);
+                if (json_resp.len > 0 && str_starts_with(json_resp, "{")) {
+                    db_execute(db, "INSERT OR REPLACE INTO cnpjs (cnpj, json) VALUES ('" + cnpj + "', '" + json_resp + "');");
+                    println("  [💾 SALVO NO SQLITE] CNPJ " + cnpj + " armazenado para as próximas consultas.");
+                    responder_http(client, 200, "application/json; charset=utf-8", json_resp);
+                } else {
+                    responder_http(client, 404, "application/json", "{\"erro\": true, \"mensagem\": \"CNPJ nao localizado\"}");
+                }
+            }
+        }
+        // ROTA 3: Estatísticas do Cache (/stats)
+        else if (path == "/stats") {
+            array[map] r_cep = db_query(db, "SELECT count(*) as total FROM ceps;");
+            array[map] r_cnpj = db_query(db, "SELECT count(*) as total FROM cnpjs;");
+            var c1 = r_cep[0];
+            var c2 = r_cnpj[0];
+            string stats_json = "{\"ceps_em_cache\": " + to_string(c1.total) + ", \"cnpjs_em_cache\": " + to_string(c2.total) + ", \"servidor\": \"Kaz ERP Gateway 1.4.0\"}";
+            responder_http(client, 200, "application/json; charset=utf-8", stats_json);
+        }
+        // ROTA 4: Dashboard Web (HTML)
+        else {
+            string html = "<!DOCTYPE html><html lang='pt-BR'><head><meta charset='utf-8'><title>Kaz ERP Gateway</title>";
+            html = html + "<style>body{font-family:system-ui,sans-serif;background:#0d1117;color:#c9d1d9;padding:40px;display:flex;justify-content:center;}";
+            html = html + ".card{background:#161b22;border:1px solid #30363d;border-radius:12px;padding:32px;max-width:640px;width:100%;box-shadow:0 8px 24px rgba(0,0,0,0.5);}";
+            html = html + "h1{color:#58a6ff;margin-top:0;font-size:24px;}code{background:#21262d;padding:4px 8px;border-radius:6px;color:#7ee787;}";
+            html = html + "a{color:#58a6ff;text-decoration:none;}a:hover{text-decoration:underline;}</style></head><body>";
+            html = html + "<div class='card'><h1>🦅 Kaz ERP Gateway v1.4.0</h1>";
+            html = html + "<p>Microserviço nativo em <strong>Kaz Lang</strong> com cache em <strong>SQLite</strong> para automação de cadastros em ERPs (C#, Delphi, Web).</p>";
+            html = html + "<h3>Rotas de Teste Rápido:</h3><ul>";
+            html = html + "<li><a href='/cep/01001000' target='_blank'>Consultar CEP Sé (01001000)</a></li>";
+            html = html + "<li><a href='/cnpj/27865757000102' target='_blank'>Consultar CNPJ Globo (27865757000102)</a></li>";
+            html = html + "<li><a href='/stats' target='_blank'>Estatísticas do Banco SQLite (/stats)</a></li>";
+            html = html + "</ul></div></body></html>";
+            responder_http(client, 200, "text/html; charset=utf-8", html);
+        }
+
+        net_close(client);
+    }
+
+    db_close(db);
+    net_close(server);
+}
+
+main();
