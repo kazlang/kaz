@@ -4,6 +4,7 @@
     "description": "Suporte oficial a linguagem Kaz: Coloracao sintatica (Syntax Highlighting), snippets inteligentes e configuracao de linguagem para Lumina IDE e VS Code.",
     "version": "1.5.0",
     "publisher": "Kaz-Language",
+    "license": "MIT",
     "repository": {
         "type": "git",
         "url": "https://github.com/kazlang/kaz.git"

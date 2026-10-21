@@ -27,6 +27,7 @@ if os.path.exists(pkg_json_path):
         pkg_data = json.load(f)
     pkg_data["version"] = VERSION
     pkg_data["publisher"] = PUBLISHER
+    pkg_data["license"] = "MIT"
     with open(pkg_json_path, "w", encoding="utf-8") as f:
         json.dump(pkg_data, f, indent=4)
         f.write("\n")
@@ -42,8 +43,10 @@ content_types_xml = (
     '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">'
     '<Default Extension=".json" ContentType="application/json"/>'
     '<Default Extension=".md" ContentType="text/markdown"/>'
+    '<Default Extension=".txt" ContentType="text/plain"/>'
     '<Default Extension=".png" ContentType="image/png"/>'
     '<Default Extension=".vsixmanifest" ContentType="text/xml"/>'
+    '<Override PartName="/extension/LICENSE" ContentType="text/plain"/>'
     '</Types>'
 )
 
@@ -70,7 +73,9 @@ manifest_xml = f"""<?xml version="1.0" encoding="utf-8"?>
             <Property Id="Microsoft.VisualStudio.Services.Links.Learn" Value="https://github.com/kazlang/kaz#readme" />
             <Property Id="Microsoft.VisualStudio.Services.GitHubFlavoredMarkdown" Value="true" />
             <Property Id="Microsoft.VisualStudio.Services.Content.Pricing" Value="Free"/>
+            <Property Id="Microsoft.VisualStudio.Services.Content.License" Value="extension/LICENSE" />
         </Properties>
+        <License>extension/LICENSE</License>
         <Icon>extension/icon.png</Icon>
     </Metadata>
     <Installation>
@@ -80,6 +85,7 @@ manifest_xml = f"""<?xml version="1.0" encoding="utf-8"?>
     <Assets>
         <Asset Type="Microsoft.VisualStudio.Code.Manifest" Path="extension/package.json" Addressable="true" />
         <Asset Type="Microsoft.VisualStudio.Services.Content.Details" Path="extension/readme.md" Addressable="true" />
+        <Asset Type="Microsoft.VisualStudio.Services.Content.License" Path="extension/LICENSE" Addressable="true" />
         <Asset Type="Microsoft.VisualStudio.Services.Icons.Default" Path="extension/icon.png" Addressable="true" />
     </Assets>
 </PackageManifest>"""
