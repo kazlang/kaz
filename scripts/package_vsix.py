@@ -10,7 +10,7 @@ import json
 import shutil
 import zipfile
 
-VERSION = "1.4.0"
+VERSION = "1.5.0"
 PUBLISHER = "Kaz-Language"
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))

@@ -8,7 +8,7 @@ set -e
 
 echo "========================================================"
 echo "     Instalador Oficial da Linguagem Kaz                "
-echo "                 Versao 1.4.0                           "
+echo "                 Versao 1.5.0                           "
 echo "========================================================"
 echo ""
 

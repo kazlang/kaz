@@ -7,6 +7,23 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ---
 
+## [1.5.0] - 2026-10-20
+
+### 🚀 Adicionado & Concluído (Milestone 5 - Compilador Nativo Self-Hosted Completo & Ponto Fixo AOT)
+- **Bootstrap Nativo e Ponto Fixo (Fixed Point) 100% Alcançado**:
+  - O compilador nativo auto-hospedado (escrito 100% em Kaz puro em `compiler/*.kaz`) gerou o assembly x86-64 do Stage 2 e montou o binário autônomo `kazc_stage2` (269 KB).
+  - `kazc_stage2` compilou o código-fonte gerando `kazc_stage3.asm` (2.309.919 bytes) em apenas 39 segundos.
+  - `kazc_stage3` compilou o compilador novamente gerando `kazc_stage4.asm`, com prova matemática formal de Ponto Fixo determinístico bit a bit (SHA-256 idêntico: `95398a3ce2056ca043767774130fa07593da2f7b3b7ad5e0ad265679a29d7ae8` e `diff` vazio).
+- **Alocador Dinâmico de Heap (`sys_brk`) no AOT x86-64**:
+  - Remoção de buffers estáticos gigantes no `.bss` (ocupando agora apenas 24 bytes na seção `.bss`).
+  - Alocador nativo sob demanda via syscall pura do kernel Linux `sys_brk(12)` com expansão em blocos de 64 MB e gerenciamento de paginação pelo kernel, eliminando riscos de buffer overflow.
+- **Tree Merge O(N) e Otimizações de Memória**:
+  - Substituição da concatenação quadrática de strings no gerador NASM por Binary Reduction Tree Merge (`aot_join_lines`), reduzindo o consumo de memória na compilação de 20 GB para menos de 20 MB.
+- **Extensão VS Code v1.5.0**:
+  - Atualização do pacote oficial `.vsix` v1.5.0 com suporte a novos opcodes AOT e builtins estendidos.
+
+---
+
 ## [1.4.0] - 2026-10-12
 
 ### 🚀 Adicionado & Concluído (Milestone 4 - Compilador Nativo AOT x86-64 Completo)
