@@ -1,355 +1,213 @@
-# Manual da CLI & Kaz Terminal 🖥️
+# CLI & Kaz Terminal Guide 🖥️
 
-O utilitário de linha de comando `kaz` é o coração do ecossistema da linguagem, fornecendo ferramentas para executar scripts, gerenciar projetos em pastas, validar código e utilizar o **Kaz Terminal Interativo**.
-
----
-
-## 📑 Sumário
-
-1. [Instalação & Configuração de PATH](#1-instalação--configuração-de-path)
-2. [Execução de Arquivos e Projetos](#2-execução-de-arquivos-e-projetos)
-3. [Modos de Execução (VM vs AST)](#3-modos-de-execução-vm-vs-ast)
-4. [Validação de Sintaxe (Check)](#4-validação-de-sintaxe-check)
-5. [Formatador Canônico de Código (kaz fmt)](#5-formatador-canônico-de-código-kaz-fmt)
-6. [Kaz Terminal Interativo (Shell)](#6-kaz-terminal-interativo-shell)
-7. [Executor de Testes Nativos (kaz test)](#7-executor-de-testes-nativos-kaz-test)
-8. [Ferramentas de Diagnóstico e Debug Nativas](#8-ferramentas-de-diagnóstico-e-debug-nativas)
-9. [REPL Simples](#9-repl-simples)
-10. [Referência de Opções e Códigos de Saída](#10-referência-de-opções-e-códigos-de-saída)
+The `kaz` command-line interface is the core utility of the Kaz ecosystem, providing tools to execute scripts, manage multi-file projects, validate code, and interact with the **Kaz Interactive Shell**.
 
 ---
 
-## 1. Instalação & Configuração de PATH
+## 📑 Table of Contents
 
-Após executar o instalador (`install.ps1` no Windows ou `install.sh` no Linux/macOS), o binário `kaz` fica disponível em qualquer terminal:
+1. [Installation & PATH Configuration](#1-installation--path-configuration)
+2. [Running Scripts and Projects](#2-running-scripts-and-projects)
+3. [Execution Modes (Stack VM vs AST)](#3-execution-modes-stack-vm-vs-ast)
+4. [Standalone Native Compilation (`kaz build`)](#4-standalone-native-compilation-kaz-build-)
+5. [Syntax Validation (`kaz check`)](#5-syntax-validation-kaz-check)
+6. [Canonical Code Formatter (`kaz fmt`)](#6-canonical-code-formatter-kaz-fmt)
+7. [Interactive Kaz Terminal (Shell)](#7-interactive-kaz-terminal-shell)
+8. [Native Test Runner (`kaz test`)](#8-native-test-runner-kaz-test)
+9. [Diagnostic and Debug Tools](#9-diagnostic-and-debug-tools)
+10. [Simple REPL](#10-simple-repl)
+11. [Command Reference & Exit Codes](#11-command-reference--exit-codes)
+
+---
+
+## 1. Installation & PATH Configuration
+
+After running the official installer (`install.ps1` on Windows or `install.sh` on Linux/macOS), the `kaz` binary is accessible globally in any terminal:
 
 ```bash
 kaz --version
-# Kaz 1.1.0
+# Output: Kaz 1.5.0
+```
+
+To verify the installation and view quick help:
+```bash
+kaz --help
 ```
 
 ---
 
-## 2. Execução de Arquivos e Projetos
+## 2. Running Scripts and Projects
 
-### A. Executar um Arquivo Individual
-Basta passar o caminho do arquivo `.kaz`:
+### 2.1 Single File Execution
+To run an individual script via the Stack VM (default mode):
 ```bash
-kaz programa.kaz
-# ou explicitamente:
-kaz run programa.kaz
+kaz run script.kaz
+# Or simply:
+kaz script.kaz
 ```
 
-### B. Executar um Projeto Completo em Pasta
-Kaz reconhece projetos estruturados. Ao apontar para um diretório, o compilador busca automaticamente pelo ponto de entrada (`main.kaz` ou `src/main.kaz`) e compila todo o grafo de dependências e submódulos:
+### 2.2 Passing Command-Line Arguments
+Arguments passed after the filename are forwarded directly to the script and accessible through the standard library `io.args()`:
 ```bash
-# Executa o projeto localizado na pasta 'meu_sistema':
-kaz meu_sistema/
-
-# Executa o projeto localizado na pasta atual:
-kaz .
+kaz run script.kaz arg1 arg2 "third argument"
 ```
 
-### C. Criar um Novo Projeto Estruturado (`kaz new` ou `kaz create`)
-Para iniciar um novo projeto com a arquitetura padrão recomendada (com banco SQLite embutido, modelos, testes automatizados e manifesto `kaz.json`):
-
+### 2.3 Running Structured Projects (`main.kaz`)
+When pointing `kaz run` to a directory containing a `main.kaz` entrypoint:
 ```bash
-kaz new meusistema
-# ou equivalentemente:
-kaz create meusistema
+kaz run ./meu_projeto
+```
+The runtime automatically resolves dependencies, imports, and executes `main.kaz`.
+
+---
+
+## 3. Execution Modes (Stack VM vs AST)
+
+Kaz offers two execution engines:
+
+| Engine | Flag | Description | Ideal For |
+| :--- | :--- | :--- | :--- |
+| **Stack VM** | *(default)* | Compiles to bytecode and executes on an optimized Stack Virtual Machine. | Production, high performance, enterprise workloads. |
+| **AST Tree-Walk** | `--ast` | Directly walks the Abstract Syntax Tree. | Educational debugging, compiler development. |
+
+Example:
+```bash
+# High-performance execution via Stack VM (default)
+kaz run benchmark.kaz
+
+# Tree-walk execution
+kaz run --ast benchmark.kaz
 ```
 
-O comando gera a seguinte árvore:
+---
+
+## 4. Standalone Native Compilation (`kaz build`) 📦
+
+Kaz can compile source files directly into **standalone, pure x86-64 ELF64 binaries** (~10 KB) with zero external runtime dependencies (no libc, no VM):
+
+```bash
+# Compile directly to a standalone binary
+kaz build main.kaz -o my_app
+
+# Run the compiled native binary directly
+./my_app
+```
+
+### Build Options:
+- `-o <output>`: Specifies the output executable name.
+- `--emit-asm`: Emits clean Intel-syntax NASM assembly code without linking.
+- `--emit-obj`: Emits the ELF64 object file (`.o`).
+
+---
+
+## 5. Syntax Validation (`kaz check`)
+
+Performs lexical and syntactic verification without executing the code. Useful for CI/CD pipelines, pre-commit hooks, and IDE integration:
+
+```bash
+kaz check script.kaz
+```
+
+Output:
 ```text
-meusistema/
-├── kaz.json             # Manifesto de configuração do projeto
-├── README.md            # Documentação e instruções de execução
-├── .gitignore           # Ignora *.db, bin/, dist/ e temporários
-├── data/
-│   └── schema.sql       # Script DDL com a estrutura do banco SQLite
-├── src/
-│   ├── main.kaz         # Ponto de entrada do sistema
-│   ├── database.kaz     # Funções utilitárias de conexão e migração SQLite
-│   └── models/
-│       └── usuario.kaz  # Modelos de domínio (structs)
-└── tests/
-    └── main_test.kaz    # Testes unitários automatizados nativos
+✓ Syntax OK: script.kaz
 ```
 
-Para rodar e testar imediatamente:
-```bash
-cd meusistema
-kaz run .
-kaz test
-```
+In case of syntax errors, the command exits with code `1` and prints the exact line, column, and error context.
 
 ---
 
-## 3. Motores de Execução (JIT Nativo vs Stack VM vs AST)
+## 6. Canonical Code Formatter (`kaz fmt`)
 
-Kaz possui três motores de execução de alta fidelidade:
+Formats `.kaz` files according to official style guidelines with AST round-trip validation:
 
-### 1. Compilador JIT Nativo via Cranelift (`kaz jit`) ⚡
-Compila o código-fonte em tempo de execução diretamente para **código de máquina AMD64 nativo**, oferecendo desempenho de até **~750x mais rápido que a interpretação em Bytecode**, e rodando a 1.9x de paridade com Rust/C compilados com otimização máxima (`-O3`):
 ```bash
-kaz jit programa.kaz
-# Passando argumentos via linha de comando:
-kaz jit programa.kaz arg1 arg2
-```
+# Format a specific file in place
+kaz fmt script.kaz
 
-### 2. Stack Bytecode Virtual Machine (Padrão Portável)
-Compila o código para sequências contíguas de `OpCode` em memória e despacha instruções em alta velocidade na VM:
-```bash
-kaz programa.kaz
-# ou explicitamente:
-kaz run programa.kaz
-```
+# Check formatting without modifying (CI mode)
+kaz fmt --check script.kaz
 
-### 3. AST Tree-Walking Evaluator (Modo Clássico / Fallback)
-Modo alternativo para depuração e inspeção detalhada de nós da Árvore Sintática:
-```bash
-kaz ast programa.kaz
-```
-
----
-
-## 4. Compilação de Binários Nativos Autônomos (`kaz build`) 📦
-
-Kaz possui um compilador nativo AOT (Ahead-of-Time) de alta performance que traduz o código diretamente para **código de máquina x86-64 estático**, gerando binários ELF64 autônomos sem necessidade de máquinas virtuais, libc ou runtimes intermediários:
-
-### A. Compilação Nativa AOT Direta (Padrão)
-Compila o programa Kaz diretamente para assembly x86-64, montando com NASM e linkando com GNU LD em um binário executável estático (~10 KB):
-```bash
-kaz build main.kaz -o meu_app
-# Executa diretamente em bare-metal com inicialização instantânea:
-./meu_app
-```
-
-Opções suportadas:
-* `--native` / `-n`: Força explicitamente a compilação nativa AOT pura (comportamento padrão).
-* `-o <saida>`: Define o nome ou caminho do binário de saída gerado.
-
-### B. Modo Empacotado (Bundle com Runtime)
-Caso deseje empacotar todo o runtime padrão da linguagem em um arquivo único:
-```bash
-kaz build main.kaz --bundle -o meu_app
-```
-
-### C. Gerar Arquivo de Objeto Nativo (.obj no Windows, .o no Linux)
-Gera arquivos de código de máquina compilados diretamente para integração com linkers externos:
-```bash
-kaz build main.kaz --emit-obj -o main.o
-```
-
----
-
-## 4. Validação de Sintaxe (Check)
-
-Para verificar se um código ou projeto possui erros de sintaxe **sem executar nenhuma instrução**:
-```bash
-kaz check programa.kaz
-# ou em um projeto:
-kaz check meu_projeto/
-```
-
-**Saída em caso de sucesso:**
-```text
-Sintaxe correta: 'meu_projeto/main.kaz' verificado com sucesso!
-```
-
----
-
-## 5. Formatador Canônico de Código (`kaz fmt`) 📐
-
-Kaz possui um formatador de código automático integrado de nível de produção (`kaz fmt`), eliminando discussões de estilo e padronizando todo o ecossistema.
-
-### Características do Estilo Canônico Kaz:
-- **Indentação consistente**: 4 espaços por nível.
-- **Estilo de Chaves K&R / 1TBS**: Chaves de abertura na mesma linha (`function Main() {`, `if (cond) { ... } else { ... }`, `try { ... } catch (e) { ... }`).
-- **Espaçamento de Operadores**: Espaçamento uniforme em operadores binários (`+`, `-`, `*`, `/`, `%`), de atribuição (`=`, `+=`, `-=`, `*=`, `/=`, `%=`), relacionais (`==`, `!=`, `<`, `>`, `<=`, `>=`), lógicos (`&&`, `||`) e ternários (`? :`).
-- **Operadores Unários Compactos**: Operadores `+`, `-` e `!` unários aderem imediatamente ao operando (`-5`, `+3`, `!ativo`).
-- **Parâmetros e Argumentos**: Vírgula seguida de espaço uniforme (`function soma(int a, int b): int`).
-- **Colapso de Linhas em Branco**: Evita acúmulo desnecessário de quebras de linha (máximo de 1 linha em branco consecutiva entre instruções ou declarações).
-- **Preservação Total de Comentários**: Comentários de linha (`//`) e comentários em bloco (`/* ... */`) são fielmente preservados.
-- **🛡️ Garantia de Segurança por Validação de AST**: Antes de gravar qualquer alteração em disco, o compilador Kaz analisa a Árvore Sintática Abstrata (AST) do arquivo formatado e a compara com o original. Se houver qualquer divergência sintática, a formatação é abortada imediatamente com erro explicativo, garantindo que o seu código nunca será corrompido.
-
-### Modos de Uso:
-
-#### A. Formatar um Arquivo Específico
-```bash
-kaz fmt src/main.kaz
-```
-
-#### B. Formatar um Diretório ou Projeto Recursivamente
-```bash
-# Formata recursivamente todos os arquivos .kaz dentro da pasta src/
-kaz fmt src/
-
-# Formata recursivamente todo o projeto atual
+# Format all .kaz files in the current folder recursively
 kaz fmt .
 ```
 
-#### C. Modo Verificação (`--check`) para CI/CD Pipelines
-Verifica se todos os arquivos estão em conformidade com o padrão sem modificar o disco. Retorna código de saída `0` se tudo estiver perfeito ou `1` se houver arquivos precisando de formatação:
-```bash
-kaz fmt src/ --check
-```
-
 ---
 
-## 6. Kaz Terminal Interativo (Shell)
+## 7. Interactive Kaz Terminal (Shell)
 
-O **Kaz Terminal** combina os recursos de um shell de sistema operacional com o interpretador em tempo real da linguagem:
+Launches the rich interactive shell with syntax highlighting, auto-completion, multiline editing, and command history:
 
 ```bash
 kaz shell
-# ou simplesmente iniciar kaz sem argumentos:
-kaz
 ```
 
-### Interface do Kaz Terminal:
-```text
-╔═════════════════════════════════════════════════════════════════╗
-║                      KAZ TERMINAL 🦅 v1.1.0                     ║
-║              Ambiente Interativo & Shell da Linguagem           ║
-╚═════════════════════════════════════════════════════════════════╝
-
-kaz [E:\projetos]> ls
-  [DIR]  models/
-  [DIR]  db/
-  [FILE] main.kaz (1.5 KB)
-
-kaz [E:\projetos]> int a = 10;
-kaz [E:\projetos]> int b = 25;
-kaz [E:\projetos]> runoff("Soma:", a + b);
-=> Soma: 35
-
-kaz [E:\projetos]> run main.kaz
-[Executa a aplicação modular e preserva variáveis de sessão]
-```
-
-### Comandos Embutidos do Shell:
-- `ls` / `dir`: Lista arquivos e diretórios detalhando tamanhos.
-- `cd <pasta>`: Navega entre diretórios e atualiza o prompt dinamicamente.
-- `pwd`: Exibe o diretório de trabalho atual.
-- `run <arquivo>`: Executa um script Kaz diretamente na sessão ativa.
-- `check <arquivo>`: Valida a sintaxe de um script.
-- `fmt [caminho]`: Formata scripts ou diretórios no padrão canônico Kaz.
-- `env`: Exibe todas as variáveis, funções e tipos ativos no escopo do shell.
-- `clear` / `cls`: Limpa a tela do terminal.
-- `help`: Mostra o manual de comandos rápidos.
-- `exit` / `quit`: Encerra o Kaz Terminal.
+Special shell commands:
+- `:help`: Displays available commands.
+- `:vars`: Lists active variables and structs in scope.
+- `:clear`: Clears the terminal screen.
+- `:reset`: Resets the execution environment state.
+- `:exit` / `quit`: Exits the terminal.
 
 ---
 
-## 7. Executor de Testes Nativos (`kaz test`) 🧪
+## 8. Native Test Runner (`kaz test`)
 
-Kaz traz um executor de testes unitários integrado diretamente no compilador. Não é necessário baixar nenhuma ferramenta de terceiros:
+Discovers and executes built-in test suites defined with `test "name" { ... }`:
 
 ```bash
-# Executa todos os testes do projeto na pasta atual:
+# Run all tests in the current project
 kaz test
 
-# Executa testes em uma pasta específica:
-kaz test tests/
-
-# Executa testes contidos em um único arquivo:
-kaz test meu_arquivo.kaz
-```
-
-### Relatório Visual do Teste:
-```text
-running 2 test(s) in examples/battery_included_demo.kaz:
-  test "validar integridade de sha256"          ... ok (1.22ms)
-  test "validar regex simples"                  ... ok (1.21ms)
-
-test result: OK. 2 passed; 0 failed; finished in 3.54ms
+# Run tests matching a specific pattern
+kaz test --filter "auth"
 ```
 
 ---
 
-## 8. Ferramentas de Diagnóstico e Debug Nativas 🔍
+## 9. Diagnostic and Debug Tools
 
-### A. Rastreamento Passo a Passo da Stack VM (`kaz trace`)
-Permite inspecionar o ciclo de vida da Máquina Virtual em tempo real, exibindo o Ponteiro de Instrução (IP), a Linha do Código (L), o OpCode despachado e o estado exato da Pilha de Valores:
+Kaz includes native diagnostics for inspecting compilation phases:
 
+### 9.1 Disassembling Bytecode
 ```bash
-kaz trace programa.kaz
+kaz --disasm script.kaz
 ```
+Prints the complete disassembled bytecode instruction table with operands, jumps, and string pools.
 
-**Exemplo de Saída:**
-```text
-=== Kaz Stack VM Tracer: Iniciando rastreamento de 'programa.kaz' ===
-
-[TRACE IP:0000 L002] Constant(0)               | Pilha (0): []
-[TRACE IP:0001 L002] DefGlobal(1, false, Int)  | Pilha (1): [Int(10)]
-[TRACE IP:0002 L003] GetGlobal(1)              | Pilha (0): []
-[TRACE IP:0003 L003] Constant(2)               | Pilha (1): [Int(10)]
-[TRACE IP:0004 L003] Add                       | Pilha (2): [Int(10), Int(20)]
-[TRACE IP:0005 L003] CallNative(3, 1)          | Pilha (1): [Int(30)]
-30
-[TRACE IP:0006 L003] Pop                       | Pilha (1): [Void]
-[TRACE IP:0007 L001] Halt                      | Pilha (0): []
-
-=== Rastreamento finalizado ===
-```
-
-### B. Desmontador de Bytecode & Constantes (`kaz debug`)
-Desmonta os chunks de bytecode compilados e exibe a tabela de literais e instruções sem executar o programa:
-
+### 9.2 Inspecting the AST
 ```bash
-kaz debug programa.kaz
+kaz --dump-ast script.kaz
 ```
-
-### C. Console SQL Interativo do SQLite (`kaz db-cli`)
-Abre um terminal interativo conectado diretamente a qualquer arquivo de banco de dados SQLite, permitindo rodar consultas e comandos de inspeção sem instalar clientes externos:
-
-```bash
-kaz db-cli meu_banco.db
-```
-
-**Comandos do `kaz db-cli`:**
-- `.tables`: Lista todas as tabelas criadas no banco de dados.
-- `.schema [tabela]`: Exibe a instrução DDL de criação da tabela.
-- `SELECT ...`: Executa consultas e exibe o resultado formatado em colunas.
-- `INSERT` / `UPDATE` / `DELETE`: Executa alterações e exibe o número de linhas afetadas.
-- `.exit` ou `.quit`: Encerra o console do banco.
+Outputs the formatted syntax tree hierarchy for debugging parser behaviors.
 
 ---
 
-## 9. REPL Simples
+## 10. Simple REPL
 
-Para testes rápidos de expressões aritméticas ou snippets curtos de código:
+For quick expression evaluation and lightweight interactive sessions without terminal styling:
 ```bash
 kaz repl
 ```
 
 ---
 
-## 10. Referência de Opções e Códigos de Saída
+## 11. Command Reference & Exit Codes
 
-### Tabela Geral de Comandos da CLI:
-| Comando | Descrição |
-|---|---|
-| `kaz <caminho>` | Executa arquivo `.kaz` ou pasta de projeto na Bytecode VM. |
-| `kaz run <caminho>` | Sinônimo explícito de execução na VM. |
-| `kaz test [caminho]` | Executa os blocos de testes unitários nativos com relatório. |
-| `kaz trace <arquivo>` | Rastreia a Stack VM passo a passo exibindo a pilha em tempo real. |
-| `kaz debug <arquivo>` | Desmonta o bytecode e exibe as tabelas de constantes e chunks. |
-| `kaz db-cli <banco.db>` | Abre o console interativo SQL para o banco SQLite embutido. |
-| `kaz vm <caminho>` | Força execução na Bytecode VM. |
-| `kaz ast <caminho>` | Executa no interpretador clássico de AST. |
-| `kaz check <caminho>` | Valida sintaxe sem executar. |
-| `kaz fmt [caminho] [--check]` | Formata arquivos .kaz no estilo canônico (--check para CI/CD). |
-| `kaz shell` / `kaz` | Inicia o Kaz Terminal Shell interativo. |
-| `kaz repl` | Inicia o REPL simplificado. |
-| `kaz --help` / `-h` | Exibe a mensagem de ajuda e opções. |
-| `kaz --version` / `-v` | Exibe a versão instalada da linguagem. |
+| Command | Description |
+| :--- | :--- |
+| `kaz run <file> [args]` | Executes a Kaz script or project using the Stack VM. |
+| `kaz build <file> [-o bin]` | Compiles a program to a native standalone x86-64 executable. |
+| `kaz check <file>` | Validates syntax and types without execution. |
+| `kaz fmt <file\|dir>` | Formats code to official canonical style. |
+| `kaz shell` | Opens the rich interactive terminal. |
+| `kaz repl` | Opens the lightweight REPL. |
+| `kaz test [path]` | Executes test suites. |
+| `kaz --version` | Displays version and build info. |
+| `kaz --help` | Displays command-line help. |
 
-### Códigos de Saída (Exit Codes):
-| Código | Significado |
-|---|---|
-| `0` | Execução concluída com sucesso (ou todos os testes passaram / formatado). |
-| `1` | Erro de sintaxe, asserção falha, runtime, arquivo não encontrado ou formatação pendente em `--check`. |
-
-
+### Exit Codes:
+- `0`: Success.
+- `1`: Syntax or compilation error.
+- `2`: Runtime error or uncaught exception.
+- `130`: Terminated by user (`SIGINT` / `Ctrl+C`).

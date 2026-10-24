@@ -1,0 +1,300 @@
+# Arquitetura Interna & Engenharia de Compilação 🏛️
+
+A linguagem **Kaz** combina a segurança de tipos inspirada em Rust com uma arquitetura moderna de compilação para **Máquina Virtual de Bytecode baseada em Pilha (Stack VM)**.
+
+Este documento detalha o pipeline completo de execução, desde o código-fonte `.kaz` até o ciclo de instruções na VM.
+
+---
+
+## 📑 Sumário
+
+1. [Visão Geral do Pipeline](#1-visão-geral-do-pipeline)
+2. [Análise Léxica & Sintática (Parser PEG + Pratt)](#2-análise-léxica--sintática)
+3. [Árvore Sintática Abstrata (AST)](#3-árvore-sintática-abstrata-ast)
+4. [Resolução de Módulos & Dependências](#4-resolução-de-módulos--dependências)
+5. [O Compilador de Bytecode](#5-o-compilador-de-bytecode)
+6. [Conjunto de Instruções (`OpCode`)](#6-conjunto-de-instruções-opcode)
+7. [A Máquina Virtual de Pilha & Stack Unwinding (Kaz Stack VM)](#7-a-máquina-virtual-de-pilha--stack-unwinding-kaz-stack-vm)
+8. [Módulos Nativos Embutidos (Bateria Inclusa)](#8-módulos-nativos-embutidos-bateria-inclusa)
+9. [Ferramentas Nativas de Diagnóstico e Depuração](#9-ferramentas-nativas-de-diagnóstico-e-depuração)
+10. [Comparativo de Desempenho: AST vs Stack VM](#10-comparativo-de-desempenho-ast-vs-stack-vm)
+
+---
+
+## 1. Visão Geral do Pipeline
+
+```
+  ┌───────────────────────────────────────────────────────────┐
+  │                    Código-Fonte (.kaz)                    │
+  └─────────────────────────────┬─────────────────────────────┘
+                                │
+                                ▼
+  ┌───────────────────────────────────────────────────────────┐
+  │  1. Frontend: Lexer PEG (Pest) + Pratt Parser             │
+  │     - Tokenização e validação de regras gramaticais       │
+  │     - Resolução estrita de precedência de operadores      │
+  └─────────────────────────────┬─────────────────────────────┘
+                                │
+                                ▼
+  ┌───────────────────────────────────────────────────────────┐
+  │  2. Árvore Sintática Abstrata (AST com Spans de Depuração)│
+  │     - Stmt (Declarações, Funções, Structs, Loops)         │
+  │     - Expr (Literais, Chamadas, Ternário, Binários)       │
+  └─────────────────────────────┬─────────────────────────────┘
+                                │
+                                ▼
+  ┌───────────────────────────────────────────────────────────┐
+  │  3. Compilador de Bytecode & Resolvedor de Módulos        │
+  │     - Resolução recursiva de imports com proteção anti-loop│
+  │     - Mapeamento estático de variáveis em slots de pilha   │
+  │     - Patching de saltos (Jumps) para loops e condicionais │
+  └─────────────────────────────┬─────────────────────────────┘
+                                │
+                                ▼
+  ┌───────────────────────────────────────────────────────────┐
+  │  4. Chunks de Bytecode (Instruções Lineares Contíguas)    │
+  │     - Pool de Constantes, Tabela de Funções Compiladas    │
+  └─────────────────────────────┬─────────────────────────────┘
+                                │
+                                ▼
+  ┌───────────────────────────────────────────────────────────┐
+  │  5. Kaz Stack VM (Runtime em Rust de Alta Performance)    │
+  │     - Despacho ultra-rápido de OpCodes em memória linear  │
+  │     - Integração direta com SQLite, Serde JSON e Rede TCP │
+  └───────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 2. Análise Léxica & Sintática
+
+- **Gramática PEG (`src/grammar.pest`)**: Utiliza Parsing Expression Grammar formal, garantindo que não haja ambiguidades sintáticas.
+- **Pratt Parser (`src/parser.rs`)**: Para operadores binários, lógicos, unários e ternários, utiliza o algoritmo de Pratt, assegurando que expressões complexas como `(a + b * c > d) ? e : f` sejam agrupadas rigorosamente segundo a tabela padrão de precedência.
+
+---
+
+## 3. Árvore Sintática Abstrata (AST)
+
+Definida em `src/ast.rs`, a AST representa as intenções do desenvolvedor em estruturas fortemente tipadas em Rust:
+- `Stmt`: Declarações de variáveis, funções (`Stmt::FunctionDecl`), estruturas (`Stmt::StructDef`), condicionais (`Stmt::If`), loops (`Stmt::For`, `Stmt::ForIn`, `Stmt::While`) e comandos de importação (`Stmt::Import`).
+- `Expr`: Operações aritméticas, chamadas de método, instanciação de structs e operadores ternários (`Expr::Ternary`).
+- `Span`: Cada nó preserva linha e coluna exatas no arquivo de origem para relatórios precisos de erros.
+
+---
+
+## 4. Resolução de Módulos & Dependências
+
+O resolvedor de módulos em `src/vm/compiler.rs`:
+1. **Resolução Relativa**: Quando `src/main.kaz` executa `import "models/user.kaz"`, o caminho é resolvido em relação à pasta de `main.kaz`, e não ao diretório de trabalho do terminal.
+2. **Cache Canônico Anti-Ciclo**: Um `HashSet<String>` com os caminhos canônicos normalizados impede que o mesmo módulo seja compilado mais de uma vez, evitando loops infinitos (ex: Módulo A importa Módulo B e Módulo B importa Módulo A).
+3. **Fusão de Símbolos**: Structs e funções compiladas em módulos secundários são integradas ao mapa global de execução, mantendo a função `Main()` raiz protegida contra sobreposição.
+
+---
+
+## 5. O Compilador de Bytecode
+
+Localizado em `src/vm/compiler.rs`, o compilador transforma a AST em chunks de bytecode contíguos:
+- **Resolução Estática de Variáveis Locais**: Durante a compilação, cada variável local recebe um slot fixo de pilha (`u16`). Em tempo de execução, a leitura dessa variável não faz nenhuma busca em strings ou hash maps: acessa diretamente o array de memória por offset (`OpCode::GetLocal(slot)`).
+- **Backpatching de Saltos (Jumps)**: Para condicionais e loops, o compilador emite instruções com saltos provisórios (`OpCode::Jump(0)`) e atualiza o endereço de salto assim que o bloco termina (`patch_jump`).
+
+---
+
+## 6. Conjunto de Instruções (`OpCode`)
+
+O conjunto de instruções de Kaz (`src/vm/opcode.rs`) é compacto e focado em operações eficientes de pilha:
+
+| OpCode | Descrição |
+|---|---|
+| `Constant(u16)` | Empilha uma constante do pool da VM. |
+| `DefGlobal(u16, bool, DataType)` | Registra uma variável global com metadados de tipo e constância. |
+| `GetGlobal(u16)` / `SetGlobal(u16)` | Lê ou atualiza variável global pelo índice do nome. |
+| `GetLocal(u16)` / `SetLocal(u16)` | Lê ou atualiza variável local por offset de pilha (**tempo O(1)**). |
+| `Add`, `Subtract`, `Multiply`, `Divide`, `Modulo` | Operações aritméticas de topo de pilha. |
+| `Equal`, `NotEqual`, `Greater`, `Less`, etc. | Comparações relacionais. |
+| `Jump(u16)`, `JumpIfFalse(u16)`, `Loop(u16)` | Desvios incondicionais e condicionais de fluxo. |
+| `PushTry(u16)` | Registra manipulador de exceção na VM com ponteiro de salto para o catch. |
+| `PopTry` | Remove o manipulador de exceção ativo ao finalizar o bloco `try` com sucesso. |
+| `Call(u8)` / `CallMethod(u16, u8)` | Chamada de funções de usuário ou métodos de tipos complexos. |
+| `CallNative(u16, u8)` | Chamada direta de funções da biblioteca padrão implementadas em Rust. |
+| `Return` | Retorno da chamada desempilhando o frame de execução e limpando handlers expirados. |
+| `Halt` | Encerramento do programa. |
+
+---
+
+## 7. A Máquina Virtual de Pilha & Stack Unwinding (Kaz Stack VM)
+
+A Stack VM (`src/vm/vm.rs`) implementa o loop de despacho das instruções em memória contígua:
+- **CallFrames**: Cada chamada de função aloca um frame contendo ponteiro de instrução (`ip`), chunk local e ponteiro de base da pilha (`stack_start`).
+- **Valores Primitivos Eficientes**: O enum `Value` armazena inteiros de 64 bits, floats, booleanos, structs e strings com alocação mínima.
+- **Tratamento de Exceções & Desenrolamento (*Stack Unwinding*)**:
+  - Quando um erro ocorre durante a execução (aritmético, I/O, SQL, asserção, limites), o método `handle_error` consulta o vetor `exception_handlers`.
+  - Os call frames são desenrolados até o frame onde o `PushTry` foi registrado.
+  - A pilha de operandos é truncada diretamente para `handler.stack_depth`, eliminando todos os valores intermediários acumulados.
+  - A mensagem de erro em `Value::String` é empilhada para ser vinculada à variável do `catch` (ou descartada via `Pop`).
+  - O ponteiro `frame.ip` é redirecionado instantaneamente para `handler.catch_ip`.
+  - **Custo Zero (*Zero-Overhead*)**: Na ausência de exceções, `PushTry` e `PopTry` são operações de custo irrisório sem nenhuma sobrecarga de captura ou checagem em cada instrução.
+
+---
+
+## 8. Módulos Nativos Embutidos (Bateria Inclusa)
+
+Diferente de interpretadores que exigem instalação de pacotes C externos ou gerenciadores de pacotes pesados, Kaz incorpora tudo em Rust:
+1. **SQLite 3 Bundled (`src/stdlib/db.rs`)**: Compilado estaticamente para dentro do binário `kaz.exe`. Suporta bancos em memória (`:memory:`) e arquivos persistentes em disco.
+2. **Criptografia & Hashes (`src/stdlib/crypto.rs`)**: Implementações nativas de SHA-256 (`sha2`), MD5 (`md-5`) e codificação/decodificação Base64 (`base64`).
+3. **Expressões Regulares (`src/stdlib/regex.rs`)**: Motor de regex de alta performance baseado na crate Rust `regex`.
+4. **Sistema de Arquivos Moderno (`src/stdlib/fs.rs`)**: Operações completas de `mkdir -p`, leitura recursiva de diretórios, cópia, verificação de tamanho e remoção segura.
+5. **Serde JSON (`src/stdlib/json.rs`)**: Parser e gerador JSON ultra-otimizados que mapeiam diretamente entre árvores JSON e structs/arrays Kaz.
+6. **Rede TCP / HTTP (`src/stdlib/net.rs`)**: Medição de ping via handshake TCP nativo e requisições HTTP RESTful com sockets padrão do sistema.
+
+---
+
+## 9. Ferramentas Nativas de Diagnóstico e Depuração
+
+Kaz não requer a instalação de ferramentas externas para inspeção ou testes:
+- **`kaz trace <arquivo.kaz>`**: Executa o programa exibindo o ciclo de despacho de cada OpCode, número de linha, Instruction Pointer (IP) e todo o conteúdo da pilha em tempo real.
+- **`kaz debug <arquivo.kaz>`**: Desmonta os chunks de bytecode, exibindo as tabelas de literais e instruções sem executar o programa.
+- **`kaz db-cli <banco.db>`**: Console interativo SQLite integrado para consultas, inspeção de esquemas e comandos DDL/DML diretamente pelo terminal.
+- **`kaz test [caminho]`**: Executor de testes unitários nativo integrado ao compilador, que ignora os blocos de teste durante `kaz run`, mas os executa com relatório de milissegundos durante `kaz test`.
+
+---
+
+## 10. Comparativo de Desempenho: AST vs Stack VM
+
+Em testes de estresse computacional (`examples/benchmark.kaz`):
+
+| Teste de Benchmark | Interpretador AST Clássico | Kaz Stack Bytecode VM | Ganho de Desempenho |
+|---|---|---|---|
+| **Loop Aritmético (50.000 iterações)** | 420 ms | **21 ms** | **20x mais rápido** |
+| **Alocação de 10.000 Structs** | 890 ms | **70 ms** | **12.7x mais rápido** |
+| **Fibonacci 26 (242.785 chamadas)** | ~18.500 ms | **638 ms** | **28.9x mais rápido** |
+| **Tempo Total da Suíte** | ~19.810 ms | **729 ms** | **27x mais rápido** |
+
+---
+
+## 11. Backend Nativo Cranelift JIT & Compilador AOT (`kaz jit` e `kaz build`)
+
+Além da Bytecode VM, Kaz incorpora um gerador de código de máquina nativo baseado em **Cranelift** (`src/jit/`):
+- **Cranelift JIT (`kaz jit`)**: Compila funções diretamente em tempo de execução para assembly x86_64, alcançando paridade de ~1,8x a 2,1x com binários compilados por Rust (`rustc -O3`) e superando interpretadores tradicionais em mais de 25x.
+- **AOT ELF Generator (`kaz build`)**: Empacota o pipeline em executáveis autônomos sem dependências externas.
+- **Instruções Intrínsecas de CPU**: Operações matemáticas como `math.sqrt` emitem opcodes de máquina diretos (`sqrtsd %xmm0, %xmm0`) sem overhead de FFI.
+
+---
+
+## 12. Modelo de Segurança de Extensões & Mods: Sandbox VM vs Acelerador JIT
+
+> [!CAUTION]
+> **REGRA DE ISOLAMENTO DE EXTENSÕES & SCRIPTS DE TERCEIROS:**
+> Por diretriz arquitetural estrita, **todos os scripts de terceiros, plugins e mods devem ser executados exclusivamente na Kaz Bytecode VM (`kaz vm`)**.
+> 
+> O Cranelift JIT opera como acelerador computacional com ponteiros de máquina diretos (`*mut u8`). Enquanto o modelo de posse e contagem de referências (ARC) estiver em homologação, a garantia de segurança contra Use-After-Free, buffer overflow e corrupção de memória do host é fornecida **exclusivamente pela sandbox da Bytecode VM**, gerenciada pelas garantias de RAII do Rust.
+
+---
+
+## 13. Modelo de Gerenciamento de Memória Nativo: ARC Atômico & Concorrência Thread-Safe
+
+Para o runtime JIT e código compilado, Kaz adota **Contagem Automática de Referências Atômica (ARC - Automatic Reference Counting)** determinística:
+
+1. **Cabeçalho Padronizado de Objeto (16 bytes):**
+   - Offset `-16`: `ref_count` gerenciado com `AtomicUsize` (`fetch_add`/`fetch_sub` com ordenação `AcqRel`/`Release`).
+   - Offset `-8`: `type_id` (`u64` para despacho de destrutor recursivo).
+   - Offset `0`: Início do payload da struct/dados.
+2. **Salvaguarda de Threading e Atomicidade Homologada:**
+   - O contador de referências foi blindado com `AtomicUsize`, permitindo passagem segura e retenção/liberação concorrente entre múltiplas threads do SO sem corrupção ou corrida de dados.
+3. **Regra de Ingestão (Sink Rule) para Coleções:**
+   - Funções que retêm ou persistem ponteiros além da chamada (ex: `array.push(item)`, atribuição a campo de struct `p.filho = outro`, registro em tabelas globais) emitem `retain` obrigatório antes de armazenar o endereço.
+4. **Tabela Dinâmica de Destrutores Recursivos (Dynamic Drop Registry):**
+   - Tabela protegida por `RwLock` com crescimento sob demanda que suporta milhares de structs (`type_id` dinâmico sem limite rígido de 256), com liberação recursiva de campos gerenciados (managed offsets).
+
+---
+
+## 14. Compilador Self-Hosted (`compiler/`)
+
+A linguagem Kaz possui seu próprio compilador escrito integralmente em Kaz puro (`compiler/`):
+- **Lexer (`compiler/lexer.kaz`)**: Tokenizador completo sem dependência de geradores externos.
+- **Pratt Parser (`compiler/parser.kaz`)**: Analisador de precedência e árvores sintáticas baseadas em arenas contíguas (`compiler/ast.kaz`).
+- **Bytecode CodeGen (`compiler/codegen.kaz`)**: Emissor de instruções lineares compatíveis com o formato binário e a Stack VM Kaz (`compiler/bytecode.kaz`).
+- **Driver CLI (`compiler/main.kaz`)**: Orquestrador e gerador de disassembly nativo.
+---
+
+## 15. Arquitetura do Compilador Nativo AOT x86-64 (`src/aot/`) ⚙️
+
+O subsistema AOT do Kaz traduz código Kaz para **código de máquina nativo x86-64 autônomo**, gerando binários estáticos ELF64 com zero dependências de libc ou VM:
+
+```
+  ┌───────────────────────────────────────────────────────────┐
+  │                 Código-Fonte Kaz (.kaz)                   │
+  └─────────────────────────────┬─────────────────────────────┘
+                                │
+                                ▼
+  ┌───────────────────────────────────────────────────────────┐
+  │       Frontend Kaz (AST & Compilador de Bytecode)         │
+  └─────────────────────────────┬─────────────────────────────┘
+                                │
+                                ▼
+  ┌───────────────────────────────────────────────────────────┐
+  │         Backend AOT Nativo (`src/aot/mod.rs`)             │
+  │   - Inferência estática de tipos via pilha abstrata       │
+  │   - Mapeamento direto de registradores e slots RBP        │
+  │   - Emissão de Assembly x86-64 limpo (sintaxe Intel)      │
+  └─────────────────────────────┬─────────────────────────────┘
+                                │
+                                ▼
+  ┌───────────────────────────────────────────────────────────┐
+  │                 NASM Assembler (elf64)                    │
+  └─────────────────────────────┬─────────────────────────────┘
+                                │
+                                ▼
+  ┌───────────────────────────────────────────────────────────┐
+  │               GNU LD (Linker Estático ELF64)              │
+  └─────────────────────────────┬─────────────────────────────┘
+                                │
+                                ▼
+  ┌───────────────────────────────────────────────────────────┐
+  │        Executável Nativo Autônomo (~10-12 KB)             │
+  │   - Syscalls Linux diretas (sys_write, sys_exit)          │
+  │   - Bump Allocator de Heap integrado (kaz_alloc)          │
+  │   - Zero dependências de runtime ou interpretadores       │
+  └───────────────────────────────────────────────────────────┘
+```
+
+### Layout de Memória e Estruturas no Heap Nativo:
+1. **Arena de Heap (`kaz_alloc`)**:
+   - Alocador contíguo *bump allocator* em `.bss` com alinhamento rigoroso a 8 bytes.
+2. **Structs**:
+   - `Offset 0`: Quantidade de campos (`field_count`).
+   - `Offset 8`: Ponteiro para string com nome da struct.
+   - `Offset 16 + i*16`: Chave do campo (`key_ptr`).
+   - `Offset 24 + i*16`: Valor do campo (`val_qword`).
+3. **Arrays**:
+   - `Offset 0`: Comprimento (`len`).
+   - `Offset 8`: Capacidade (`cap`).
+   - `Offset 16 + i*8`: Elementos contíguos de 64 bits.
+4. **Enums (Tagged Unions com Payloads)**:
+   - `Offset 0`: Ponteiro para nome do enum (`enum_name`).
+   - `Offset 8`: Ponteiro para nome da variante (`variant_name`).
+   - `Offset 16`: Quantidade de campos de dados (`payload_count`).
+   - `Offset 24 + p*8`: Valores dos payloads ordenados.
+5. **Strings & Concatenação**:
+   - Literais estáticos são emitidos como bytes UTF-8 terminados em nulo na seção `.rodata`.
+   - Concatenação dinâmica (`kaz_str_concat`) aloca o buffer total no heap e realiza cópia sequencial preservando terminação nula.
+
+
+---
+
+## 16. Compilador Self-Hosted e Ponto Fixo AOT (Milestone 5) 🦅
+
+Na versão 1.5.0, a linguagem Kaz alcançou autonomia completa (*self-hosting*) com verificação formal de **Ponto Fixo Determinístico (Fixed Point)**.
+
+### Pipeline de Bootstrap Multi-Estágio:
+1. **Stage 1 (Compilador Host Rust)**: Compila o código-fonte do compilador Kaz (`compiler/*.kaz`) gerando o assembly x86-64 do compilador.
+2. **Stage 2 (Montagem & Linkagem Nativa)**: O código assembly gerado é montado via NASM e linkado via LD, produzindo o binário executável autônomo `kazc_stage2` (269 KB).
+3. **Stage 3 (Auto-Compilação Nativa Soberana)**: O binário nativo `kazc_stage2` compila o código-fonte do compilador (`compiler/*.kaz`) sem qualquer dependência do executável em Rust, gerando `kazc_stage3.asm` (2.3 MB) em menos de 40 segundos.
+4. **Stage 4 & Prova de Ponto Fixo**: O binário gerado do Stage 3 compila novamente o compilador, produzindo `kazc_stage4.asm`.
+   - **Garantia Bit-a-Bit**: `diff -u kazc_stage3.asm kazc_stage4.asm` é nulo e os hashes criptográficos SHA-256 são idênticos:
+     `95398a3ce2056ca043767774130fa07593da2f7b3b7ad5e0ad265679a29d7ae8`.
+
+### Heap Dinâmico via Syscall Linux (`sys_brk`):
+Para eliminar o risco de estouro de buffer associado a reservas estáticas no `.bss` sem sacrificar a independência de libc:
+- A seção `.bss` foi reduzida para apenas 24 bytes para ponteiros de controle (`kaz_heap_start`, `kaz_heap_current`, `kaz_heap_limit`).
+- O runtime AOT utiliza a syscall direta do kernel Linux `sys_brk(12)` (`kaz_expand_heap`).
+- A alocação ocorre dinamicamente em blocos de 64 MB sob demanda, permitindo paginação transparente pelo kernel e prevenindo alocações desnecessárias de memória física.

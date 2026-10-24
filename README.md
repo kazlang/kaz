@@ -371,10 +371,10 @@ Kaz has reached complete self-hosting sovereignty:
 
 Explore the comprehensive manuals inside the [`docs/`](docs/) directory:
 
-- 📖 **[Official Language Guide](docs/LANGUAGE_GUIDE.md)**: Full syntax specification, type rules, control flow, and structs.
-- 📚 **[Standard Library Reference (Stdlib)](docs/STDLIB.md)**: Catalog of native functions: I/O, math, strings, SQLite, JSON, and networking.
-- 🖥️ **[CLI & Kaz Terminal Guide](docs/CLI_GUIDE.md)**: Terminal commands, execution flags, and interactive shell features.
-- 🏛️ **[Compiler & VM Architecture](docs/ARCHITECTURE.md)**: Compilation pipeline, Pratt parsing, opcode design, and VM dispatch loop.
+- 📖 **[Official Language Guide](docs/LANGUAGE_GUIDE.md)** ([Português](docs/LANGUAGE_GUIDE.pt-BR.md)): Full syntax specification, type rules, control flow, and structs.
+- 📚 **[Standard Library Reference (Stdlib)](docs/STDLIB.md)** ([Português](docs/STDLIB.pt-BR.md)): Catalog of native functions: I/O, math, strings, SQLite, JSON, and networking.
+- 🖥️ **[CLI & Kaz Terminal Guide](docs/CLI_GUIDE.md)** ([Português](docs/CLI_GUIDE.pt-BR.md)): Terminal commands, execution flags, and interactive shell features.
+- 🏛️ **[Compiler & VM Architecture](docs/ARCHITECTURE.md)** ([Português](docs/ARCHITECTURE.pt-BR.md)): Compilation pipeline, Pratt parsing, opcode design, and VM dispatch loop.
 - 🦅 **[Milestone 3: Self-Hosted Compiler Report](docs/RELATORIO_MILESTONE_3_SELF_HOSTED.md)**: Technical breakdown, bootstrap verification, and Windows execution guide.
 
 ---
@@ -731,10 +731,10 @@ Kaz alcançou soberania técnica absoluta com auto-hospedagem completa:
 
 Para aprofundar-se em cada aspecto da linguagem, consulte os manuais especializados em [`docs/`](docs/):
 
-- 📖 **[Guia Oficial da Linguagem (Language Guide)](docs/LANGUAGE_GUIDE.md)**: Manual sintático completo, regras de tipagem, controle de fluxo e structs.
-- 📚 **[Referência da Biblioteca Padrão (Stdlib)](docs/STDLIB.md)**: Catálogo com todas as funções nativas de E/S, matemática, strings, SQLite, JSON e rede.
-- 🖥️ **[Manual da CLI e Kaz Terminal](docs/CLI_GUIDE.md)**: Comandos de terminal, flags de execução e recursos do shell interativo.
-- 🏛️ **[Arquitetura Interna do Compilador e VM](docs/ARCHITECTURE.md)**: Detalhes do pipeline de compilação, Pratt parser, opcodes e motor de despacho da VM.
+- 📖 **[Guia Oficial da Linguagem (Language Guide)](docs/LANGUAGE_GUIDE.pt-BR.md)** ([English](docs/LANGUAGE_GUIDE.md)): Manual sintático completo, regras de tipagem, controle de fluxo e structs.
+- 📚 **[Referência da Biblioteca Padrão (Stdlib)](docs/STDLIB.pt-BR.md)** ([English](docs/STDLIB.md)): Catálogo com todas as funções nativas de E/S, matemática, strings, SQLite, JSON e rede.
+- 🖥️ **[Manual da CLI e Kaz Terminal](docs/CLI_GUIDE.pt-BR.md)** ([English](docs/CLI_GUIDE.md)): Comandos de terminal, flags de execução e recursos do shell interativo.
+- 🏛️ **[Arquitetura Interna do Compilador e VM](docs/ARCHITECTURE.pt-BR.md)** ([English](docs/ARCHITECTURE.md)): Detalhes do pipeline de compilação, Pratt parser, opcodes e motor de despacho da VM.
 - 🦅 **[Milestone 3: Relatório do Compilador Self-Hosted](docs/RELATORIO_MILESTONE_3_SELF_HOSTED.md)**: Detalhamento técnico, verificação de bootstrap e guia Windows.
 
 ---
