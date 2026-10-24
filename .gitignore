@@ -5,3 +5,6 @@ Thumbs.db
 *.log
 *.kzc
 .vscode/
+*.tar.gz
+*.deb
+*.zip

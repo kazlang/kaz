@@ -56,7 +56,7 @@ if ($LASTEXITCODE -ne 0) {
     Write-Error "Erro ao compilar o instalador NSIS!"
 }
 
-$installerExe = Join-Path $distDir "kaz-v1.4.0-windows-x64-setup.exe"
+$installerExe = Join-Path $distDir "kaz-v1.5.0-windows-x64-setup.exe"
 if (Test-Path $installerExe) {
     $sizeMb = [math]::Round((Get-Item $installerExe).Length / 1MB, 2)
     Write-Host "=== Instalador gerado com sucesso! ===" -ForegroundColor Green

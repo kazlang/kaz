@@ -10,15 +10,18 @@ TAR_FILE="${DIST_DIR}/${DIST_NAME}.tar.gz"
 
 echo "=== Empacotando Distribuição: ${DIST_NAME} ==="
 
-cd "${ROOT_DIR}"
-cargo build --release
+KAZ_BIN="${ROOT_DIR}/bin/kaz"
+if [ ! -f "${KAZ_BIN}" ]; then
+    echo "ERRO: Binário ${KAZ_BIN} não encontrado."
+    exit 1
+fi
 
 rm -rf "${TARGET_DIST_DIR}" "${TAR_FILE}"
 mkdir -p "${TARGET_DIST_DIR}/bin"
 mkdir -p "${TARGET_DIST_DIR}/examples"
 mkdir -p "${TARGET_DIST_DIR}/docs"
 
-cp "${ROOT_DIR}/target/release/kaz" "${TARGET_DIST_DIR}/bin/kaz"
+cp "${KAZ_BIN}" "${TARGET_DIST_DIR}/bin/kaz"
 cp -r "${ROOT_DIR}/examples/"* "${TARGET_DIST_DIR}/examples/"
 cp -r "${ROOT_DIR}/docs/"* "${TARGET_DIST_DIR}/docs/"
 cp "${ROOT_DIR}/README.md" "${TARGET_DIST_DIR}/"

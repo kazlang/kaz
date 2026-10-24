@@ -1,4 +1,4 @@
-$version = "1.4.0"
+$version = "1.5.0"
 $distName = "kaz-$version-windows-x64"
 $rootDir = (Get-Item $PSScriptRoot).Parent.FullName
 $distDir = Join-Path $rootDir "dist"

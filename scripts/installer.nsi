@@ -3,7 +3,7 @@
 ; ==============================================================================
 
 !define PRODUCT_NAME "Kaz Programming Language"
-!define PRODUCT_VERSION "1.4.0"
+!define PRODUCT_VERSION "1.5.0"
 !define PRODUCT_PUBLISHER "Armando Soares"
 !define PRODUCT_WEB_SITE "https://github.com/armandosds/kaz"
 !define PRODUCT_DIR_REGKEY "Software\Kaz"

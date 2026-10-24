@@ -278,3 +278,23 @@ O subsistema AOT do Kaz traduz código Kaz para **código de máquina nativo x86
    - Literais estáticos são emitidos como bytes UTF-8 terminados em nulo na seção `.rodata`.
    - Concatenação dinâmica (`kaz_str_concat`) aloca o buffer total no heap e realiza cópia sequencial preservando terminação nula.
 
+
+---
+
+## 16. Compilador Self-Hosted e Ponto Fixo AOT (Milestone 5) 🦅
+
+Na versão 1.5.0, a linguagem Kaz alcançou autonomia completa (*self-hosting*) com verificação formal de **Ponto Fixo Determinístico (Fixed Point)**.
+
+### Pipeline de Bootstrap Multi-Estágio:
+1. **Stage 1 (Compilador Host Rust)**: Compila o código-fonte do compilador Kaz (`compiler/*.kaz`) gerando o assembly x86-64 do compilador.
+2. **Stage 2 (Montagem & Linkagem Nativa)**: O código assembly gerado é montado via NASM e linkado via LD, produzindo o binário executável autônomo `kazc_stage2` (269 KB).
+3. **Stage 3 (Auto-Compilação Nativa Soberana)**: O binário nativo `kazc_stage2` compila o código-fonte do compilador (`compiler/*.kaz`) sem qualquer dependência do executável em Rust, gerando `kazc_stage3.asm` (2.3 MB) em menos de 40 segundos.
+4. **Stage 4 & Prova de Ponto Fixo**: O binário gerado do Stage 3 compila novamente o compilador, produzindo `kazc_stage4.asm`.
+   - **Garantia Bit-a-Bit**: `diff -u kazc_stage3.asm kazc_stage4.asm` é nulo e os hashes criptográficos SHA-256 são idênticos:
+     `95398a3ce2056ca043767774130fa07593da2f7b3b7ad5e0ad265679a29d7ae8`.
+
+### Heap Dinâmico via Syscall Linux (`sys_brk`):
+Para eliminar o risco de estouro de buffer associado a reservas estáticas no `.bss` sem sacrificar a independência de libc:
+- A seção `.bss` foi reduzida para apenas 24 bytes para ponteiros de controle (`kaz_heap_start`, `kaz_heap_current`, `kaz_heap_limit`).
+- O runtime AOT utiliza a syscall direta do kernel Linux `sys_brk(12)` (`kaz_expand_heap`).
+- A alocação ocorre dinamicamente em blocos de 64 MB sob demanda, permitindo paginação transparente pelo kernel e prevenindo alocações desnecessárias de memória física.

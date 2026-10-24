@@ -6,8 +6,8 @@
 </p>
 
 <p align="center">
-    <a href="https://github.com/armandosds/Kaz"><img src="https://img.shields.io/badge/versão-1.4.0-blue.svg" alt="Versão"></a>
-    <a href="CHANGELOG.md"><img src="https://img.shields.io/badge/changelog-v1.4.0-informational.svg" alt="Changelog"></a>
+    <a href="https://github.com/armandosds/Kaz"><img src="https://img.shields.io/badge/versão-1.5.0-blue.svg" alt="Versão"></a>
+    <a href="CHANGELOG.md"><img src="https://img.shields.io/badge/changelog-v1.5.0-informational.svg" alt="Changelog"></a>
     <a href="LICENSE"><img src="https://img.shields.io/badge/Licença-Proprietária-red.svg" alt="Licença: Proprietária"></a>
     <img src="https://img.shields.io/badge/build-passando-brightgreen.svg" alt="Status da Build">
     <img src="https://img.shields.io/badge/Motor-Stack%20Bytecode%20VM-purple.svg" alt="Motor: Bytecode VM">
@@ -351,6 +351,18 @@ cargo test
 - Conectividade de rede TCP e HTTP (`net_tests.rs`)
 - Máquina Virtual de Bytecode (`vm_tests.rs`)
 - Interface de linha de comando (`cli_tests.rs`, `shell_tests.rs`)
+
+---
+
+---
+
+## 🦅 Milestone 5: Compilador Nativo Self-Hosted Completo & Ponto Fixo AOT
+
+Kaz alcançou soberania técnica absoluta com auto-hospedagem completa:
+- **Bootstrap 100% Self-Hosted**: O compilador nativo escrito integralmente em Kaz puro (`compiler/*.kaz`) compila a si próprio gerando código de máquina autônomo x86-64 (`kazc_stage2`).
+- **Ponto Fixo Determinístico Bit a Bit**: Comprovado formalmente através do bootstrap multi-estágio (`Stage 2 -> Stage 3 -> Stage 4`). Os fontes em assembly `kazc_stage3.asm` e `kazc_stage4.asm` são rigorosamente idênticos (SHA-256: `95398a3ce2056ca043767774130fa07593da2f7b3b7ad5e0ad265679a29d7ae8` com diff nulo).
+- **Alocador de Heap Dinâmico (`sys_brk`)**: Gerenciamento de paginação direta pelo kernel Linux via syscall pura `sys_brk(12)` com blocos de 64 MB, eliminando riscos de estouro de buffer.
+- **Arquitetura Tree Merge O(N)**: Emissão de código otimizada com mesclagem em árvore por redução binária, reduzindo o consumo de memória na compilação para menos de 20 MB.
 
 ---
 
