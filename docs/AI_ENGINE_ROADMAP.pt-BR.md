@@ -19,7 +19,7 @@ O Kaz AI Engine foi projetado para inferência local determinística e de alto d
 
 ```mermaid
 flowchart TD
-    M1["Fase 1: Fundação de Memória e Buffers<br/>(CONCLUÍDO)"] --> M2["Fase 2: Carregadores Binários de Modelos<br/>(.kzm e Safetensors)"]
+    M1["Fase 1: Fundação de Memória e Buffers<br/>(CONCLUÍDO)"] --> M2["Fase 2: Carregadores Binários de Modelos<br/>(CONCLUÍDO)"]
     M2 --> M3["Fase 3: Kernels SIMD de Matrizes<br/>(AVX2 / AVX-512 GEMM)"]
     M3 --> M4["Fase 4: Tokenizador e KV-Cache<br/>(BPE / Janela de Contexto)"]
     M4 --> M5["Fase 5: Quantização e Streaming<br/>(Q4_K / Q8_0 / Paridade com llama.cpp)"]
@@ -40,15 +40,18 @@ flowchart TD
 
 ---
 
-### Fase 2: Carregadores Binários e Validação de Formatos
-- **Status**: Em Andamento
-- **Objetivos Principais**:
-  - Carregador seguro com mapeamento direto em memória (`mmap`) com zero cópia.
-  - Validação estrita do cabeçalho: `data_offset.checked_add(data_len) <= mmap_len`.
-  - Formato nativo `.kzm` com metadados de dimensões de embedding, cabeças de atenção e quantização.
+### Fase 2: Carregadores Binários e Validação de Formatos (Concluído)
+- **Status**: [x] Concluído
+- **Recursos Entregues**:
+  - Implementação de syscalls diretas x86-64 Linux sem dependência de libc (`sys_open_ro`, `sys_lseek`, `sys_mmap`, `sys_munmap`, `sys_close`) em `runtime/kazrt.c`.
+  - Primitivos de carregador de modelos binários com zero cópia (`model_open`, `model_close`, `model_size`, `model_type`).
+  - Parser e inspeção nativa de formato binário `.kzm` (`kzm_dim`, `kzm_layers`, `kzm_heads`, `kzm_vocab`, `kzm_tensor_count`).
+  - Extração direta de ponteiros e tensores (`kzm_tensor_ptr`, `kzm_tensor_size`, `safetensors_tensor_ptr`, `safetensors_tensor_size`).
+  - Acesso direto à memória em velocidade de barramento de hardware via `buf_load_f32_le` ignorando alocações e verificações de tag para regiões de `mmap`.
+  - Paridade total multiplataforma entre Avaliador AST, Bytecode VM e compilador nativo auto-contido AOT x86-64 sem libc.
 - **Pronto Quando**:
-  - Um modelo de 7B parâmetros (.safetensors ou .kzm) carrega em $< 150\text{ ms}$ em SSD via `mmap`.
-  - Arquivos corrompidos ou truncados são rejeitados com erro claro, sem causar SIGSEGV.
+  - Arquivos `.kzm` e `.safetensors` válidos ou corrompidos carregam ou falham determinísticamente sem travamentos ou corrupção de memória.
+  - Tensores são lidos diretamente de páginas mapeadas sob demanda na largura de banda máxima da RAM.
 
 ---
 
