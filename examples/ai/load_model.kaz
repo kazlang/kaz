@@ -1,0 +1,146 @@
+// load_model.kaz
+// Utilitário Kaz para inspeção, abertura zero-copy e mapeamento de tensores
+// Suporta formatos .kzm nativo do Kaz e .safetensors do Hugging Face via mmap.
+
+function print_separator(): int {
+    println("================================================================================");
+    return 0;
+}
+
+function inspect_and_load(string path): int {
+    print_separator();
+    println("  KAZ AI ENGINE - Carregador Zero-Copy de Modelos Binários");
+    println("  Arquivo Alvo: ", path);
+    print_separator();
+
+    if (!file_exists(path)) {
+        println("[-] Erro: Arquivo não encontrado:", path);
+        return 1;
+    }
+
+    int handle = model_open(path);
+    if (handle <= 0) {
+        println("[-] Erro: Formato inválido ou corrompido. Não foi possível mapear via mmap.");
+        return 1;
+    }
+
+    int mtype = model_type(handle);
+    int fsize = model_size(handle);
+    int size_mb = fsize / (1024 * 1024);
+
+    println("[+] Modelo mapeado com sucesso em memória virtual!");
+    println("    Handle do Mmap:", handle);
+    println("    Tamanho do Arquivo:", size_mb, "MB (", fsize, "bytes)");
+
+    if (mtype == 1) {
+        println("    Formato Identificado: Kaz Native Model (.kzm)");
+        int layers = kzm_layers(handle);
+        int dim = kzm_dim(handle);
+        int heads = kzm_heads(handle);
+        int vocab = kzm_vocab(handle);
+        int tcount = kzm_tensor_count(handle);
+
+        println("    --- Metadados da Arquitetura ---");
+        println("    Camadas Ocultas (Layers):", layers);
+        println("    Dimensão de Embedding (Hidden Dim):", dim);
+        println("    Cabeças de Atenção (Attention Heads):", heads);
+        println("    Tamanho do Vocabulário (Vocab Size):", vocab);
+        println("    Total de Tensores Registrados:", tcount);
+
+        // Teste de resolução de ponteiros de tensores
+        println("    --- Resolução de Tensores ---");
+        int ptr_embed = kzm_tensor_ptr(handle, "model.embed");
+        if (ptr_embed != 0) {
+            int sz = kzm_tensor_size(handle, "model.embed");
+            println("    [OK] Tensor 'model.embed' -> Ponteiro RAM: 0x", ptr_embed, "(", sz, "bytes)");
+            float w0 = buf_load_f32_le(ptr_embed, 0);
+            float w1 = buf_load_f32_le(ptr_embed, 4);
+            println("         Primeiros pesos: [", w0, ", ", w1, ", ...]");
+        }
+    } else if (mtype == 2) {
+        println("    Formato Identificado: Hugging Face Safetensors (.safetensors)");
+
+        // Demonstração de resolução de tensores comuns (ex: embeddings, bert, minilm)
+        println("    --- Sondagem de Tensores Safetensors ---");
+        array[string] common_tensors = [
+            "embeddings.word_embeddings.weight",
+            "bert.embeddings.word_embeddings.weight",
+            "embeddings",
+            "weight",
+            "model.embed_tokens.weight",
+            "lm_head.weight"
+        ];
+
+        for (tname in common_tensors) {
+            int ptr = safetensors_tensor_ptr(handle, tname);
+            if (ptr != 0) {
+                int sz = safetensors_tensor_size(handle, tname);
+                println("    [OK] Tensor Encontrado: '", tname, "' (", sz, "bytes)");
+                float f0 = buf_load_f32_le(ptr, 0);
+                float f1 = buf_load_f32_le(ptr, 4);
+                println("         Pesos iniciais: [", f0, ", ", f1, ", ...]");
+            }
+        }
+    } else {
+        println("    Formato Desconhecido");
+    }
+
+    model_close(handle);
+    println("[+] Mapeamento descarregado com sucesso.");
+    print_separator();
+    return 0;
+}
+
+function main(): int {
+    if (args_len() < 2) {
+        println("Uso: kaz run examples/ai/load_model.kaz <caminho_do_modelo.kzm_ou_safetensors>");
+        println("");
+        println("Executando teste padrão com modelo de demonstração...");
+        
+        // Cria um modelo de teste em /tmp para demonstrar a execução
+        string demo_path = "/tmp/demo_test_model.safetensors";
+        println("Gerando modelo de teste para demonstração em:", demo_path);
+        
+        // JSON Safetensors mínimo
+        // Header: {"weight":{"dtype":"F32","shape":[2,2],"data_offsets":[0,16]}}
+        string json_hdr = "{\"weight\":{\"dtype\":\"F32\",\"shape\":[2,2],\"data_offsets\":[0,16]}}";
+        int hlen = json_hdr.len;
+        
+        array[int] bytes = [];
+        // 8 bytes LE header length
+        bytes.push(hlen);
+        bytes.push(0);
+        bytes.push(0);
+        bytes.push(0);
+        bytes.push(0);
+        bytes.push(0);
+        bytes.push(0);
+        bytes.push(0);
+        
+        // JSON bytes
+        int p = 0;
+        while (p < hlen) {
+            bytes.push(ord(json_hdr[p]));
+            p = p + 1;
+        }
+        
+        // 4 floats: 1.0 (0x3f800000), 2.0 (0x40000000), 3.0 (0x40400000), 4.0 (0x40800000)
+        // 1.0 -> 0x00, 0x00, 0x80, 0x3f
+        bytes.push(0); bytes.push(0); bytes.push(128); bytes.push(63);
+        // 2.0 -> 0x00, 0x00, 0x00, 0x40
+        bytes.push(0); bytes.push(0); bytes.push(0); bytes.push(64);
+        // 3.0 -> 0x00, 0x00, 0x40, 0x40
+        bytes.push(0); bytes.push(0); bytes.push(64); bytes.push(64);
+        // 4.0 -> 0x00, 0x00, 0x80, 0x40
+        bytes.push(0); bytes.push(0); bytes.push(128); bytes.push(64);
+        
+        file_write_bytes(demo_path, bytes);
+        
+        inspect_and_load(demo_path);
+        file_delete(demo_path);
+        return 0;
+    }
+
+    string model_path = argv(1);
+    return inspect_and_load(model_path);
+}

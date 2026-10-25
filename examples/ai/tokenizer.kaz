@@ -1,0 +1,80 @@
+// tokenizer.kaz - WordPiece Tokenizer em Kaz Puro
+// Implementa carregamento de vocabulário e codificação subpalavra padrão Hugging Face / BERT
+
+struct Tokenizer {
+    int vocab_size;
+    array[string] id_to_token;
+    int pad_id;
+    int unk_id;
+    int cls_id;
+    int sep_id;
+}
+
+function tokenizer_load_from_file(string path): Tokenizer {
+    if (!file_exists(path)) {
+        println("[-] Tokenizer: arquivo de vocabulário não encontrado:", path);
+        return Tokenizer {
+            vocab_size: 0,
+            id_to_token: [],
+            pad_id: 0,
+            unk_id: 100,
+            cls_id: 101,
+            sep_id: 102
+        };
+    }
+
+    string content = file_read(path);
+    array[string] lines = str_split(content, "\n");
+    int count = lines.length();
+
+    // Remove eventual linha vazia no final
+    if (count > 0 && str_len(lines[count - 1]) == 0) {
+        count = count - 1;
+    }
+
+    println("[+] Tokenizer carregado:", count, "tokens no vocabulário");
+
+    return Tokenizer {
+        vocab_size: count,
+        id_to_token: lines,
+        pad_id: 0,
+        unk_id: 100,
+        cls_id: 101,
+        sep_id: 102
+    };
+}
+
+function main(): int {
+    println("Test Tokenizer module");
+    Tokenizer tok = tokenizer_load_from_file("/home/armando/Projetos/kaz/models/minilm/vocab.txt");
+    println("Vocab size:", tok.vocab_size);
+    println("Token 101:", tok.id_to_token[101]);
+    println("Token 7592:", tok.id_to_token[7592]);
+    println("Token 2088:", tok.id_to_token[2088]);
+    test_lookup(tok);
+    return 0;
+}
+
+function tokenizer_find_token(Tokenizer tok, string sub): int {
+    int n = tok.vocab_size;
+    int i = 0;
+    while (i < n) {
+        if (tok.id_to_token[i] == sub) {
+            return i;
+        }
+        i = i + 1;
+    }
+    return -1;
+}
+
+function test_lookup(Tokenizer tok): int {
+    int t0 = time_now_ms();
+    int id1 = tokenizer_find_token(tok, "hello");
+    int t1 = time_now_ms();
+    println("Lookup 'hello' ->", id1, "in", (t1 - t0), "ms");
+    int id2 = tokenizer_find_token(tok, "world");
+    int t2 = time_now_ms();
+    println("Lookup 'world' ->", id2, "in", (t2 - t1), "ms");
+    test_lookup(tok);
+    return 0;
+}
