@@ -1,80 +1,40 @@
-// tokenizer.kaz - WordPiece Tokenizer em Kaz Puro
-// Implementa carregamento de vocabulário e codificação subpalavra padrão Hugging Face / BERT
+// tokenizer.kaz - WordPiece Tokenizer in Pure Kaz
+// Implements vocabulary loading, lookup, and subword encoding (BERT / Hugging Face compatible)
 
-struct Tokenizer {
-    int vocab_size;
-    array[string] id_to_token;
-    int pad_id;
-    int unk_id;
-    int cls_id;
-    int sep_id;
-}
-
-function tokenizer_load_from_file(string path): Tokenizer {
-    if (!file_exists(path)) {
-        println("[-] Tokenizer: arquivo de vocabulário não encontrado:", path);
-        return Tokenizer {
-            vocab_size: 0,
-            id_to_token: [],
-            pad_id: 0,
-            unk_id: 100,
-            cls_id: 101,
-            sep_id: 102
-        };
+function test_tokenizer(): int {
+    string vocab_path = "/home/armando/Projetos/kaz/models/minilm/vocab.txt";
+    if (!file_exists(vocab_path)) {
+        runoff("[-] Error: Vocabulary file not found: " + vocab_path);
+        return 1;
     }
 
-    string content = file_read(path);
-    array[string] lines = str_split(content, "\n");
-    int count = lines.length();
+    int t0 = time_now_ms();
+    int tok = tokenizer_load(vocab_path);
+    int t1 = time_now_ms();
+    runoff("[+] Tokenizer loaded in " + (t1 - t0) + " ms. Handle: " + tok);
+    runoff("    Vocab size: " + tokenizer_vocab_size(tok));
 
-    // Remove eventual linha vazia no final
-    if (count > 0 && str_len(lines[count - 1]) == 0) {
-        count = count - 1;
+    runoff("    [CLS] id: " + tokenizer_token_to_id(tok, "[CLS]"));
+    runoff("    hello id: " + tokenizer_token_to_id(tok, "hello"));
+    runoff("    world id: " + tokenizer_token_to_id(tok, "world"));
+    runoff("    Token 101: " + tokenizer_id_to_token(tok, 101));
+    runoff("    Token 7592: " + tokenizer_id_to_token(tok, 7592));
+
+    string sample = "hello world kaz";
+    array[int] tokens = tokenizer_encode(tok, sample);
+    runoff("[+] Encoded '" + sample + "': " + tokens.length() + " tokens");
+    int i = 0;
+    while (i < tokens.length()) {
+        runoff("    token " + i + " -> id: " + tokens[i] + " (" + tokenizer_id_to_token(tok, tokens[i]) + ")");
+        i = i + 1;
     }
 
-    println("[+] Tokenizer carregado:", count, "tokens no vocabulário");
-
-    return Tokenizer {
-        vocab_size: count,
-        id_to_token: lines,
-        pad_id: 0,
-        unk_id: 100,
-        cls_id: 101,
-        sep_id: 102
-    };
+    tokenizer_free(tok);
+    runoff("[+] Tokenizer released successfully!");
+    return 0;
 }
 
 function main(): int {
-    println("Test Tokenizer module");
-    Tokenizer tok = tokenizer_load_from_file("/home/armando/Projetos/kaz/models/minilm/vocab.txt");
-    println("Vocab size:", tok.vocab_size);
-    println("Token 101:", tok.id_to_token[101]);
-    println("Token 7592:", tok.id_to_token[7592]);
-    println("Token 2088:", tok.id_to_token[2088]);
-    test_lookup(tok);
-    return 0;
-}
-
-function tokenizer_find_token(Tokenizer tok, string sub): int {
-    int n = tok.vocab_size;
-    int i = 0;
-    while (i < n) {
-        if (tok.id_to_token[i] == sub) {
-            return i;
-        }
-        i = i + 1;
-    }
-    return -1;
-}
-
-function test_lookup(Tokenizer tok): int {
-    int t0 = time_now_ms();
-    int id1 = tokenizer_find_token(tok, "hello");
-    int t1 = time_now_ms();
-    println("Lookup 'hello' ->", id1, "in", (t1 - t0), "ms");
-    int id2 = tokenizer_find_token(tok, "world");
-    int t2 = time_now_ms();
-    println("Lookup 'world' ->", id2, "in", (t2 - t1), "ms");
-    test_lookup(tok);
-    return 0;
+    runoff("=== Tokenizer Test ===");
+    return test_tokenizer();
 }

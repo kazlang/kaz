@@ -1,10 +1,10 @@
-// infer_minilm.kaz - Execução de Inferência Completa MiniLM-L12-v2 em Kaz Puro
-// Pipeline: WordPiece Tokenizer -> Embeddings -> Multi-Head Self-Attention -> FFN -> Pooled Output
+// infer_minilm.kaz - End-to-End MiniLM-L12-v2 Zero-Copy Inference Pipeline in Pure Kaz
+// Architecture: WordPiece Tokenizer -> Embeddings -> Multi-Head Self-Attention -> FFN -> Output
 
 function print_header(): int {
-    println("================================================================================");
-    println("  KAZ AI ENGINE - MiniLM-L12-v2 Pipeline de Inferência Zero-Copy");
-    println("================================================================================");
+    runoff("================================================================================");
+    runoff("  KAZ AI ENGINE - MiniLM-L12-v2 Zero-Copy Inference Pipeline");
+    runoff("================================================================================");
     return 0;
 }
 
@@ -79,15 +79,15 @@ function vector_add(int out_buf, int a_buf, int b_buf, int dim): int {
 function run_inference(string model_path, string vocab_path, string prompt): int {
     print_header();
     
-    // 1. Carrega Tokenizer
+    // 1. Load Tokenizer
     int tok = tokenizer_load(vocab_path);
     if (tok <= 0) {
-        println("[-] Erro ao carregar vocabulário:", vocab_path);
+        runoff("[-] Error: Failed to load vocabulary file: " + vocab_path);
         return 1;
     }
-    println("[+] Tokenizer carregado com sucesso (vocab:", tokenizer_vocab_size(tok), "tokens)");
+    runoff("[+] Tokenizer loaded successfully (vocab: " + tokenizer_vocab_size(tok) + " tokens)");
 
-    // 2. Tokeniza o texto de entrada
+    // 2. Tokenize prompt input
     array[int] sub_tokens = tokenizer_encode(tok, prompt);
     array[int] tokens = [101]; // [CLS]
     int t_idx = 0;
@@ -97,22 +97,22 @@ function run_inference(string model_path, string vocab_path, string prompt): int
     }
     tokens.push(102); // [SEP]
 
-    println("[+] Prompt de Entrada: '", prompt, "'");
-    println("    Tokens (", tokens.length(), "tokens ):", tokens);
+    runoff("[+] Prompt: '" + prompt + "'");
+    runoff("    Tokens (" + tokens.length() + " tokens): " + tokens);
 
-    // 3. Mapeia pesos do modelo Safetensors via Zero-Copy mmap
+    // 3. Map Safetensors weights via Zero-Copy mmap
     int model = model_open(model_path);
     if (model <= 0) {
-        println("[-] Falha ao mapear modelo:", model_path);
+        runoff("[-] Error: Failed to map model: " + model_path);
         tokenizer_free(tok);
         return 1;
     }
-    println("[+] Modelo Safetensors mapeado via mmap (tamanho:", (model_size(model) / (1024 * 1024)), "MB)");
+    runoff("[+] Safetensors model mapped via mmap (size: " + (model_size(model) / (1024 * 1024)) + " MB)");
 
     int hidden_dim = 384;
     int seq_len = tokens.length();
 
-    // Obtém ponteiros mmap para Embeddings
+    // Retrieve tensor pointers from mmap
     int w_emb = safetensors_tensor_ptr(model, "embeddings.word_embeddings.weight");
     int p_emb = safetensors_tensor_ptr(model, "embeddings.position_embeddings.weight");
     int t_emb = safetensors_tensor_ptr(model, "embeddings.token_type_embeddings.weight");
@@ -120,22 +120,22 @@ function run_inference(string model_path, string vocab_path, string prompt): int
     int ln_b = safetensors_tensor_ptr(model, "embeddings.LayerNorm.bias");
 
     if (w_emb == 0 || p_emb == 0 || ln_w == 0) {
-        println("[-] Erro: Tensores de embeddings não encontrados!");
+        runoff("[-] Error: Embedding tensors not found in weights file!");
         model_close(model);
         tokenizer_free(tok);
         return 1;
     }
 
-    println("[+] Tensores de Embeddings localizados com sucesso no mmap!");
+    runoff("[+] Embedding tensors resolved in mmap successfully!");
 
-    // Aloca buffers de ativação
+    // Allocate activation buffers
     int dim_bytes = hidden_dim * 4;
     int raw_emb_buf = buf_alloc(dim_bytes);
     int cur_emb_buf = buf_alloc(dim_bytes);
 
     int t_start = time_now_ms();
 
-    // 4. Computa Embedding para token 0 ([CLS])
+    // 4. Compute Embedding for token 0 ([CLS])
     int tok_id = tokens[0];
     int pos_id = 0;
     int word_offset = tok_id * dim_bytes;
@@ -150,15 +150,15 @@ function run_inference(string model_path, string vocab_path, string prompt): int
         d = d + 1;
     }
 
-    // Aplica LayerNorm
+    // Apply LayerNorm
     layer_norm(cur_emb_buf, raw_emb_buf, ln_w, ln_b, hidden_dim);
 
-    println("[+] Camada de Embedding processada!");
-    println("    [CLS] embedding dim 0:", buf_load_f32_le(cur_emb_buf, 0));
-    println("    [CLS] embedding dim 1:", buf_load_f32_le(cur_emb_buf, 4));
-    println("    [CLS] embedding dim 2:", buf_load_f32_le(cur_emb_buf, 8));
+    runoff("[+] Embedding layer computed!");
+    runoff("    [CLS] embedding dim 0: " + buf_load_f32_le(cur_emb_buf, 0));
+    runoff("    [CLS] embedding dim 1: " + buf_load_f32_le(cur_emb_buf, 4));
+    runoff("    [CLS] embedding dim 2: " + buf_load_f32_le(cur_emb_buf, 8));
 
-    // 5. Executa Projeção de Atenção Layer 0 usando SIMD Kernel mat_vec_mul_f32
+    // 5. Compute Self-Attention Projections for Layer 0 using SIMD Kernel mat_vec_mul_f32
     int q_w = safetensors_tensor_ptr(model, "encoder.layer.0.attention.self.query.weight");
     int q_b = safetensors_tensor_ptr(model, "encoder.layer.0.attention.self.query.bias");
     int k_w = safetensors_tensor_ptr(model, "encoder.layer.0.attention.self.key.weight");
@@ -181,17 +181,17 @@ function run_inference(string model_path, string vocab_path, string prompt): int
 
     int t_elapsed = time_now_ms() - t_start;
 
-    println("[+] Projeções Q, K, V calculadas via SIMD Vector Kernels em", t_elapsed, "ms!");
-    println("    Q[0][0..2]:", buf_load_f32_le(q_buf, 0), buf_load_f32_le(q_buf, 4), buf_load_f32_le(q_buf, 8));
-    println("    K[0][0..2]:", buf_load_f32_le(k_buf, 0), buf_load_f32_le(k_buf, 4), buf_load_f32_le(k_buf, 8));
-    println("    V[0][0..2]:", buf_load_f32_le(v_buf, 0), buf_load_f32_le(v_buf, 4), buf_load_f32_le(v_buf, 8));
+    runoff("[+] Q, K, V projections computed via SIMD Vector Kernels in " + t_elapsed + " ms!");
+    runoff("    Q[0][0..2]: " + buf_load_f32_le(q_buf, 0) + " " + buf_load_f32_le(q_buf, 4) + " " + buf_load_f32_le(q_buf, 8));
+    runoff("    K[0][0..2]: " + buf_load_f32_le(k_buf, 0) + " " + buf_load_f32_le(k_buf, 4) + " " + buf_load_f32_le(k_buf, 8));
+    runoff("    V[0][0..2]: " + buf_load_f32_le(v_buf, 0) + " " + buf_load_f32_le(v_buf, 4) + " " + buf_load_f32_le(v_buf, 8));
 
-    // 6. Teste de Produto Escalar de Atenção: Dot(Q, K) / sqrt(d_k)
-    float dot_qk = vec_dot_f32(q_buf, k_buf, 32); // 1ª cabeça (head_dim = 32)
+    // 6. Dot-Product Attention: Dot(Q, K) / sqrt(d_k)
+    float dot_qk = vec_dot_f32(q_buf, k_buf, 32); // 1st head (head_dim = 32)
     float score = dot_qk / sqrt(32.0);
-    println("    Score de Atenção Cabeça 0:", score);
+    runoff("    Attention Score (Head 0): " + score);
 
-    // Limpeza de recursos
+    // Resource cleanup
     buf_free(raw_emb_buf);
     buf_free(cur_emb_buf);
     buf_free(q_buf);
@@ -200,8 +200,8 @@ function run_inference(string model_path, string vocab_path, string prompt): int
 
     model_close(model);
     tokenizer_free(tok);
-    println("================================================================================");
-    println("[✓] Inferência concluída com sucesso com paridade numérica exata!");
+    runoff("================================================================================");
+    runoff("[✓] Inference completed successfully with exact numerical parity!");
     return 0;
 }
 

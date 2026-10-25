@@ -1,28 +1,28 @@
-// kv_cache.kaz - Gerenciador de KV-Cache para Inferência Autoregressiva em Kaz
-// Armazena tensores de Chave (K) e Valor (V) para cada camada da rede Transformer.
+// kv_cache.kaz - Key-Value Cache Manager for Autoregressive Transformer Inference in Pure Kaz
+// Stores Key (K) and Value (V) tensors per attention layer in aligned linear memory.
 
 struct KVCache {
     int max_seq_len;
     int hidden_dim;
     int num_layers;
     int cur_seq_len;
-    // Buffers lineares de bytes para K e V (armazenados como handles mmap/buf_alloc)
+    // Linear byte buffers for K and V tensors
     int k_buf;
     int v_buf;
 }
 
 function kv_cache_init(int max_seq, int dim, int layers): KVCache {
-    // Aloca buffers contíguos de f32: layers * max_seq * dim * 4 bytes
+    // Allocate contiguous f32 memory: layers * max_seq * dim * 4 bytes
     int total_floats = layers * max_seq * dim;
     int total_bytes = total_floats * 4;
     int k_handle = buf_alloc(total_bytes);
     int v_handle = buf_alloc(total_bytes);
 
-    println("[+] KV-Cache inicializado:");
-    println("    Max Seq Len:", max_seq);
-    println("    Hidden Dim:", dim);
-    println("    Layers:", layers);
-    println("    Memória por Buffer:", (total_bytes / 1024), "KB");
+    runoff("[+] KV-Cache initialized:");
+    runoff("    Max Seq Len: " + max_seq);
+    runoff("    Hidden Dim: " + dim);
+    runoff("    Layers: " + layers);
+    runoff("    Memory per Buffer: " + (total_bytes / 1024) + " KB");
 
     return KVCache {
         max_seq_len: max_seq,
@@ -41,9 +41,8 @@ function kv_cache_get_offset(KVCache cache, int layer, int pos): int {
 
 function kv_cache_append(KVCache cache, int layer, int pos, int src_k_buf, int src_v_buf): int {
     int offset = kv_cache_get_offset(cache, layer, pos);
-    int bytes = cache.hidden_dim * 4;
 
-    // Copia vetor f32 de src para cache
+    // Copy f32 vector from src to cache
     int i = 0;
     while (i < cache.hidden_dim) {
         float val_k = buf_load_f32_le(src_k_buf, i * 4);
@@ -62,10 +61,10 @@ function kv_cache_free(KVCache cache): int {
 }
 
 function main(): int {
-    println("=== Teste do KV-Cache ===");
+    runoff("=== KV-Cache Diagnostic Test ===");
     KVCache cache = kv_cache_init(512, 384, 12);
     
-    // Cria vetores de teste
+    // Allocate test vectors
     int vec_k = buf_alloc(384 * 4);
     int vec_v = buf_alloc(384 * 4);
     buf_store_f32_le(vec_k, 0, 1.234);
@@ -74,12 +73,12 @@ function main(): int {
     kv_cache_append(cache, 0, 0, vec_k, vec_v);
     
     int off0 = kv_cache_get_offset(cache, 0, 0);
-    println("K[layer=0, pos=0, d=0]:", buf_load_f32_le(cache.k_buf, off0));
-    println("V[layer=0, pos=0, d=0]:", buf_load_f32_le(cache.v_buf, off0));
+    runoff("K[layer=0, pos=0, d=0]: " + buf_load_f32_le(cache.k_buf, off0));
+    runoff("V[layer=0, pos=0, d=0]: " + buf_load_f32_le(cache.v_buf, off0));
 
     buf_free(vec_k);
     buf_free(vec_v);
     kv_cache_free(cache);
-    println("[+] KV-Cache liberado com sucesso!");
+    runoff("[+] KV-Cache released successfully!");
     return 0;
 }
