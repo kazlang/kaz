@@ -1,0 +1,38 @@
+// convert_to_kzm.kaz - Zero-Copy Safetensors to .kzm Converter in Pure Kaz
+// Packs tensor directory and 64-byte aligned payload directly into native Kaz format
+
+function main(): int {
+    runoff("================================================================================");
+    runoff("  KAZ AI ENGINE - Native Safetensors to .kzm Model Converter");
+    runoff("================================================================================");
+
+    string st_path = "/home/armando/Projetos/kaz/models/minilm/model.safetensors";
+    string kzm_path = "/home/armando/Projetos/kaz/models/minilm/model.kzm";
+
+    if (args_len() >= 2) {
+        st_path = argv(0);
+        kzm_path = argv(1);
+    }
+
+    if (!file_exists(st_path)) {
+        runoff("[-] Error: Source Safetensors model not found: " + st_path);
+        return 1;
+    }
+
+    runoff("[*] Reading source model: " + st_path);
+    int t0 = time_now_ms();
+    
+    // Convert MiniLM (Arch=1 BERT, Layers=12, HiddenDim=384, Heads=12, Vocab=30522, Bitrate=32.0)
+    int count = kzm_convert_safetensors(st_path, kzm_path, 1, 12, 384, 12, 30522, 32.0);
+    int elapsed = time_now_ms() - t0;
+
+    if (count <= 0) {
+        runoff("[-] Error: Failed to convert model to .kzm format");
+        return 1;
+    }
+
+    runoff("[+] Successfully converted " + count + " tensors to native .kzm in " + elapsed + " ms!");
+    runoff("[+] Target File: " + kzm_path);
+    runoff("================================================================================");
+    return 0;
+}

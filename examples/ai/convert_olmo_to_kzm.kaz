@@ -1,0 +1,38 @@
+// convert_olmo_to_kzm.kaz - Zero-Copy Sharded Safetensors to .kzm Converter in Pure Kaz
+// Unifies and packs AllenAI OLMo-2 1B shards directly into native Kaz format
+
+function main(): int {
+    runoff("================================================================================");
+    runoff("  KAZ AI ENGINE - AllenAI OLMo-2 1B Sharded Safetensors to .kzm Converter");
+    runoff("================================================================================");
+
+    string s1 = "/home/armando/Projetos/kaz/models/olmo/model-00001-of-00002.safetensors";
+    string s2 = "/home/armando/Projetos/kaz/models/olmo/model-00002-of-00002.safetensors";
+    string out_path = "/home/armando/Projetos/kaz/models/olmo/olmo-2-1b.kzm";
+
+    if (!file_exists(s1) || !file_exists(s2)) {
+        runoff("[-] Error: Source shards not found in models/olmo/");
+        return 1;
+    }
+
+    array[string] shards = [s1, s2];
+    runoff("[*] Source Shards: " + shards.length() + " files (~5.6 GB total)");
+    runoff("    Shard 1: " + s1);
+    runoff("    Shard 2: " + s2);
+    runoff("[*] Target .kzm: " + out_path);
+
+    int t0 = time_now_ms();
+
+    // Arch=2 (Olmo2/CausalLM), Layers=16, HiddenDim=2048, Heads=16, Vocab=100352, Bitrate=32.0 (F32)
+    int count = kzm_convert_sharded_safetensors(shards, out_path, 2, 16, 2048, 16, 100352, 32.0);
+    int elapsed = time_now_ms() - t0;
+
+    if (count <= 0) {
+        runoff("[-] Error: Failed to convert sharded model to .kzm format");
+        return 1;
+    }
+
+    runoff("[+] Successfully converted " + count + " tensors to native .kzm in " + elapsed + " ms (" + (elapsed / 1000) + " s)!");
+    runoff("================================================================================");
+    return 0;
+}
