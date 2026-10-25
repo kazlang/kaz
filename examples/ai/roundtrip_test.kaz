@@ -1,0 +1,99 @@
+// roundtrip_test.kaz - Acceptance Test Phase 2: Complete Round-Trip Hash Verification
+// Compares byte-for-byte SHA-256 hash of each tensor between source Safetensors and native .kzm
+
+function run_roundtrip(string st_path, string kzm_path): int {
+    runoff("================================================================================");
+    runoff("  KAZ AI ENGINE - Round-Trip Tensor Hash Acceptance Test (Phase 2)");
+    runoff("================================================================================");
+    runoff("Source Safetensors: " + st_path);
+    runoff("Target KZM Model:   " + kzm_path);
+    runoff("--------------------------------------------------------------------------------");
+
+    if (!file_exists(st_path) || !file_exists(kzm_path)) {
+        runoff("[-] Error: Model files not found");
+        return 1;
+    }
+
+    int m_st = model_open(st_path);
+    int m_kzm = model_open(kzm_path);
+
+    if (m_st <= 0 || m_kzm <= 0) {
+        runoff("[-] Error: Failed to open models via zero-copy loader");
+        return 1;
+    }
+
+    array[string] tensor_names = safetensors_tensor_names(st_path);
+    int total = tensor_names.length();
+    runoff("[*] Total tensors to verify: " + total);
+
+    int matches = 0;
+    int mismatches = 0;
+    int t_start = time_now_ms();
+
+    int i = 0;
+    while (i < total) {
+        string name = tensor_names[i];
+        
+        int ptr_st = safetensors_tensor_ptr(m_st, name);
+        int sz_st = safetensors_tensor_size(m_st, name);
+
+        int ptr_kzm = kzm_tensor_ptr(m_kzm, name);
+        int sz_kzm = kzm_tensor_size(m_kzm, name);
+
+        if (ptr_st == 0 || ptr_kzm == 0 || sz_st != sz_kzm) {
+            runoff("[-] MISMATCH on tensor '" + name + "': size st=" + sz_st + " vs kzm=" + sz_kzm);
+            mismatches = mismatches + 1;
+        } else {
+            string hash_st = crypto_buf_sha256(ptr_st, sz_st);
+            string hash_kzm = crypto_buf_sha256(ptr_kzm, sz_kzm);
+
+            if (hash_st == hash_kzm) {
+                matches = matches + 1;
+                if (matches <= 5 || matches % 50 == 0 || matches == total) {
+                    runoff("    [" + matches + "/" + total + "] ✓ " + name + " (" + sz_st + " bytes) -> SHA-256: " + hash_kzm);
+                }
+            } else {
+                runoff("[-] HASH MISMATCH on tensor '" + name + "'!");
+                runoff("    Safetensors SHA256: " + hash_st);
+                runoff("    KZM Model   SHA256: " + hash_kzm);
+                mismatches = mismatches + 1;
+            }
+        }
+
+        i = i + 1;
+    }
+
+    int elapsed = time_now_ms() - t_start;
+    model_close(m_st);
+    model_close(m_kzm);
+
+    runoff("--------------------------------------------------------------------------------");
+    runoff("[+] Verification Completed in " + elapsed + " ms (" + (elapsed / 1000) + " s)");
+    runoff("    Total Verified: " + total);
+    runoff("    Matches:        " + matches + " (" + ((matches * 100) / total) + "%)");
+    runoff("    Mismatches:     " + mismatches);
+
+    if (mismatches == 0 && matches == total) {
+        runoff("================================================================================");
+        runoff("[✓✓✓] PHASE 2 ACCEPTANCE PASSED: 100% BYTE-FOR-BYTE CRYPTOGRAPHIC INTEGRITY!");
+        runoff("================================================================================");
+        return 0;
+    } else {
+        runoff("================================================================================");
+        runoff("[✗] PHASE 2 FAILED: Mismatches detected");
+        runoff("================================================================================");
+        return 1;
+    }
+}
+
+function main(): int {
+    string st_path = "/home/armando/Projetos/kaz/models/minilm/model.safetensors";
+    string kzm_path = "/home/armando/Projetos/kaz/models/minilm/model.kzm";
+
+    if (args_len() >= 2) {
+        st_path = argv(0);
+        kzm_path = argv(1);
+    }
+
+    return run_roundtrip(st_path, kzm_path);
+}
