@@ -1,99 +1,72 @@
-# Relatório de Aceitação Técnica: Integridade Criptográfica dos Tensores (Fase 2)
+# Relatório de Aceitação Técnica: Integridade Criptográfica dos Tensores e Formato KZM
 
 **Data de Emissão:** 25 de Outubro de 2026  
-**Ambiente de Teste:** Linux x86_64 · Kaz Native Runtime 1.5.0  
-**Status do Laudo:** **APROVADO (100% de Integridade Criptográfica)**
+**Ambiente de Teste:** Linux x86_64 · Intel Core i7 / Xeon (AVX2, FMA) · Kaz Native Runtime 1.5.0  
+**Status do Laudo:** **APROVADO (Fase 2a: Formato Soberano, Sharding e Integridade Criptográfica)**
 
 ---
 
-## 1. Objetivo do Teste de Aceitação
+## 1. Escopo e Classificação da Fase 2
 
-Garantir que a conversão de modelos neurais do formato padrão da indústria (**Hugging Face Safetensors**) para o formato binário soberano do ecossistema Kaz (**`.kzm`**) preserva **100% dos bytes dos tensores** com precisão absoluta, sem qualquer perda, truncamento ou alteração na ordenação de bytes (*endianness* ou alinhamento).
-
-O critério de aceitação estipulado é:
-$$\text{Taxa de Mismatch} = 0\% \quad \text{e} \quad \text{Taxa de Hash SHA-256 Idêntico} = 100\%$$
-
----
-
-## 2. Metodologia do Round-Trip
-
-O teste foi executado através do script nativo Kaz [`examples/ai/roundtrip_test.kaz`](file:///home/armando/Projetos/kaz/examples/ai/roundtrip_test.kaz), orquestrado de ponta a ponta sem ferramentas externas (sem Python ou bibliotecas C terceiras):
-
-1. **Mapeamento em Memória Virtual (`mmap`):**
-   - Ambos os arquivos (`model.safetensors` e `model.kzm`) são abertos simultaneamente via `model_open`.
-2. **Iteração e Resolução de Ponteiros:**
-   - Para cada um dos 200 tensores do modelo:
-     - Localiza o descritor e o ponteiro bruto de memória no arquivo de origem (`Safetensors`).
-     - Localiza o descritor correspondente no arquivo convertido (`.kzm`) garantindo alinhamento em 64 bytes (`KZM_ALIGNMENT = 64`).
-3. **Hashing Criptográfico em Hardware (`crypto_buf_sha256`):**
-   - Extrai o buffer de memória virtual e calcula o digest criptográfico **SHA-256** dos bytes brutos em ambos os formatos.
-   - Compara as strings hexadecimais geradas. Qualquer desvio de 1 bit invalida o teste imediatamente.
-
-```mermaid
-flowchart LR
-    A["model.safetensors"] -->|model_open| B["Ponteiro Safetensors (RAM)"]
-    C["model.kzm"] -->|model_open| D["Ponteiro KZM (RAM)"]
-    B -->|crypto_buf_sha256| E["Hash Origem (SHA-256)"]
-    D -->|crypto_buf_sha256| F["Hash Destino (SHA-256)"]
-    E & F --> G{"Hash == Hash ?"}
-    G -->|200 / 200| H["APROVADO: 100% Byte-for-Byte"]
-    G -->|Divergência| I["REJEITADO"]
-```
+Conforme a separação arquitetural do ecossistema:
+- **Fase 2a (Formato, Sharding e Integridade Criptográfica):** Conversão de Safetensors para o formato soberano `.kzm` (incluindo modelos multi-shard), preservação do conjunto de nomes, alinhamento de memória em 64 bytes, integridade de dtypes/shapes e correspondência byte a byte (SHA-256).
+- **Fase 2b (Loader Nativo em Kaz Puro & Tokenizador BPE):** Implementação do parser binário e do tokenizador BPE em Kaz nativo com validação determinística de 100 frases contra referências.
 
 ---
 
-## 3. Resumo Executivo dos Resultados
+## 2. Resultados dos Testes de Aceitação da Fase 2a
 
-| Métrica | Valor Obtido | Status |
-| :--- | :--- | :--- |
-| **Modelo Alvo** | `sentence-transformers/all-MiniLM-L12-v2` | Nominal |
-| **Tamanho do Arquivo Safetensors** | `133.564.960 bytes` (~127.4 MB) | Validado |
-| **Tamanho do Arquivo KZM** | `133.578.880 bytes` (~127.4 MB) | Validado (Alinhado 64B) |
-| **Total de Tensores Avaliados** | **200 tensores** | 100% Cobertura |
-| **Tensores Idênticos (Hash Match)** | **200 tensores (100.0%)** | **Aprovado** |
-| **Divergências / Mismatches** | **0 (Zero)** | **Aprovado** |
-| **Tempo Total de Verificação (200 SHA-256)**| **2.216 ms (2,2 segundos)** | Alto Desempenho |
+### A. Teste de Sharding & Escala: AllenAI OLMo-2 1B (5.6 GB)
+O modelo `OLMo-2-0425-1B` é distribuído em múltiplos shards e possui arquitetura completa CausalLM (16 camadas, 2048 hidden dimension, 16 attention heads, 100.352 vocab size).
 
----
+- **Script:** [`examples/ai/roundtrip_sharded_test.kaz`](file:///home/armando/Projetos/kaz/examples/ai/roundtrip_sharded_test.kaz)
+- **Arquivos de Origem:**
+  - Shard 1: `model-00001-of-00002.safetensors` (4.7 GB, 173 tensores)
+  - Shard 2: `model-00002-of-00002.safetensors` (913 MB, 6 tensores)
+- **Destino:** `olmo-2-1b.kzm` (5.664 MB, 179 tensores unificados)
 
-## 4. Amostra de Validação Criptográfica por Tensor
+| Métrica Avaliada | Safetensors Origem | KZM Destino | Validação |
+| :--- | :---: | :---: | :---: |
+| **Contagem de Tensores** | 179 tensores (173 + 6) | 179 tensores | **100% Exato** |
+| **Conjunto de Nomes** | 179 nomes únicos | 179 nomes únicos | **100% Exato** |
+| **Integridade de Shape / Tamanho** | 179 verificados | 179 verificados | **100% Exato** |
+| **Integridade de Bytes (SHA-256)** | 179 hashes SHA-256 | 179 hashes SHA-256 | **179/179 Matches (100%)** |
+| **Tempo de Hash (11.8 GB lidos)** | — | — | **126 segundos (~93.6 MB/s)** |
 
-Abaixo estão listados tensores críticos de diferentes componentes da arquitetura (Embeddings, Camadas Intermediárias do Encoder, Projeções de Atenção, LayerNorm e Cabeça de Pooling):
-
-| Tensor ID | Nome do Tensor | Tamanho (Bytes) | SHA-256 Origem (Safetensors) vs KZM | Status |
-| :---: | :--- | :---: | :--- | :---: |
-| **1/200** | `embeddings.LayerNorm.bias` | 1.536 | `5bc819388febcad5646ab944563fe0dc45ca74e078544f838a4fca3418a5892e` | MATCH ✓ |
-| **2/200** | `embeddings.LayerNorm.weight` | 1.536 | `1f1c7b681db33d62a16075db0ec5ad55f61cc16625cc5244cf650554cd373676` | MATCH ✓ |
-| **3/200** | `embeddings.position_embeddings.weight` | 786.432 | `685f0b6748f16af21551819dcf2abe01cf975a1cdc22ff4760405132e824c487` | MATCH ✓ |
-| **4/200** | `embeddings.position_ids` | 4.096 | `5738153ec97595b1c1e4dc027f7b7fb4534f19ed2ce9f9ee712e6d34a384cde7` | MATCH ✓ |
-| **5/200** | `embeddings.token_type_embeddings.weight` | 3.072 | `ca1226367b26d25eed44d6b8898e15c92fce3827665962c60fcc5b8036f8bf1a` | MATCH ✓ |
-| **50/200** | `encoder.layer.10.intermediate.dense.weight` | 2.359.296 | `776af7dce2522706a5e1e18024b58532262ceb9715200ddca343f7fcb793e5a6` | MATCH ✓ |
-| **100/200**| `encoder.layer.3.output.LayerNorm.weight` | 1.536 | `94c0f6f6bc65329d7fb7e9a639d776410cb30eaab282f064d54d54f6568a6b83` | MATCH ✓ |
-| **150/200**| `encoder.layer.6.output.dense.weight` | 2.359.296 | `c49927fb462291dd25197f6a8ca7f490604eb94b03be46b56ff9feaba3859414` | MATCH ✓ |
-| **200/200**| `pooler.dense.weight` | 589.824 | `eb9e55f478fe64f53f97c83c03f1823bbd0ddc932f8431ce5dce6ae8babbe873` | MATCH ✓ |
+#### Amostra dos Shards do OLMo-2 1B:
+- `[1/179] ✓ (Shard 1) model.embed_tokens.weight` (822.083.584 bytes) -> SHA-256: `d8ee0366d704dba055d3b74ff68dacd842e1cc83e96d3a9ddfd38012c81fbbad`
+- `[2/179] ✓ (Shard 1) model.layers.0.mlp.down_proj.weight` (67.108.864 bytes) -> SHA-256: `26cfb5442177313d70474dcc6abf84f4842d3ac69b132299698826a59cf42f17`
+- `[174/179] ✓ (Shard 2) lm_head.weight` (822.083.584 bytes) -> SHA-256: `e326fcabc18b60fd57ee1201ce158224a92a4d66fa8f4c62cbea7c10a4e63793`
+- `[179/179] ✓ (Shard 2) model.norm.weight` (8.192 bytes) -> SHA-256: `a86cc4e7f8f6a7faa08936a432e54ebdf50e0564ccb8da6eada5fe044674f86b`
 
 ---
 
-## 5. Integração na Suíte de Testes Contínua (CI/CD)
-
-O teste de aceitação foi encapsulado no teste unitário oficial do compilador:
-- Arquivo: [`tests/phase2_acceptance_test.rs`](file:///home/armando/Projetos/kaz/tests/phase2_acceptance_test.rs)
-- Comando de execução:
-  ```bash
-  cargo test --test phase2_acceptance_test
-  ```
-- Resultado do teste automatizado:
-  ```text
-  running 1 test
-  test test_phase2_roundtrip_cryptographic_acceptance ... ok
-
-  test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 24.21s
-  ```
+### B. Teste Sintético Rápido para CI/CD (Borda, Alinhamento e Multi-Dtype)
+Para evitar tempos de CI proibitivos decorrentes do download e processamento de arquivos de 127 MB ou 5.6 GB, foi criado um teste unitário determinístico em memória:
+- **Arquivo:** [`tests/synthetic_safetensors_test.rs`](file:///home/armando/Projetos/kaz/tests/synthetic_safetensors_test.rs)
+- **Cenários Cobertos:**
+  1. **Tensores Alinhados (F32):** 64 bytes (4x4 floats).
+  2. **Tensores com Tamanho Desalinhado (BF16):** 34 bytes (17 elementos de 2 bytes — propositalmente não-múltiplo de 64 para testar o padding zero-byte de alinhamento no `.kzm`).
+  3. **Tensores Não-Float (I64):** 16 bytes (2 elementos inteiros de 64 bits).
+  4. **Tensores Vazios:** 0 bytes (elementos vazios com offset nulo).
+  5. **Conversão Multi-Shard:** 2 shards sintéticos unificados com preservação de índices.
+- **Resultado:** Executa e valida em **< 5 milissegundos** no pipeline contínuo do Cargo (`cargo test`).
+- **Verificação de Alinhamento:** $100\%$ dos tensores com `file_offset % 64 == 0`.
 
 ---
 
-## 6. Conclusão Técnica
+## 3. Análise da Vazão de Hashing Criptográfico
 
-O formato binário **`.kzm`** (Kaz Model Format), sua biblioteca de conversão nativa (`kzm_convert_safetensors` e `kzm_convert_sharded_safetensors`) e a interface de carregamento sob demanda (`model_open`) demonstraram **fidelidade matemática e criptográfica de 100%**. 
+A CPU de testes possui suporte a `AVX2`, `FMA` e `AES`, mas não dispõe do conjunto de instruções dedicado `SHA-NI` (*SHA New Instructions* presente em CPUs mais recentes). Portanto:
+- O cálculo do hash SHA-256 é processado via **software puro** através da crate padrão `sha2` (com paralelismo escalar e SIMD genérico).
+- A velocidade obtida de ~94 MB/s a ~120 MB/s reflete a taxa combinada de varredura sequencial em memória virtual e processamento SHA-256 em software sem aceleração dedicada de hardware.
+- A terminologia foi corrigida: não se trata de SHA acelerado por hardware dedicado, mas sim processado por software na CPU host.
 
-A **Fase 2 do Kaz AI Engine está formalmente aceita e validada**.
+---
+
+## 4. Conclusão Técnica da Fase 2a
+
+1. O unificador de shards `kzm_convert_sharded_safetensors` foi validado em um modelo de grande porte com 5.6 GB, preservando 179 tensores sem sobreposição ou deslocamento de bytes.
+2. O padding de 64 bytes foi validado em tensores arbitrários não múltiplos de 64 sem corrupção de dados adjacentes.
+3. A suíte de testes de CI passou a rodar em milissegundos via modelos sintéticos, mantendo os testes com pesos reais como opcionais (`#[ignore]`).
+4. **Fase 2a aprovada.** O foco agora avança para a Fase 2b (Loader em Kaz puro e Tokenizador determinístico).
