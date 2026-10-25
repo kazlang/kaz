@@ -258,8 +258,8 @@ O subsistema AOT do Kaz traduz código Kaz para **código de máquina nativo x86
 ```
 
 ### Layout de Memória e Estruturas no Heap Nativo:
-1. **Arena de Heap (`kaz_alloc`)**:
-   - Alocador contíguo *bump allocator* em `.bss` com alinhamento rigoroso a 8 bytes.
+1. **Arena de Heap Dinâmica (`kaz_alloc`)**:
+   - Alocador linear (*bump allocator*) de alta performance expandido dinamicamente via `sys_brk(12)` em blocos de 64 MB com alinhamento estrito de 64 bytes para instruções vetoriais SIMD AVX2/AVX-512.
 2. **Structs**:
    - `Offset 0`: Quantidade de campos (`field_count`).
    - `Offset 8`: Ponteiro para string com nome da struct.
@@ -277,6 +277,21 @@ O subsistema AOT do Kaz traduz código Kaz para **código de máquina nativo x86
 5. **Strings & Concatenação**:
    - Literais estáticos são emitidos como bytes UTF-8 terminados em nulo na seção `.rodata`.
    - Concatenação dinâmica (`kaz_str_concat`) aloca o buffer total no heap e realiza cópia sequencial preservando terminação nula.
+6. **Buffers Crus com Cabeçalho Tagged (`buf_alloc`)**:
+   - `Offset -16`: Capacidade em bytes (`size: qword`).
+   - `Offset -8`: Assinatura mágica da tag `0x4B415A42` ('KAZB').
+   - `Offset 0 a size-1`: Bytes contíguos de dados úteis.
+   - O ponteiro devolvido aos programas Kaz aponta diretamente para o byte 0 (`rax + 16`). As rotinas de acesso (`buf_load_*`, `buf_store_*`) inspecionam `[ptr - 8] == 0x4B415A42`. Caso contenha a tag, os limites são validados (`offset + sizeof(T) <= size`) com checagem de estouro aritmético (`jb kaz_panic_oob`). Se não contiver a tag (ponteiro bruto de `mmap` ou FFI externa), o acesso é direto sem pânico.
+
+### O Tipo Primitivo `decimal` (Ponto Fixo Financeiro & Moeda):
+O Kaz incorpora o tipo de ponto fixo exato `decimal`, projetado para cálculos financeiros, contábeis e monetários de alta integridade:
+- **Representação**: Inteiro com sinal de 64 bits com escala implícita de $10^4$ (4 casas decimais de precisão exata, ex: `12.3456m`).
+- **Eliminação de Erros de Arredondamento Binário**: Elimina as imprecisões de fração binária da norma IEEE-754 ($0.1 + 0.2 \neq 0.3$).
+- **Sintaxe Literal**: Sufixo `m` ou `M` (ex: `12.34m`, `0.05m`, `1000m`).
+- **Aceleração Nativa em Hardware 128 Bits**: Na compilação AOT x86-64, a aritmética aproveita diretamente o par de registradores de 128 bits `rdx:rax`:
+  - Multiplicação calcula $(a \times b) / 10000$ via `imul rbx` seguido de `idiv rcx`.
+  - Divisão calcula $(a \times 10000) / b$ via `imul rcx` seguido de `idiv rbx`.
+  - Ambas as operações impedem estouro intermediário de 64 bits enquanto executam na velocidade máxima do silício sem alocação em heap.
 
 
 ---
@@ -332,7 +347,7 @@ flowchart LR
 ```
 
 ### Mecanismos de Mitigação:
-O Kaz fornece três camadas arquiteturais para garantir segurança e robustez de memória:
+O Kaz fornece quatro camadas arquiteturais para garantir segurança e robustez de memória:
 
 1. **Checkpoints e Rewinds de Escopo (`heap_checkpoint` e `heap_rewind`)**:
    Laços de servidores e daemons devem delimitar o escopo transacional de cada requisição:
@@ -352,8 +367,24 @@ O Kaz fornece três camadas arquiteturais para garantir segurança e robustez de
    let b = buf_alloc(4096); // Alocado uma vez, endereço fixo, sem cópia ou bloco abandonado
    buf_store_u32_le(b, 0, 1337);
    ```
-   Buffers possuem ciclo de vida previsível e imunidade contra abandono de memória em redimensionamento.
+   Buffers possuem ciclo de vida previsível, validação de limites com tags mágicas e imunidade contra abandono de memória em redimensionamento.
 
-3. **Plano de Longo Prazo (Milestone 6: Slab/Pool Allocator)**:
+3. **Teto Ativo de Heap & Prevenção Anti-OOM (`heap_set_limit`)**:
+   Nos sistemas operacionais Linux modernos, a política de *memory overcommit* fica ativa por padrão (`vm.overcommit_memory = 0`). Com isso, invocações de `sys_brk(12)` raramente falham no momento da alocação; em vez disso, o kernel cede endereços virtuais até que a RAM e a partição swap se esgotem completamente, travando a máquina inteira em *thrashing* de I/O antes que o OOM-killer envie um `SIGKILL` arbitrário.
+   Para eliminar essa vulnerabilidade:
+   - O runtime AOT do Kaz estabelece um teto ativo na seção `.data`: `kaz_heap_max_limit: dq 4294967296` (4 GB por padrão).
+   - Em `kaz_alloc`, antes de invocar `sys_brk`, o consumo total acumulado é verificado contra o teto:
+     ```nasm
+     mov rbx, [kaz_heap_current]
+     add rbx, rax ; tamanho alinhado requisitado
+     jb kaz_panic_oom ; estouro aritmético de inteiros
+     mov r11, [kaz_heap_start]
+     add r11, [kaz_heap_max_limit]
+     cmp rbx, r11
+     ja kaz_panic_oom ; teto ativo excedido!
+     ```
+   - Aplicações podem configurar um teto dinâmico customizado usando `heap_set_limit(bytes: int)` (ex: `heap_set_limit(512 * 1024 * 1024)` para limitar um sandbox em 512 MB), assegurando que o processo finalize de modo determinístico com saída 1 e diagnóstico claro em `stderr`, sem congelar o sistema operacional hospedeiro.
+
+4. **Plano de Longo Prazo (Milestone 6: Slab/Pool Allocator)**:
    Para suportar dados dinâmicos com ciclo de vida arbitrário fora de checkpoints de escopo, o Kaz introduzirá um alocador pool/slab para arrays com indirection handle (`{ptr, len, cap}`), reciclando blocos descartados.
 

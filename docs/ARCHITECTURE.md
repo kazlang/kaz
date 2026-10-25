@@ -154,7 +154,7 @@ The AOT subsystem translates Kaz code directly into **pure standalone x86-64 mac
 
 ### Memory Layout and Heap Primitives:
 1. **Dynamic Heap Arena (`kaz_alloc`)**:
-   - High-performance bump allocator expanding dynamically via `sys_brk(12)` in 64 MB blocks.
+   - High-performance bump allocator expanding dynamically via `sys_brk(12)` in 64 MB blocks with 64-byte AVX2/AVX-512 alignment.
 2. **Structs**:
    - `Offset 0`: Field count (`field_count`).
    - `Offset 8`: Pointer to struct name string.
@@ -167,6 +167,21 @@ The AOT subsystem translates Kaz code directly into **pure standalone x86-64 mac
 4. **Strings**:
    - Static string literals are emitted into `.rodata` as null-terminated UTF-8 byte streams.
    - Dynamic concatenation (`kaz_str_concat`) allocates memory on the heap and executes linear buffer copies preserving null terminators.
+5. **Tagged Raw Buffers (`buf_alloc`)**:
+   - `Offset -16`: Buffer capacity in bytes (`size: qword`).
+   - `Offset -8`: Buffer tag signature `0x4B415A42` ('KAZB').
+   - `Offset 0 to size-1`: User contiguous bytes.
+   - Pointers returned to Kaz programs point directly to byte 0 (`rax + 16`). Access primitives (`buf_load_*`, `buf_store_*`) check `[ptr - 8] == 0x4B415A42`. If tagged, bounds are validated (`offset + sizeof(T) <= size`) with arithmetic overflow prevention (`jb kaz_panic_oob`). If untagged (e.g. raw memory from `mmap` or FFI), direct access is performed without panicking.
+
+### The `decimal` Primitive Type (Fixed-Point Finance & Currency):
+Kaz features an exact fixed-point `decimal` type designed for high-integrity monetary, financial, and accounting computations:
+- **Representation**: Stored as a 64-bit signed integer with an implicit scale factor of $10^4$ (4 decimal digits of precision, e.g. `12.3456m`).
+- **Elimination of Binary Float Roundoff**: Avoids IEEE-754 binary fraction inaccuracies ($0.1 + 0.2 \neq 0.3$).
+- **Literal Syntax**: Suffix `m` or `M` (e.g., `12.34m`, `0.05m`, `1000m`).
+- **128-Bit Native Hardware Acceleration**: In AOT compilation, arithmetic leverages the 128-bit `rdx:rax` register pair:
+  - Multiplication computes $(a \times b) / 10000$ using `imul rbx` followed by `idiv rcx`.
+  - Division computes $(a \times 10000) / b$ using `imul rcx` followed by `idiv rbx`.
+  - Both operations prevent intermediate 64-bit overflow while executing at native CPU speed without heap allocations.
 
 ---
 
@@ -221,7 +236,7 @@ flowchart LR
 ```
 
 ### Architectural Mitigations:
-Kaz provides a robust three-tier strategy to prevent heap exhaustion and memory accumulation:
+Kaz provides a robust four-tier strategy to prevent heap exhaustion and memory accumulation:
 
 1. **Arena Scope Checkpoints (`heap_checkpoint` & `heap_rewind`)**:
    Long-running server loops and worker tasks must define transactional scope boundaries:
@@ -241,8 +256,24 @@ Kaz provides a robust three-tier strategy to prevent heap exhaustion and memory 
    let b = buf_alloc(4096); // Allocated once, never moves, zero reallocation waste
    buf_store_u32_le(b, 0, 1337);
    ```
-   Buffers have fixed contiguous lifetimes, eliminate abandoned reallocation blocks, and avoid pointer invalidation risks.
+   Buffers have fixed contiguous lifetimes, eliminate abandoned reallocation blocks, tagged bounds checking, and avoid pointer invalidation risks.
 
-3. **Roadmap (Milestone 6: Slab/Pool Allocator)**:
+3. **Active Heap Ceiling & Anti-OOM Protection (`heap_set_limit`)**:
+   On modern Linux systems, virtual memory overcommit is active by default (`vm.overcommit_memory = 0`). Consequently, requests for virtual address space via `sys_brk(12)` almost never fail at allocation time; instead, the operating system commits virtual pages until physical RAM and swap are exhausted, locking the entire machine into disk thrashing before the kernel OOM-killer issues `SIGKILL`.
+   To eliminate this unpredictability:
+   - Kaz AOT maintains an explicit heap limit ceiling in `section .data`: `kaz_heap_max_limit: dq 4294967296` (4 GB default).
+   - In `kaz_alloc`, before advancing the break or requesting memory, the total allocated heap is checked against the ceiling:
+     ```nasm
+     mov rbx, [kaz_heap_current]
+     add rbx, rax ; requested aligned size
+     jb kaz_panic_oom ; integer overflow trap
+     mov r11, [kaz_heap_start]
+     add r11, [kaz_heap_max_limit]
+     cmp rbx, r11
+     ja kaz_panic_oom ; active ceiling exceeded!
+     ```
+   - Applications can dynamically configure a custom ceiling using `heap_set_limit(bytes: int)` (e.g., `heap_set_limit(512 * 1024 * 1024)` for a 512 MB sandbox limit), guaranteeing that bounded services fail deterministically with exit code 1 and error diagnostics on `stderr` rather than hanging the host OS.
+
+4. **Roadmap (Milestone 6: Slab/Pool Allocator)**:
    For complex applications requiring arbitrary object lifetimes that cross scope boundaries, Kaz will introduce a dedicated slab/free-list pool allocator for dynamic array handles (`{ptr, len, cap}` indirection) to recycle discarded reallocation buffers.
 

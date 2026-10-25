@@ -71,13 +71,23 @@ Kaz possui um sistema de tipos rico e estrito:
 
 | Tipo | Descrição | Exemplo de Sintaxe | Valor Padrão |
 |---|---|---|---|
-| `int` | Inteiro de 64 bits com sinal | `int total = 100;` | `0` |
+| `int` / `i64` | Inteiro de 64 bits com sinal (overflow com wrapping) | `int total = 100;` | `0` |
+| `decimal` | Ponto fixo decimal exato (escala $10^4$, financeiro/moedas) | `decimal preco = 12.34m;` | `0.0m` |
 | `float` / `double` | Ponto flutuante IEEE 754 de 64 bits | `float pi = 3.14159;` | `0.0` |
+| `f32` | Ponto flutuante de precisão simples (32 bits) | `f32 taxa = 1.5;` | `0.0` |
+| `u8`, `i8`, `u16`, `i16`, `u32`, `i32` | Tipos inteiros de largura fixa explícita | `u8 byte_val = 255;` | `0` |
 | `string` | Texto UTF-8 com suporte a sequências de escape | `string msg = "Kaz 🦅\nLinha 2";` | `""` |
-| `char` | Caractere Unicode individual | `char letra = 'K';` | `'\0'` |
+| `char` | Caractere Unicode escalar (32 bits / u32) | `char letra = 'K';` | `'\0'` |
 | `bool` / `bol` | Booleano lógico | `bool ativo = true;` | `false` |
 | `array[T]` | Array dinâmico tipado homogêneo | `array[string] itens = ["A", "B"];` | `[]` |
 | `array[any]` | Array dinâmico heterogêneo | `array[any] misto = [1, "dois", true];` | `[]` |
+
+### As 5 Regras Canônicas dos Tipos Primitivos
+1. **Ponto Flutuante**: `float` e `double` são estritamente ponto flutuante IEEE 754 de 64 bits (`f64`). `f32` é de 32 bits.
+2. **Texto e Unicode**: `char` é um escalar Unicode de 32 bits (`u32`). `string` é uma sequência de bytes UTF-8; índices e comprimentos medem bytes brutos.
+3. **Segurança de Nulo em Structs**: Campos de struct não inicializados assumem `null` (`0`). Acesso a campos ou métodos sobre ponteiros nulos dispara pânico determinístico em tempo de execução.
+4. **Aritmética Inteira**: Operações com inteiros utilizam wrapping de complemento de dois de 64 bits (`wrapping_add`, `wrapping_sub`, `wrapping_mul`). Divisão por zero dispara pânico determinístico (`kaz_panic_divzero`).
+5. **Aritmética Decimal Exata**: O tipo `decimal` utiliza escala de $10.000$ (4 casas decimais), eliminando imprecisões binárias de ponto flutuante (ex.: `0.1m + 0.2m == 0.3m`). Aritmética é acelerada por hardware com intermediários de 128 bits.
 | `struct` | Estrutura de dados personalizada | `Usuario u = Usuario { ... };` | Campos nulos |
 | `void` | Ausência explícita de valor | `function log(): void { ... }` | `void` |
 

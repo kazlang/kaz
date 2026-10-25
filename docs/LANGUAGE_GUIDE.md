@@ -53,16 +53,27 @@ Statements can end with an optional semicolon `;`.
 
 ## 3. Type System & Literals
 
-Kaz features strong primitive types and rich composite types:
+Kaz features strong primitive types, exact fixed-point decimals, and rich composite types:
 
 | Type | Description | Example |
 | :--- | :--- | :--- |
-| `int` | 64-bit signed integer | `42`, `-10` |
-| `float` | 64-bit IEEE 754 floating-point | `3.14159`, `-0.5` |
+| `int` / `i64` | 64-bit signed integer (two's complement wrapping) | `42`, `-10`, `0xFF`, `0b1010` |
+| `decimal` | Exact fixed-point base-10 number (scale $10^4$, currency & finance) | `12.34m`, `0.05m`, `100m` |
+| `float` / `double` | 64-bit IEEE 754 floating-point | `3.14159`, `-0.5` |
+| `f32` | 32-bit IEEE 754 single-precision float | `1.5` |
+| `u8`, `i8`, `u16`, `i16`, `u32`, `i32` | Explicit fixed-width integer types | `255`, `-128`, `65535` |
 | `bool` | Boolean flag | `true`, `false` |
-| `string` | UTF-8 encoded text | `"Hello, World!"` |
-| `[T]` | Homogeneous dynamic array | `[1, 2, 3, 4]` |
+| `char` | 32-bit Unicode scalar value | `'A'`, `'ç'`, `'\n'` |
+| `string` | UTF-8 encoded byte stream | `"Hello, World!"` |
+| `array[T]` | Dynamic array | `[1, 2, 3, 4]` |
 | `struct` | Named structure with typed fields | `struct User { name: string, age: int }` |
+
+### 5 Canonical Rules for Primitive Types
+1. **Floating-Point Representation**: `float` and `double` are 64-bit IEEE 754 double precision (`f64`). `f32` is single-precision.
+2. **Text & Unicode**: `char` is a 32-bit Unicode code point (`u32`). `string` is a UTF-8 encoded byte sequence; lengths and offsets operate on raw UTF-8 bytes.
+3. **Null Field Guarantees**: Uninitialized struct references default to `null` (`0`). Calling a method or accessing a field on a null reference triggers a deterministic runtime panic (`Null pointer dereference`).
+4. **Integer Overflow**: Integer operations wrap according to standard 64-bit two's complement arithmetic (`wrapping_add`, `wrapping_sub`, `wrapping_mul`). Division by zero triggers a deterministic runtime panic (`kaz_panic_divzero`).
+5. **Exact Decimal Arithmetic**: The `decimal` type is scaled by $10,000$ (4 decimal places), avoiding binary floating-point roundoff (e.g. `0.1m + 0.2m == 0.3m`). Arithmetic is hardware-accelerated with 128-bit intermediate integer math.
 
 ---
 
