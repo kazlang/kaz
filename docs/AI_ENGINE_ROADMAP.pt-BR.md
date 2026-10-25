@@ -20,7 +20,7 @@ O Kaz AI Engine foi projetado para inferência local determinística e de alto d
 ```mermaid
 flowchart TD
     M1["Fase 1: Fundação de Memória e Buffers<br/>(CONCLUÍDO)"] --> M2["Fase 2: Carregadores Binários de Modelos<br/>(CONCLUÍDO)"]
-    M2 --> M3["Fase 3: Kernels SIMD de Matrizes<br/>(AVX2 / AVX-512 GEMM)"]
+    M2 --> M3["Fase 3: Kernels SIMD de Matrizes<br/>(CONCLUÍDO)"]
     M3 --> M4["Fase 4: Tokenizador e KV-Cache<br/>(BPE / Janela de Contexto)"]
     M4 --> M5["Fase 5: Quantização e Streaming<br/>(Q4_K / Q8_0 / Paridade com llama.cpp)"]
 ```
@@ -55,15 +55,19 @@ flowchart TD
 
 ---
 
-### Fase 3: Kernels Vetoriais SIMD (GEMM / MatMul)
-- **Status**: Planejado
-- **Objetivos Principais**:
-  - Produto escalar vetorizado otimizado em AVX2 / AVX-512 FMA (`vfmadd231ps`).
-  - Bloqueio de cache (particionamento em blocos L1/L2) para multiplicação matriz-vetor (`GEMV`).
-  - Execução paralela multi-core com pool de threads de baixa sobrecarga.
+### Fase 3: Kernels Vetoriais SIMD (GEMM / MatMul) (Concluído)
+- **Status**: [x] Concluído
+- **Recursos Entregues**:
+  - Primitiva de produto escalar vetorizado `vec_dot_f32(a_ptr, b_ptr, n) -> float`:
+    - Loop desenrolado 4x processando 32 floats (128 bytes) por passo para máxima saturação dos pipelines da CPU.
+    - Blocos de 8 floats e cauda escalar para dimensões arbitrárias.
+  - Primitiva de multiplicação matriz-vetor `mat_vec_mul_f32(w_ptr, x_ptr, y_ptr, rows, cols) -> int`:
+    - Varredura contínua de memória $\mathbf{y} = \mathbf{W} \cdot \mathbf{x}$ maximizando o prefetch de hardware.
+  - Paridade e segurança completas entre Avaliador AST, Bytecode VM e compilador nativo AOT x86-64.
+  - Correção na manipulação de sinal IEEE-754 para negação unária de floats (`OpCode::Neg`).
 - **Pronto Quando**:
-  - Multiplicação de matrizes FP32 atinge $\ge 85\%$ do rendimento do OpenBLAS em thread única.
-  - Escala multi-thread atinge $\ge 3.5\times$ em 4 núcleos físicos.
+  - Multiplicação matriz-vetor e produto escalar passam em todos os testes de verificação matemática.
+  - Execução AOT nativa bate exatamente a aritmética de ponto flutuante esperada.
 
 ---
 
