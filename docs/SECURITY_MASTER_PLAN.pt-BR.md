@@ -16,6 +16,7 @@ flowchart TD
     F3 --> F4["Fase 4: Tipagem Forte de Largura Fixa & Buffers (11.1, 11.2) ✅<br/>(u8..u64, i8..i64, f32/f64, bitcasts IEEE-754, buf_load/store LE)"]
     F4 --> F5["Fase 5: Validação Rigorosa de Formatos Binários Externos (9.2) ✅<br/>(Safetensors, .kzm, aritmética de offsets com checagem de estouro)"]
     F5 --> F6["Fase 6: Paridade Completa da Stdlib AOT/VM (2.1, 10.1) ✅<br/>(libkazrt nativa, SHA256, MD5, Base64, time/sleep, fs e math no AOT)"]
+    F6 --> F7["Fase 7: Estouro de Pilha, SIMD 64B, CSPRNG & Docs Anti-DoS (8.2, 8.4, 3.1) ✅<br/>(Checagem de stack nativa, alinhamento de 64 bytes, comparação em tempo constante, sys_getrandom e impressão float)"]
 ```
 
 ---
@@ -31,6 +32,7 @@ flowchart TD
 | **Fase 4** | Tipos Numéricos de Largura Fixa, Buffers Little-Endian & Bitcasts (`11.1`, `11.2`) | Família completa: `u8`, `i8`, `u16`, `i16`, `u32`, `i32`, `u64`, `i64`, `f32`, `f64`. Conversões de bits IEEE-754 sem custo (`f32_to_bits`, `f32_from_bits`, `f64_to_bits`, `f64_from_bits`). Primitivas de buffer direto Little-Endian (`buf_alloc`, `buf_free`, `buf_load_*_le`, `buf_store_*_le`). Correção de constantes float no AOT. | Suíte `tests/buffer_and_f32_tests.rs` aprovada 100% no AST, VM, AOT e compilador self-hosted. |
 | **Fase 5** | Formatos Binários Externos & DoS por Exaustão de RAM (`9.2`) | Módulo `src/stdlib/model.rs` com suporte completo a Safetensors e `.kzm` (Kaz Model). Limites estritos (`MAX_HEADER_SIZE=100MB`, `MAX_TENSOR_COUNT=50k`, `MAX_DIMENSIONS=8`). Todos os cálculos com `checked_add` e `checked_mul`. Carregamento direto em buffers brutos de memória (`safetensors_load_tensor_buf`, `kzm_load_tensor_buf`). | Suíte `tests/model_validation_tests.rs` aprovada 100%, rejeitando arquivos maliciosos ou forjados. |
 | **Fase 6** | Paridade Stdlib entre VM e AOT (`2.1`, `10.1`) | Biblioteca de runtime nativa `runtime/kazrt.c` (compilada via `build.rs` para `runtime/libkazrt.a`) com SHA-256, MD5 e Base64 freestanding. Implementadas syscalls diretas x86-64 no AOT para `time_now_us`, `time_now_ms`, `time_now_secs`, `sleep_ms`, `file_exists`, `file_delete`, `fs_size`, `str_contains`, `arr_len`, `arr_pop`, `math_sqrt`, `math_abs`, `math_min`, `math_max`. | Binário nativo gerado pelo AOT compilou, linkou com `libkazrt.a` e executou com 100% de sucesso em teste de integração. |
+| **Fase 7** | Proteção contra Estouro de Pilha (`8.2`), Alinhamento SIMD 64 Bytes (`3.1`), Criptografia em Tempo Constante & CSPRNG (`8.4`) | Injeção de limite de pilha nativo no AOT (`kaz_stack_limit` no `_start` checado em preâmbulos de função desviando para `kaz_panic_stackoverflow`). Limites de frames de recursão na VM (`10.000` frames) e Evaluator. Alinhamento de `kaz_alloc` elevado para 64 bytes para instruções SIMD AVX2/AVX-512. Implementados `kazrt_const_time_cmp` e syscall 318 Linux `SYS_getrandom` em `libkazrt.a`. Adicionado formatador float autônomo `kazrt_format_float`. Documentação completa do modelo bump allocator e prevenção de DoS Remoto nos manuais de arquitetura. | Suítes `tests/recursion_limit_tests.rs`, `tests/crypto_tests.rs` e `tests/buffer_and_f32_tests.rs` aprovadas 100%. |
 
 ---
 

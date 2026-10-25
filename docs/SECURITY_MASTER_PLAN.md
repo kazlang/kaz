@@ -16,6 +16,7 @@ flowchart TD
     F3 --> F4["Phase 4: Fixed-Width Types & Raw Buffers (11.1, 11.2) ✅<br/>(u8..u64, i8..i64, f32/f64, zero-cost bitcasts, buf_load/store LE)"]
     F4 --> F5["Phase 5: Strict Binary Model Validation (9.2) ✅<br/>(Safetensors, .kzm, overflow-checked offset arithmetic)"]
     F5 --> F6["Phase 6: Full Stdlib Parity AOT/VM (2.1, 10.1) ✅<br/>(Freestanding libkazrt, SHA256, MD5, Base64, time/sleep, fs & math)"]
+    F6 --> F7["Phase 7: Stack Overflow, SIMD 64B, CSPRNG & Anti-DoS Docs (8.2, 8.4, 3.1) ✅<br/>(Native stack check, 64-byte alignment, constant-time compare, sys_getrandom & float printing)"]
 ```
 
 ---
@@ -31,6 +32,7 @@ flowchart TD
 | **Phase 4** | Fixed-Width Numeric Types, Little-Endian Raw Buffers & Bitcasts (`11.1`, `11.2`) | Full family: `u8`, `i8`, `u16`, `i16`, `u32`, `i32`, `u64`, `i64`, `f32`, `f64`. Zero-cost IEEE-754 bitcasts (`f32_to_bits`, `f32_from_bits`, `f64_to_bits`, `f64_from_bits`). Direct Little-Endian raw buffer primitives (`buf_alloc`, `buf_free`, `buf_load_*_le`, `buf_store_*_le`). Fixed AOT float constant emission. | Test suite `tests/buffer_and_f32_tests.rs` passed 100% across AST, VM, AOT, and self-hosted compiler. |
 | **Phase 5** | External Binary Model Formats & Memory Exhaustion DoS (`9.2`) | Created `src/stdlib/model.rs` supporting `Safetensors` and native `.kzm` (Kaz Model). Strict security limits (`MAX_HEADER_SIZE=100MB`, `MAX_TENSOR_COUNT=50k`, `MAX_DIMENSIONS=8`). All offset arithmetic uses `checked_add` and `checked_mul`. Direct zero-copy loading into raw memory buffers (`safetensors_load_tensor_buf`, `kzm_load_tensor_buf`). | Test suite `tests/model_validation_tests.rs` passed 100%, rejecting tampered/huge models. |
 | **Phase 6** | Stdlib Parity between VM and AOT (`2.1`, `10.1`) | Created freestanding C runtime `runtime/kazrt.c` (built automatically via `build.rs` into `runtime/libkazrt.a`) providing SHA-256, MD5, and Base64. Implemented direct Linux syscalls in AOT for `time_now_us`, `time_now_ms`, `time_now_secs`, `sleep_ms`, `file_exists`, `file_delete`, `fs_size`, `str_contains`, `arr_len`, `arr_pop`, `math_sqrt`, `math_abs`, `math_min`, `math_max`. | AOT binary compiled, linked with `libkazrt.a`, and executed with 100% success in integration tests. |
+| **Phase 7** | Stack Overflow Protection (`8.2`), SIMD 64-Byte Alignment (`3.1`), Constant-Time Crypto & CSPRNG (`8.4`) | Injected stack limit threshold in AOT (`kaz_stack_limit` at `_start` checked in function preambles branching to `kaz_panic_stackoverflow`). Implemented recursion frame bounds in VM (`10,000` frames) and Evaluator. Upgraded `kaz_alloc` alignment to 64 bytes for AVX2/AVX-512. Added `kazrt_const_time_cmp` and Linux syscall 318 `SYS_getrandom` in `libkazrt.a`. Added freestanding float formatter `kazrt_format_float`. Fully documented bump allocator mechanics and Anti-DoS scope checkpoints in architecture docs. | Test suites `tests/recursion_limit_tests.rs`, `tests/crypto_tests.rs`, and `tests/buffer_and_f32_tests.rs` passed 100%. |
 
 ---
 

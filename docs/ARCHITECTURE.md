@@ -187,3 +187,62 @@ To eradicate buffer overflow vulnerabilities associated with giant static `.bss`
 - Static `.bss` memory is reduced to just 24 bytes for pointer tracking (`kaz_heap_start`, `kaz_heap_current`, `kaz_heap_limit`).
 - The AOT runtime invokes the direct Linux kernel syscall `sys_brk(12)` (`kaz_expand_heap`).
 - Memory grows dynamically in 64 MB chunks on demand, enabling native kernel paging management and preventing unintended physical memory exhaustion.
+
+---
+
+## 13. Memory Architecture: Bump Allocation, Dynamic Array Growth & Anti-DoS Security 🛡️
+
+### The Linear Bump Allocator Model (`kaz_alloc`):
+Kaz AOT uses a high-performance linear bump allocator (`kaz_alloc`) designed for deterministic, zero-overhead memory allocation without libc dependency:
+- Allocation consists simply of aligning the requested size to 64 bytes and advancing the heap pointer `kaz_heap_ptr`.
+- Alignment is strictly 64 bytes (`(size + 63) & -64`), guaranteeing compatibility with AVX2 (32-byte) and AVX-512 (64-byte) SIMD vector instructions without misaligned access penalties or CPU exceptions (`#GP`).
+
+### Dynamic Array Growth and Abandoned Blocks:
+When dynamic arrays grow via `arr_push`:
+1. If the current length exceeds capacity (`len >= cap`), capacity is doubled ($cap_{new} = cap \times 2$).
+2. A new contiguous memory chunk of size $16 + cap_{new} \times 8$ is allocated at `kaz_heap_ptr`.
+3. Elements are copied from the old buffer to the new buffer.
+4. **The Old Buffer is Abandoned**: Because a pure bump allocator does not maintain an individual free-list or perform in-place deallocations, the previous buffer remains permanently behind the heap pointer.
+5. **Memory Overhead**: Mathematically, the sum of all intermediate buffers is $\sum_{i=0}^{k-1} 2^i \approx 2^k$, meaning dynamic array growth consumes approximately $2 \times$ the memory of the final array allocation.
+
+### The Threat: Long-Running Daemons and Remote DoS (CWE-400):
+In short-lived CLI scripts, linear bump allocation is optimal because the entire heap is reclaimed instantaneously by the OS kernel on process termination (`sys_exit`).
+
+However, in **long-running daemons** (such as HTTP/TCP servers with `net_listen` or interactive terminal multiplexers like **TermiKAZ**), allocating dynamic arrays or objects inside an unbounded loop causes monotonic heap expansion:
+- **Remote Denial of Service (DoS)**: An external attacker can deliberately send continuous request bursts, causing the daemon to allocate arrays until `sys_brk` fails (`kaz_panic_oom`) or the Linux OOM-killer terminates the process.
+
+```mermaid
+flowchart LR
+    A["Request 1 (Array 16B)"] --> B["Heap Bump (+16B)"]
+    B --> C["Resize (Array 32B)"]
+    C --> D["Old 16B Abandoned Behind Heap Pointer"]
+    D --> E["Unbounded Loop: Monotonic Heap Growth"]
+    E --> F["Potential Remote DoS / OOM Panic"]
+```
+
+### Architectural Mitigations:
+Kaz provides a robust three-tier strategy to prevent heap exhaustion and memory accumulation:
+
+1. **Arena Scope Checkpoints (`heap_checkpoint` & `heap_rewind`)**:
+   Long-running server loops and worker tasks must define transactional scope boundaries:
+   ```kaz
+   while true {
+       let cp = heap_checkpoint();
+       let req = net_accept(server);
+       handle_request(req);
+       heap_rewind(cp); // Instantly reclaims all allocations made during request handling!
+   }
+   ```
+   `heap_rewind(cp)` resets `kaz_heap_ptr` back to `cp` in $O(1)$ time, completely preventing memory leaks across iterations without garbage collection latency.
+
+2. **Fixed-Size Contiguous Little-Endian Buffers (`buf_alloc`)**:
+   For I/O, networking, file processing, and tensor manipulation, dynamic arrays should be avoided in favor of raw buffers:
+   ```kaz
+   let b = buf_alloc(4096); // Allocated once, never moves, zero reallocation waste
+   buf_store_u32_le(b, 0, 1337);
+   ```
+   Buffers have fixed contiguous lifetimes, eliminate abandoned reallocation blocks, and avoid pointer invalidation risks.
+
+3. **Roadmap (Milestone 6: Slab/Pool Allocator)**:
+   For complex applications requiring arbitrary object lifetimes that cross scope boundaries, Kaz will introduce a dedicated slab/free-list pool allocator for dynamic array handles (`{ptr, len, cap}` indirection) to recycle discarded reallocation buffers.
+

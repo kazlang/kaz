@@ -298,3 +298,62 @@ Para eliminar o risco de estouro de buffer associado a reservas estáticas no `.
 - A seção `.bss` foi reduzida para apenas 24 bytes para ponteiros de controle (`kaz_heap_start`, `kaz_heap_current`, `kaz_heap_limit`).
 - O runtime AOT utiliza a syscall direta do kernel Linux `sys_brk(12)` (`kaz_expand_heap`).
 - A alocação ocorre dinamicamente em blocos de 64 MB sob demanda, permitindo paginação transparente pelo kernel e prevenindo alocações desnecessárias de memória física.
+
+---
+
+## 17. Arquitetura de Memória: Bump Allocation, Crescimento de Arrays e Prevenção de DoS Remoto 🛡️
+
+### O Modelo Linear Bump Allocator (`kaz_alloc`):
+O Kaz AOT utiliza um alocador linear de alto desempenho (*bump allocator*, `kaz_alloc`) projetado para alocação determinística com custo zero de sobrecarga (*zero runtime overhead*) e sem dependência de libc:
+- A alocação consiste simplesmente em alinhar o tamanho solicitado para 64 bytes e avançar o ponteiro de heap `kaz_heap_ptr`.
+- O alinhamento rigoroso a 64 bytes (`(size + 63) & -64`) garante compatibilidade com instruções vetoriais SIMD AVX2 (32 bytes) e AVX-512 (64 bytes), evitando penalidades de ciclos de CPU ou exceções de desalinhamento de hardware (`#GP`).
+
+### Crescimento Dinâmico de Arrays e Blocos Abandonados:
+Quando um array dinâmico cresce via `arr_push`:
+1. Se o tamanho atual atingir a capacidade (`len >= cap`), a capacidade é dobrada ($cap_{novo} = cap \times 2$).
+2. Um novo bloco contíguo de tamanho $16 + cap_{novo} \times 8$ é alocado em `kaz_heap_ptr`.
+3. Os elementos anteriores são copiados para o novo endereço.
+4. **O Bloco Anterior Fica Abandonado**: Como um alocador bump não possui free-list individual nem faz desalocações pontuais, o bloco anterior permanece na memória, atrás do ponteiro de heap.
+5. **Impacto em Consumo de Memória**: Pela soma geométrica ($\sum_{i=0}^{k-1} 2^i \approx 2^k$), o processo de redimensionamento dinâmico consome no total aproximadamente o dobro ($\approx 2\times$) do tamanho final do array.
+
+### O Risco: Daemons de Longa Execução e DoS Remoto (CWE-400):
+Em scripts CLI de curta duração, o alocador bump é ideal: toda a memória é liberada instantaneamente pelo kernel na finalização do processo (`sys_exit`).
+
+No entanto, em **daemons de longa execução** (como servidores TCP com `net_listen` ou multiplexadores interativos como o **TermiKAZ**), alocar arrays dinâmicos repetidamente dentro de laços infinitos causa expansão monotônica contínua do heap:
+- **Vulnerabilidade de Negação de Serviço Remota (DoS Remoto)**: Um atacante externo pode disparar requisições em massa propositalmente para forçar o servidor a alocar memória até esgotar o heap (`kaz_panic_oom`) ou provocar encerramento forçado pelo Linux OOM-killer.
+
+```mermaid
+flowchart LR
+    A["Requisição 1 (Array 16B)"] --> B["Heap Bump (+16B)"]
+    B --> C["Redimensionamento (Array 32B)"]
+    C --> D["Bloco de 16B Abandonado no Heap"]
+    D --> E["Laço Infinito: Crescimento Monotônico"]
+    E --> F["Potencial DoS Remoto / Pânico OOM"]
+```
+
+### Mecanismos de Mitigação:
+O Kaz fornece três camadas arquiteturais para garantir segurança e robustez de memória:
+
+1. **Checkpoints e Rewinds de Escopo (`heap_checkpoint` e `heap_rewind`)**:
+   Laços de servidores e daemons devem delimitar o escopo transacional de cada requisição:
+   ```kaz
+   while true {
+       let cp = heap_checkpoint();
+       let req = net_accept(server);
+       handle_request(req);
+       heap_rewind(cp); // Reclama instantaneamente toda a memória alocada na requisição!
+   }
+   ```
+   A instrução `heap_rewind(cp)` retrocede `kaz_heap_ptr` para `cp` em tempo $O(1)$, eliminando qualquer vazamento entre requisições sem introduzir pausas de Garbage Collector.
+
+2. **Buffers Contíguos Little-Endian de Tamanho Fixo (`buf_alloc`)**:
+   Para operações de I/O de rede, manipuladores de pacotes e tensores de IA, deve-se usar buffers crus de tamanho fixo:
+   ```kaz
+   let b = buf_alloc(4096); // Alocado uma vez, endereço fixo, sem cópia ou bloco abandonado
+   buf_store_u32_le(b, 0, 1337);
+   ```
+   Buffers possuem ciclo de vida previsível e imunidade contra abandono de memória em redimensionamento.
+
+3. **Plano de Longo Prazo (Milestone 6: Slab/Pool Allocator)**:
+   Para suportar dados dinâmicos com ciclo de vida arbitrário fora de checkpoints de escopo, o Kaz introduzirá um alocador pool/slab para arrays com indirection handle (`{ptr, len, cap}`), reciclando blocos descartados.
+
