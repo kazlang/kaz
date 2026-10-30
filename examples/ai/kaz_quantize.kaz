@@ -1,0 +1,60 @@
+// kaz_quantize.kaz - Quantizador Soberano Kaz (KZQ-8B / KZQ-4B / KZQ-4S / KZQ-2X)
+// Converte modelos .kzm (F32 ou BF16) para blocos quantizados SIMD de 32 pesos:
+//   KZQ-8B (bits=8) : 34 bytes/32 pesos (escala BF16 + 32B int8 [-127..127])
+//   KZQ-4B (bits=4) : 18 bytes/32 pesos (escala BF16 + 16B nibbles simétricos [-8..7])
+//   KZQ-4S (bits=35): ~1.5 GB Phi-4 (Attention em KZQ-4B + FFN em 14B/32 MSE-Optimal + Vocab em 12B/32 Outlier-Aware)
+//   KZQ-2X (bits=25): ~1.18 GB Phi-4 (Attention em 14B/32 + FFN/Vocab em 12B/32 Outlier-Aware)
+//
+// Uso: kaz run examples/ai/kaz_quantize.kaz -- <entrada.kzm> <saida.kzm> [8|4|35|25]
+
+int start_idx = 0;
+if (args_len() > 0 && argv(0) == "--") {
+    start_idx = 1;
+}
+
+if (args_len() < start_idx + 2) {
+    runoff("[-] Uso: kaz run examples/ai/kaz_quantize.kaz -- <entrada.kzm> <saida.kzm> [8|4|35|25]");
+} else {
+    string in_path = argv(start_idx);
+    string out_path = argv(start_idx + 1);
+    int bits = 4;
+    if (args_len() > start_idx + 2) {
+        string mode_arg = argv(start_idx + 2);
+        if (mode_arg == "4S" || mode_arg == "4s" || mode_arg == "35" || mode_arg == "3") {
+            bits = 35;
+        } else {
+            if (mode_arg == "2X" || mode_arg == "2x" || mode_arg == "25" || mode_arg == "2") {
+                bits = 25;
+            } else {
+                if (mode_arg == "8") {
+                    bits = 8;
+                } else {
+                    bits = 4;
+                }
+            }
+        }
+    }
+
+    if (!file_exists(in_path)) {
+        runoff("[-] Erro: arquivo de entrada nao encontrado: " + in_path);
+    } else {
+        int in_size_mb = fs_size(in_path) / (1024 * 1024);
+        string profile_name = "KZQ-4B";
+        if (bits == 8) { profile_name = "KZQ-8B"; }
+        if (bits == 35) { profile_name = "KZQ-4S (Smart Hybrid ~3.5 bpw)"; }
+        if (bits == 25) { profile_name = "KZQ-2X (Outlier-Aware ~2.5 bpw)"; }
+        runoff("[+] Quantizador Soberano Kaz (" + profile_name + ")");
+        runoff("    Entrada : " + in_path + " (" + to_string(in_size_mb) + " MB)");
+        runoff("    Saida   : " + out_path);
+
+        int t0 = time_now_ms();
+        int n_tensors = quantize_kzm_file(in_path, out_path, bits);
+        int elapsed = time_now_ms() - t0;
+
+        int out_size_mb = fs_size(out_path) / (1024 * 1024);
+        runoff("[+] Quantizacao concluida com sucesso!");
+        runoff("    Tensores processados : " + to_string(n_tensors));
+        runoff("    Tamanho final        : " + to_string(out_size_mb) + " MB");
+        runoff("    Tempo decorrido      : " + to_string(elapsed) + " ms");
+    }
+}

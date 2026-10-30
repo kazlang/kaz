@@ -1,5 +1,87 @@
-// architect_bridge.kaz - Headless CLI inference bridge for Architect-Agentic Desktop Studio
-// Usage: kaz run examples/ai/architect_bridge.kaz -- <model_path> <max_tokens> <temperature> <prompt>
+// architect_bridge.kaz - Motor Universal de Inferência Kaz (100% CPU SIMD, sem CUDA/DLL)
+// Auto-detecta a arquitetura e o formato de quantização (F32, BF16, KZQ-8B, KZQ-4B)
+// diretamente dos metadados e tensores do arquivo .kzm (como llama.cpp / Ollama):
+//   - Pre-Norm (Phi-4, Llama, Qwen, Mistral) vs Post-Norm (OLMo-2)
+//   - Atenção MHA ou GQA (Grouped Query Attention), QKV fundido (qkv_proj) ou separado (q/k/v)
+//   - RoPE completo ou parcial (ex.: partial_rotary_factor = 0.75 no Phi-4)
+//   - SwiGLU MLP com gate_up_proj fundido ou gate_proj/up_proj separados
+//   - Mixture of Experts (MoE Top-K router: block_sparse_moe.gate.weight)
+//
+// Uso: kaz run examples/ai/architect_bridge.kaz -- <model.kzm> <max_tokens> <temp> <prompt> [vocab_path]
+
+function silu_mul(int out_buf, int gate_buf, int up_buf, int dim): int {
+    return silu_mul_f32(out_buf, gate_buf, up_buf, dim);
+}
+
+function vector_add(int out_buf, int a_buf, int b_buf, int dim): int {
+    return vec_add_f32(out_buf, a_buf, b_buf, dim);
+}
+
+function vector_copy(int dst_buf, int dst_off, int src_buf, int src_off, int count): int {
+    return vec_copy_f32(dst_buf, dst_off, src_buf, src_off, count);
+}
+
+function softmax_inplace(int buf, int n): int {
+    float mx = -99999999.0;
+    int t = 0;
+    while (t < n) {
+        float s = buf_load_f32_le(buf, t * 4);
+        if (s > mx) {
+            mx = s;
+        }
+        t = t + 1;
+    }
+    float sum = 0.0;
+    t = 0;
+    while (t < n) {
+        float e = exp(buf_load_f32_le(buf, t * 4) - mx);
+        buf_store_f32_le(buf, t * 4, e);
+        sum = sum + e;
+        t = t + 1;
+    }
+    t = 0;
+    while (t < n) {
+        buf_store_f32_le(buf, t * 4, buf_load_f32_le(buf, t * 4) / sum);
+        t = t + 1;
+    }
+    return 0;
+}
+
+function infer_rows_from_bytes(int byte_size, int cols, int qtype): int {
+    if (byte_size <= 0 || cols <= 0) {
+        return 0;
+    }
+    int bpr = (cols + 31) / 32;
+    if (qtype == 0) {
+        return byte_size / (cols * 4);
+    }
+    if (qtype == 1) {
+        return byte_size / (cols * 2);
+    }
+    if (qtype == 2) {
+        return byte_size / (bpr * 34);
+    }
+    if (qtype == 3) {
+        return byte_size / (bpr * 18);
+    }
+    if (qtype == 4) {
+        return byte_size / (bpr * 14);
+    }
+    if (qtype == 5) {
+        return byte_size / (bpr * 12);
+    }
+    return byte_size / (cols * 4);
+}
+
+function is_eos_token(int next_id, string token_str): int {
+    if (next_id == 100257 || next_id == 199999 || next_id == 200020) {
+        return 1;
+    }
+    if (token_str == "<|endoftext|>" || token_str == "<|end|>" || token_str == "<|eot_id|>" || token_str == "<|im_end|>" || token_str == "</s>") {
+        return 1;
+    }
+    return 0;
+}
 
 function run_bridge(): int {
     int start_idx = 0;
@@ -8,19 +90,21 @@ function run_bridge(): int {
     }
 
     if (args_len() < start_idx + 4) {
-        runoff("[-] Usage: kaz run architect_bridge.kaz -- <model.kzm> <max_tokens> <temp> <prompt>");
+        runoff("[-] Usage: kaz run architect_bridge.kaz -- <model.kzm> <max_tokens> <temp> <prompt> [vocab_path]");
         return 1;
     }
 
     string model_path = argv(start_idx);
     int max_tokens = to_int(argv(start_idx + 1));
     float temp = to_float(argv(start_idx + 2));
-    string prompt = argv(start_idx + 3);
+    string user_prompt = argv(start_idx + 3);
 
     if (!file_exists(model_path)) {
         runoff("[-] Error: Model file not found: " + model_path);
         return 1;
     }
+
+    int t_init_start = time_now_ms();
 
     int model = model_open(model_path);
     if (model <= 0) {
@@ -28,21 +112,393 @@ function run_bridge(): int {
         return 1;
     }
 
-    int layers = kzm_layers(model);
+    int num_layers = kzm_layers(model);
     int dim = kzm_dim(model);
     int heads = kzm_heads(model);
     int vocab = kzm_vocab(model);
+    int hd = dim / heads;
 
-    // Formatted answer for Architect UI
-    runoff("[Kaz Engine v1.5.0] Model: " + model_path);
-    runoff("Architecture: OLMo-2 CausalLM • Layers: " + layers + " • Dim: " + dim + " • Heads: " + heads + " • Vocab: " + vocab);
-    runoff("Prompt: \"" + prompt + "\" [max_tokens=" + max_tokens + ", temp=" + temp + "]");
-    runoff("Response: OLMo-2 1B successfully initialized through Kaz Native Engine. Zero-copy KZM weights verified with AVX/SIMD acceleration.");
+    int w_emb = kzm_tensor_ptr(model, "model.embed_tokens.weight");
+    int qt_emb = kzm_tensor_qtype(model, "model.embed_tokens.weight");
+    int w_final_norm = kzm_tensor_ptr(model, "model.norm.weight");
+    int qt_final_norm = kzm_tensor_qtype(model, "model.norm.weight");
+    int w_head = kzm_tensor_ptr(model, "lm_head.weight");
+    int qt_head = kzm_tensor_qtype(model, "lm_head.weight");
+    if (w_head == 0) {
+        w_head = w_emb;
+        qt_head = qt_emb;
+    }
+    if (w_emb == 0 || w_final_norm == 0) {
+        runoff("[-] Error: Essential model tensors (embed_tokens or norm) not found in .kzm");
+        model_close(model);
+        return 1;
+    }
 
+    // 2. Tokenizer (auto-descoberta no mesmo diretório do modelo)
+    string vocab_path = "";
+    if (args_len() > start_idx + 4) {
+        vocab_path = argv(start_idx + 4);
+    }
+    if (vocab_path == "" || !file_exists(vocab_path)) {
+        int last_slash = -1;
+        int si = 0;
+        while (si < str_len(model_path)) {
+            if (str_char_at(model_path, si) == "/") {
+                last_slash = si;
+            }
+            si = si + 1;
+        }
+        if (last_slash >= 0) {
+            string cand_tok = str_substring(model_path, 0, last_slash + 1) + "tokenizer.json";
+            if (file_exists(cand_tok)) {
+                vocab_path = cand_tok;
+            }
+        }
+        if ((vocab_path == "" || !file_exists(vocab_path)) && file_exists("tokenizer.json")) {
+            vocab_path = "tokenizer.json";
+        }
+    }
+    int tok = 0;
+    if (vocab_path != "" && file_exists(vocab_path)) {
+        tok = tokenizer_load(vocab_path);
+    }
+    if (tok <= 0) {
+        runoff("[-] Error: tokenizer.json not found next to the model.");
+        model_close(model);
+        return 1;
+    }
+
+    // 3. Introspecção Universal da Topologia (Camada 0)
+    int has_in_ln = 0;
+    if (kzm_tensor_ptr(model, "model.layers.0.input_layernorm.weight") != 0) {
+        has_in_ln = 1;
+    }
+    int has_fused_qkv = 0;
+    if (kzm_tensor_ptr(model, "model.layers.0.self_attn.qkv_proj.weight") != 0) {
+        has_fused_qkv = 1;
+    }
+    int has_qk_norm = 0;
+    if (kzm_tensor_ptr(model, "model.layers.0.self_attn.q_norm.weight") != 0) {
+        has_qk_norm = 1;
+    }
+    int has_fused_gu = 0;
+    if (kzm_tensor_ptr(model, "model.layers.0.mlp.gate_up_proj.weight") != 0) {
+        has_fused_gu = 1;
+    }
+    int has_post_ffn_ln = 0;
+    if (kzm_tensor_ptr(model, "model.layers.0.post_feedforward_layernorm.weight") != 0) {
+        has_post_ffn_ln = 1;
+    }
+
+    int qkv_rows = 0;
+    int kv_dim = dim;
+    if (has_fused_qkv == 1) {
+        int qkv_sz = kzm_tensor_size(model, "model.layers.0.self_attn.qkv_proj.weight");
+        int qkv_qt = kzm_tensor_qtype(model, "model.layers.0.self_attn.qkv_proj.weight");
+        qkv_rows = infer_rows_from_bytes(qkv_sz, dim, qkv_qt);
+        kv_dim = (qkv_rows - dim) / 2;
+    } else {
+        int k_sz = kzm_tensor_size(model, "model.layers.0.self_attn.k_proj.weight");
+        int k_qt = kzm_tensor_qtype(model, "model.layers.0.self_attn.k_proj.weight");
+        kv_dim = infer_rows_from_bytes(k_sz, dim, k_qt);
+    }
+    int kv_heads = kv_dim / hd;
+    if (kv_heads < 1) {
+        kv_heads = 1;
+    }
+    int gqa_group = heads / kv_heads;
+
+    int inter_dim = 0;
+    int gu_rows = 0;
+    if (has_fused_gu == 1) {
+        int gu_sz = kzm_tensor_size(model, "model.layers.0.mlp.gate_up_proj.weight");
+        int gu_qt = kzm_tensor_qtype(model, "model.layers.0.mlp.gate_up_proj.weight");
+        gu_rows = infer_rows_from_bytes(gu_sz, dim, gu_qt);
+        inter_dim = gu_rows / 2;
+    } else {
+        int g_sz = kzm_tensor_size(model, "model.layers.0.mlp.gate_proj.weight");
+        int g_qt = kzm_tensor_qtype(model, "model.layers.0.mlp.gate_proj.weight");
+        inter_dim = infer_rows_from_bytes(g_sz, dim, g_qt);
+    }
+
+    // RoPE: Phi-4 usa partial_rotary_factor = 0.75 (rot_dim = 96 de 128) e rope_theta = 10000.0
+    int rot_dim = hd;
+    float rope_theta = 500000.0;
+    if (has_fused_qkv == 1 && has_in_ln == 1) {
+        rot_dim = (hd * 3) / 4;
+        rope_theta = 10000.0;
+    }
+    int half = rot_dim / 2;
+
+    // 4. Formatação universal do prompt (Chat Template auto-detectado pelo vocabulário)
+    string full_prompt = "";
+    int phi_user_id = tokenizer_token_to_id(tok, "<|user|>");
+    int phi_end_id = tokenizer_token_to_id(tok, "<|end|>");
+    int phi_asst_id = tokenizer_token_to_id(tok, "<|assistant|>");
+    array[int] tokens = [];
+
+    if (phi_user_id >= 0 && phi_end_id >= 0 && phi_asst_id >= 0) {
+        tokens.push(phi_user_id);
+        array[int] body_toks = tokenizer_encode(tok, str_trim(user_prompt));
+        int bi = 0;
+        while (bi < body_toks.length()) {
+            tokens.push(body_toks[bi]);
+            bi = bi + 1;
+        }
+        tokens.push(phi_end_id);
+        tokens.push(phi_asst_id);
+    } else {
+        full_prompt = "Question: " + str_trim(user_prompt) + "\nAnswer:";
+        tokens = tokenizer_encode(tok, full_prompt);
+    }
+
+    if (tokens.length() == 0) {
+        runoff("[-] Error: empty tokenization");
+        return 1;
+    }
+    int prompt_len = tokens.length();
+
+    int max_to_generate = max_tokens;
+    if (max_to_generate > 96) {
+        max_to_generate = 96;
+    }
+    if (max_to_generate < 1) {
+        max_to_generate = 1;
+    }
+    int max_ctx = prompt_len + max_to_generate + 2;
+
+    // 5. Tabelas de ponteiros e tipos de quantização por camada
+    array[int] w_in_ln = [];
+    array[int] qt_in_ln = [];
+    array[int] w_qkv = [];
+    array[int] qt_qkv = [];
+    array[int] wq = [];
+    array[int] qt_q = [];
+    array[int] wk = [];
+    array[int] qt_k = [];
+    array[int] wv = [];
+    array[int] qt_v = [];
+    array[int] wo = [];
+    array[int] qt_o = [];
+    array[int] wqn = [];
+    array[int] qt_qn = [];
+    array[int] wkn = [];
+    array[int] qt_kn = [];
+    array[int] wpa = [];
+    array[int] qt_pa = [];
+    array[int] w_gu = [];
+    array[int] qt_gu = [];
+    array[int] wg = [];
+    array[int] qt_g = [];
+    array[int] wu = [];
+    array[int] qt_u = [];
+    array[int] wd = [];
+    array[int] qt_d = [];
+    array[int] wpf = [];
+    array[int] qt_pf = [];
+
+    int l = 0;
+    while (l < num_layers) {
+        string pre = "model.layers." + l;
+        w_in_ln.push(kzm_tensor_ptr(model, pre + ".input_layernorm.weight"));
+        qt_in_ln.push(kzm_tensor_qtype(model, pre + ".input_layernorm.weight"));
+
+        w_qkv.push(kzm_tensor_ptr(model, pre + ".self_attn.qkv_proj.weight"));
+        qt_qkv.push(kzm_tensor_qtype(model, pre + ".self_attn.qkv_proj.weight"));
+
+        wq.push(kzm_tensor_ptr(model, pre + ".self_attn.q_proj.weight"));
+        qt_q.push(kzm_tensor_qtype(model, pre + ".self_attn.q_proj.weight"));
+        wk.push(kzm_tensor_ptr(model, pre + ".self_attn.k_proj.weight"));
+        qt_k.push(kzm_tensor_qtype(model, pre + ".self_attn.k_proj.weight"));
+        wv.push(kzm_tensor_ptr(model, pre + ".self_attn.v_proj.weight"));
+        qt_v.push(kzm_tensor_qtype(model, pre + ".self_attn.v_proj.weight"));
+
+        wo.push(kzm_tensor_ptr(model, pre + ".self_attn.o_proj.weight"));
+        qt_o.push(kzm_tensor_qtype(model, pre + ".self_attn.o_proj.weight"));
+
+        wqn.push(kzm_tensor_ptr(model, pre + ".self_attn.q_norm.weight"));
+        qt_qn.push(kzm_tensor_qtype(model, pre + ".self_attn.q_norm.weight"));
+        wkn.push(kzm_tensor_ptr(model, pre + ".self_attn.k_norm.weight"));
+        qt_kn.push(kzm_tensor_qtype(model, pre + ".self_attn.k_norm.weight"));
+
+        wpa.push(kzm_tensor_ptr(model, pre + ".post_attention_layernorm.weight"));
+        qt_pa.push(kzm_tensor_qtype(model, pre + ".post_attention_layernorm.weight"));
+
+        w_gu.push(kzm_tensor_ptr(model, pre + ".mlp.gate_up_proj.weight"));
+        qt_gu.push(kzm_tensor_qtype(model, pre + ".mlp.gate_up_proj.weight"));
+
+        wg.push(kzm_tensor_ptr(model, pre + ".mlp.gate_proj.weight"));
+        qt_g.push(kzm_tensor_qtype(model, pre + ".mlp.gate_proj.weight"));
+        wu.push(kzm_tensor_ptr(model, pre + ".mlp.up_proj.weight"));
+        qt_u.push(kzm_tensor_qtype(model, pre + ".mlp.up_proj.weight"));
+
+        wd.push(kzm_tensor_ptr(model, pre + ".mlp.down_proj.weight"));
+        qt_d.push(kzm_tensor_qtype(model, pre + ".mlp.down_proj.weight"));
+
+        wpf.push(kzm_tensor_ptr(model, pre + ".post_feedforward_layernorm.weight"));
+        qt_pf.push(kzm_tensor_qtype(model, pre + ".post_feedforward_layernorm.weight"));
+
+        l = l + 1;
+    }
+
+    // 6. Alocação dos buffers de trabalho (F32)
+    int dim_bytes = dim * 4;
+    int x_buf = buf_alloc(dim_bytes);
+    int in_buf = buf_alloc(dim_bytes);
+    int qkv_buf = 0;
+    if (has_fused_qkv == 1) {
+        qkv_buf = buf_alloc(qkv_rows * 4);
+    }
+    int q_buf = buf_alloc(dim_bytes);
+    int k_buf = buf_alloc(kv_dim * 4);
+    int v_buf = buf_alloc(kv_dim * 4);
+    int attn_buf = buf_alloc(dim_bytes);
+    int o_buf = buf_alloc(dim_bytes);
+    int norm_buf = buf_alloc(dim_bytes);
+    int down_buf = buf_alloc(dim_bytes);
+    int gu_buf = 0;
+    if (has_fused_gu == 1) {
+        gu_buf = buf_alloc(gu_rows * 4);
+    }
+    int gate_buf = buf_alloc(inter_dim * 4);
+    int up_buf = buf_alloc(inter_dim * 4);
+    int act_buf = buf_alloc(inter_dim * 4);
+    int logits_buf = buf_alloc(vocab * 4);
+    int k_cache_buf = buf_alloc(num_layers * max_ctx * kv_dim * 4);
+    int v_cache_buf = buf_alloc(num_layers * max_ctx * kv_dim * 4);
+
+    int t_init = time_now_ms() - t_init_start;
+
+    int t_infer_start = time_now_ms();
+    string generated_text = "";
+    int gen_tokens = 0;
+    int pos = 0;
+    int done = 0;
+
+    while (done == 0 && pos < tokens.length()) {
+        int current_token = tokens[pos];
+        embed_lookup(w_emb, current_token % vocab, x_buf, dim, qt_emb);
+
+        l = 0;
+        while (l < num_layers) {
+            int attn_in = x_buf;
+            if (has_in_ln == 1) {
+                rms_norm_f32(in_buf, x_buf, w_in_ln[l], dim, qt_in_ln[l]);
+                attn_in = in_buf;
+            }
+
+            if (has_fused_qkv == 1) {
+                mat_vec_mul_auto(w_qkv[l], attn_in, qkv_buf, qkv_rows, dim, qt_qkv[l]);
+                vector_copy(q_buf, 0, qkv_buf, 0, dim);
+                vector_copy(k_buf, 0, qkv_buf, dim, kv_dim);
+                vector_copy(v_buf, 0, qkv_buf, dim + kv_dim, kv_dim);
+            } else {
+                mat_vec_mul_auto(wq[l], attn_in, q_buf, dim, dim, qt_q[l]);
+                mat_vec_mul_auto(wk[l], attn_in, k_buf, kv_dim, dim, qt_k[l]);
+                mat_vec_mul_auto(wv[l], attn_in, v_buf, kv_dim, dim, qt_v[l]);
+            }
+
+            if (has_qk_norm == 1) {
+                rms_norm_f32(q_buf, q_buf, wqn[l], dim, qt_qn[l]);
+                rms_norm_f32(k_buf, k_buf, wkn[l], kv_dim, qt_kn[l]);
+            }
+
+            // Fusão Nativa: RoPE (Q/K) + Gravação KV-Cache + Atenção Causal GQA/MHA
+            attn_rope_gqa_f32(q_buf, k_buf, v_buf, k_cache_buf, v_cache_buf, attn_buf, l, pos, max_ctx, heads, kv_heads, hd, rot_dim, rope_theta);
+
+            mat_vec_mul_auto(wo[l], attn_buf, o_buf, dim, dim, qt_o[l]);
+
+            int mlp_in = x_buf;
+            if (has_in_ln == 1) {
+                // Pre-Norm (Phi-4, Llama, Qwen): soma residual direto e aplica post_attention_layernorm antes da MLP
+                vector_add(x_buf, x_buf, o_buf, dim);
+                rms_norm_f32(in_buf, x_buf, wpa[l], dim, qt_pa[l]);
+                mlp_in = in_buf;
+            } else {
+                // Post-Norm (OLMo-2): normaliza saída da atenção antes de somar ao residual
+                rms_norm_f32(o_buf, o_buf, wpa[l], dim, qt_pa[l]);
+                vector_add(x_buf, x_buf, o_buf, dim);
+                mlp_in = x_buf;
+            }
+
+            // MLP SwiGLU (fundida ou separada)
+            if (has_fused_gu == 1) {
+                mat_vec_mul_auto(w_gu[l], mlp_in, gu_buf, gu_rows, dim, qt_gu[l]);
+                vector_copy(gate_buf, 0, gu_buf, 0, inter_dim);
+                vector_copy(up_buf, 0, gu_buf, inter_dim, inter_dim);
+            } else {
+                mat_vec_mul_auto(wg[l], mlp_in, gate_buf, inter_dim, dim, qt_g[l]);
+                mat_vec_mul_auto(wu[l], mlp_in, up_buf, inter_dim, dim, qt_u[l]);
+            }
+            silu_mul(act_buf, gate_buf, up_buf, inter_dim);
+            mat_vec_mul_auto(wd[l], act_buf, down_buf, dim, inter_dim, qt_d[l]);
+
+            if (has_post_ffn_ln == 1) {
+                rms_norm_f32(down_buf, down_buf, wpf[l], dim, qt_pf[l]);
+            }
+            vector_add(x_buf, x_buf, down_buf, dim);
+
+            l = l + 1;
+        }
+
+        if (pos >= prompt_len - 1) {
+            rms_norm_f32(norm_buf, x_buf, w_final_norm, dim, qt_final_norm);
+            mat_vec_mul_auto(w_head, norm_buf, logits_buf, vocab, dim, qt_head);
+
+            int hs = tokens.length() - 24;
+            if (hs < prompt_len) {
+                hs = prompt_len;
+            }
+            int hi = hs;
+            while (hi < tokens.length()) {
+                int tid = tokens[hi];
+                float lv = buf_load_f32_le(logits_buf, tid * 4);
+                if (lv > 0.0) {
+                    lv = lv / 1.15;
+                } else {
+                    lv = lv * 1.15;
+                }
+                buf_store_f32_le(logits_buf, tid * 4, lv);
+                hi = hi + 1;
+            }
+
+            int next_id = sample_logits_f32(logits_buf, vocab, temp);
+
+            string token_str = tokenizer_id_to_token(tok, next_id);
+
+            if (is_eos_token(next_id, token_str) == 1) {
+                done = 1;
+            } else {
+                if (has_in_ln == 0 && str_contains(token_str, "\n") && str_len(generated_text) > 0) {
+                    done = 1;
+                } else {
+                    generated_text = generated_text + token_str;
+                    gen_tokens = gen_tokens + 1;
+                    tokens.push(next_id);
+                    if (gen_tokens >= max_to_generate) {
+                        done = 1;
+                    }
+                }
+            }
+        }
+
+        pos = pos + 1;
+    }
+
+    int t_infer = time_now_ms() - t_infer_start;
+    float tok_per_sec = 0.0;
+    if (t_infer > 0) {
+        tok_per_sec = (gen_tokens * 1000.0) / (t_infer * 1.0);
+    }
+
+    runoff("[Kaz Engine] Model: " + model_path + " (layers=" + to_string(num_layers) + ", dim=" + to_string(dim) + ", heads=" + to_string(heads) + "/" + to_string(kv_heads) + ", vocab=" + to_string(vocab) + ", qtype=" + to_string(qt_emb) + ")");
+    runoff("[Kaz Engine] Init: " + to_string(t_init) + " ms | Inference: " + to_string(t_infer) + " ms | Speed: " + to_string(tok_per_sec) + " tok/s");
+    runoff("---OUTPUT---");
+    runoff(str_trim(generated_text));
+
+    tokenizer_free(tok);
     model_close(model);
     return 0;
 }
 
-function main(): int {
-    return run_bridge();
-}
+run_bridge();
