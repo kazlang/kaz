@@ -9,13 +9,9 @@ Cada item pendente está catalogado em uma de quatro gavetas priorizadas.
 ## Gaveta 1: Segurança e Arquitetura de Memória (Alta Prioridade)
 
 ### [1.1] Validação Estrita de Formatos Binários Externos (Safetensors e .kzm)
-- **Status**: Parcialmente implementado na VM; validação estrita com checagem de estouro aritmético pendente no AOT.
+- **Status**: Concluído ✅ (Implementado na VM e AOT com checagem de overflow aritmético e testes em `tests/model_validation_tests.rs`).
 - **Descrição**:
-  Ao carregar arquivos de modelos binários (.safetensors ou .kzm), os deslocamentos (`data_offsets`) e formatos dos tensores devem ser validados contra o tamanho real mapeado em memória (`mmap_len`).
-- **Implementação Necessária**:
-  1. Validação de estouro aritmético: verificar `data_offset.checked_add(data_len) <= file_len`.
-  2. Teto para o cabeçalho JSON: impor limite de tamanho (ex.: 100 MB) para impedir negação de serviço durante o parsing inicial.
-  3. Validação das dimensões do tensor: garantir que a multiplicação de dimensões não cause overflow de inteiros de 64 bits.
+  Ao carregar arquivos de modelos binários (.safetensors ou .kzm), os deslocamentos (`data_offsets`) e formatos dos tensores são rigorosamente validados contra o tamanho real mapeado em memória (`mmap_len`), prevenindo estouro de inteiros de 64 bits e ataques DoS.
 
 ---
 

@@ -17,6 +17,9 @@ The Kaz Standard Library provides built-in native modules compiled directly into
 9. [Networking & HTTP (`net.*`)](#9-networking--http-net)
 10. [Embedded SQLite Database (`db.*`)](#10-embedded-sqlite-database-db)
 11. [JSON Serialization & Parsing (`json.*`)](#11-json-serialization--parsing-json)
+12. [Time and System (`time.*`)](#12-time-and-system-time)
+13. [Native Hooks & Modding (`hook.*`)](#13-native-hooks--modding-hook)
+14. [AI Engine, Tensors & Models (`model` / `.kzm`)](#14-ai-engine-tensors--models-model--kzm)
 
 ---
 
@@ -172,3 +175,44 @@ db.close(conn);
 - `json.parse(payload: string) -> any`: Parses a JSON string into Kaz maps, arrays, or primitive types.
 - `json.stringify(value: any) -> string`: Serializes a Kaz structure into a compact JSON string.
 - `json.pretty(value: any) -> string`: Serializes a Kaz structure into formatted, indented JSON.
+
+---
+
+## 12. Time and System (`time.*`)
+
+- `time_now_us() -> int`: Monotonic microsecond-precision high-resolution timestamp.
+- `time_now_ms() -> int`: Current UNIX timestamp in milliseconds.
+- `time_now_secs() -> float`: Current UNIX timestamp in fractional seconds.
+- `sleep_ms(ms: int) -> void`: Suspends execution for the given duration in milliseconds.
+
+---
+
+## 13. Native Hooks & Modding (`hook.*`)
+
+In-process event bus for modular extensions and plugin systems without external package dependencies:
+- `hook.register(event: string, handler_fn: string) -> void`: Subscribes a function to an event.
+- `hook.has(event: string) -> bool`: Checks if any handler is listening to the event.
+- `hook.list(event: string) -> array`: Lists all registered handlers for the event.
+- `hook.clear(event: string) -> void`: Clears registered handlers.
+
+---
+
+## 14. AI Engine, Tensors & Models (`model` / `.kzm`)
+
+The native AI subsystem provides sovereign inference for local LLMs via the `.kzm` (Kaz Model Format) and HuggingFace `.safetensors`, featuring quantized kernels (KZQ-8, KZQ-4B, KZQ-4S, KZQ-2X) and parallel lock-free AVX2 SIMD acceleration:
+
+- `kzm_open(path: string) -> int`: Opens a memory-mapped `.kzm` model file and returns the handle.
+- `kzm_header(handle: int) -> map`: Returns architecture configuration (layers, heads, dimensions, vocab).
+- `kzm_tensor_names(handle: int) -> array[string]`: Lists all weight tensor keys.
+- `kzm_tensor_info(handle: int, name: string) -> map`: Returns shape, quantization type (`KZQ-4B`, `KZQ-8`, etc.), and offset.
+- `kzm_convert_safetensors(src: string, dst: string) -> bool`: Converts HuggingFace `.safetensors` to `.kzm`.
+- `quantize_kzm_file(src: string, dst: string, mode: string) -> bool`: Quantizes weights to `KZQ-4B` or `KZQ-8`.
+- `vec_dot_f32(a: buffer, b: buffer) -> float`: High-speed AVX2 dot product.
+- `mat_vec_mul_auto(w: buffer, x: buffer, rows: int, cols: int) -> buffer`: Multi-threaded quantized GEMM.
+- `rms_norm_f32(x: buffer, w: buffer, eps: float) -> buffer`: Root Mean Square layer normalization.
+- `silu_mul_f32(gate: buffer, up: buffer) -> buffer`: SwiGLU / SiLU activation for FFN layers.
+- `attn_rope_gqa_f32(...) -> buffer`: Grouped Query Attention with Rotary Positional Embeddings.
+- `sample_logits_f32(logits: buffer, temp: float, top_p: float, top_k: int) -> int`: Next-token stochastic sampler.
+- `tokenizer_load(path: string) -> int`: Loads BPE/SentencePiece tokenizer.
+- `tokenizer_encode(handle: int, text: string) -> array[int]`: Converts prompt to token IDs.
+- `tokenizer_id_to_token(handle: int, id: int) -> string`: Converts token ID back to string.

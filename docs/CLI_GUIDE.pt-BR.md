@@ -25,7 +25,7 @@ Após executar o instalador (`install.ps1` no Windows ou `install.sh` no Linux/m
 
 ```bash
 kaz --version
-# Kaz 1.1.0
+# Kaz 1.5.0
 ```
 
 ---
@@ -210,7 +210,7 @@ kaz
 ### Interface do Kaz Terminal:
 ```text
 ╔═════════════════════════════════════════════════════════════════╗
-║                      KAZ TERMINAL 🦅 v1.1.0                     ║
+║                      KAZ TERMINAL 🦅 v1.5.0                     ║
 ║              Ambiente Interativo & Shell da Linguagem           ║
 ╚═════════════════════════════════════════════════════════════════╝
 

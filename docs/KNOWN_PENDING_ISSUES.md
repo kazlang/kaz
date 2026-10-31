@@ -9,13 +9,9 @@ Each pending item is filed into one of four prioritized drawers.
 ## Drawer 1: Security & Memory Architecture (High Priority)
 
 ### [1.1] External Binary Model Format Validation (Safetensors & .kzm)
-- **Status**: Partially completed in VM; strict arithmetic overflow checks in AOT pending.
+- **Status**: Completed ✅ (Implemented with strict arithmetic overflow validation and tested in `tests/model_validation_tests.rs`).
 - **Description**:
-  When reading binary model files (.safetensors or .kzm), tensor data offsets and shapes must be checked against the mapped file length (`mmap_len`).
-- **Required Implementation**:
-  1. Arithmetic overflow validation: verify `data_offset.checked_add(data_len) <= file_len`.
-  2. Strict header size ceiling: enforce maximum JSON header size (e.g. 100 MB) to prevent denial of service during initial model parse.
-  3. Tensor dimension validation: verify that dimension product calculation does not overflow 64-bit integers.
+  When reading binary model files (.safetensors or .kzm), tensor data offsets and shapes are rigorously checked against the mapped file length (`mmap_len`), preventing 64-bit integer overflows and memory corruption.
 
 ---
 

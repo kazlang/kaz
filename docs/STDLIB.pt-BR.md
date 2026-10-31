@@ -19,6 +19,8 @@ Isso significa **máxima velocidade de execução e zero necessidade de instalar
 10. [Banco de Dados Relacional SQLite (`db.*`)](#10-banco-de-dados-relacional-sqlite-db)
 11. [Serialização e Parsing JSON (`json.*`)](#11-serialização-e-parsing-json-json)
 12. [Tempo e Sistema (`time`)](#12-tempo-e-sistema-time)
+13. [Extensões e Modding Nativo (`hook`)](#13-extensões-e-modding-nativo-hook)
+14. [Motor Nativo de IA, Tensores & Modelos (`model` / `.kzm`)](#14-motor-nativo-de-ia-tensores--modelos-model--kzm)
 
 ---
 
@@ -316,4 +318,43 @@ if (hook.has("on_player_hit")) {
     MeuHandler("dano: 50");
 }
 ```
+
+---
+
+## 14. Motor Nativo de IA, Tensores & Modelos (`model` / `.kzm`)
+
+O subsistema `model` introduz suporte nativo a inferência de LLMs locais em formato soberano `.kzm` (Kaz Model Format) e `safetensors`, com quantização avançada (KZQ-8, KZQ-4B, KZQ-4S, KZQ-2X) e aceleração SIMD AVX2 paralela lock-free.
+
+| Função | Parâmetros | Retorno | Descrição |
+|---|---|---|---|
+| `kzm_open(caminho)` | `caminho: string` | `int` | Abre um arquivo `.kzm` mapeado em memória (mmap) e retorna o descritor de modelo. |
+| `kzm_header(handle)` | `handle: int` | `map` | Retorna metadados do modelo: arquitetura, camadas, cabeças, dimensão e vocabulário. |
+| `kzm_tensor_names(handle)` | `handle: int` | `array[string]` | Retorna a lista com o nome de todos os tensores de pesos do modelo. |
+| `kzm_tensor_info(handle, nome)` | `handle: int, nome: string` | `map` | Retorna dimensões (`shape`), tipo de quantização (`dtype`), tamanho e offset. |
+| `kzm_convert_safetensors(src, dst)` | `src, dst: string` | `bool` | Converte pesos HuggingFace `.safetensors` diretamente para o formato binário soberano `.kzm`. |
+| `quantize_kzm_file(src, dst, modo)` | `src, dst, modo: string` | `bool` | Quantiza um modelo `.kzm` para `KZQ-4B` (4 bits balanceado), `KZQ-4S` (híbrido) ou `KZQ-8` (8 bits). |
+| `vec_dot_f32(a, b)` | `a, b: buffer` | `float` | Produto escalar ultra-rápido acelerado por SIMD AVX2 com FMA. |
+| `mat_vec_mul_auto(w, x, rows, cols)` | `w, x: buffer, rows, cols: int` | `buffer` | Multiplicação matriz-vetor com detecção automática de quantização (F32, BF16, KZQ-8, KZQ-4B/S). |
+| `rms_norm_f32(x, w, eps)` | `x, w: buffer, eps: float` | `buffer` | Aplica Root Mean Square Normalization em tensores de ativação. |
+| `silu_mul_f32(gate, up)` | `gate, up: buffer` | `buffer` | Aplica ativação SwiGLU / SiLU combinada em camadas FFN feedforward. |
+| `attn_rope_gqa_f32(...)` | `q, k, v, pos, ...` | `buffer` | Mecanismo de atenção Grouped Query Attention com Rotary Positional Embeddings (RoPE). |
+| `sample_logits_f32(logits, temp, top_p, top_k)` | `logits: buffer, temp, top_p: float, top_k: int` | `int` | Amostragem estocástica com temperatura, nucleus (top-p) e top-k para geração de tokens. |
+| `tokenizer_load(caminho)` | `caminho: string` | `int` | Carrega o tokenizador BPE/SentencePiece e retorna o handle. |
+| `tokenizer_encode(handle, texto)` | `handle: int, texto: string` | `array[int]` | Converte texto de entrada em lista de IDs de tokens. |
+| `tokenizer_id_to_token(handle, id)` | `handle: int, id: int` | `string` | Converte um ID de token de volta em string UTF-8 decodificada. |
+
+```kaz
+// Exemplo de inferência soberana em Kaz:
+int hModel = kzm_open("models/phi4_mini_kzq4.kzm");
+int hTok = tokenizer_load("models/tokenizer.json");
+
+array[int] tokens = tokenizer_encode(hTok, "Explique o que é a linguagem Kaz:");
+runoff("Tokens codificados:", tokens.len);
+
+// Executa geração token a token com aceleração de tensores nativa
+int next_token = sample_logits_f32(logits, 0.7, 0.9, 40);
+string texto_gerado = tokenizer_id_to_token(hTok, next_token);
+runoff("Resposta:", texto_gerado);
+```
+
 
