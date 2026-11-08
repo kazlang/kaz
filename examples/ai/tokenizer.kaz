@@ -2,7 +2,7 @@
 // Implements vocabulary loading, lookup, and subword encoding (BERT / Hugging Face compatible)
 
 function test_tokenizer(): int {
-    string vocab_path = "/home/armando/Projetos/kaz/models/minilm/vocab.txt";
+    string vocab_path = "models/minilm/vocab.txt";
     if (!file_exists(vocab_path)) {
         runoff("[-] Error: Vocabulary file not found: " + vocab_path);
         return 1;

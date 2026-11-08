@@ -206,8 +206,8 @@ function run_inference(string model_path, string vocab_path, string prompt): int
 }
 
 function main(): int {
-    string model_path = "/home/armando/Projetos/kaz/models/minilm/model.safetensors";
-    string vocab_path = "/home/armando/Projetos/kaz/models/minilm/vocab.txt";
+    string model_path = "models/minilm/model.safetensors";
+    string vocab_path = "models/minilm/vocab.txt";
     string prompt = "hello world";
 
     return run_inference(model_path, vocab_path, prompt);

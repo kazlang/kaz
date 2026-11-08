@@ -94,7 +94,7 @@ function inspect_and_load(string path): int {
 
 function main(): int {
     if (args_len() < 1) {
-        string default_path = "/home/armando/Projetos/kaz/models/minilm/model.safetensors";
+        string default_path = "models/minilm/model.safetensors";
         if (file_exists(default_path)) {
             return inspect_and_load(default_path);
         }

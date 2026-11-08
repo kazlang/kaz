@@ -87,8 +87,8 @@ function run_roundtrip(string st_path, string kzm_path): int {
 }
 
 function main(): int {
-    string st_path = "/home/armando/Projetos/kaz/models/minilm/model.safetensors";
-    string kzm_path = "/home/armando/Projetos/kaz/models/minilm/model.kzm";
+    string st_path = "models/minilm/model.safetensors";
+    string kzm_path = "models/minilm/model.kzm";
 
     if (args_len() >= 2) {
         st_path = argv(0);

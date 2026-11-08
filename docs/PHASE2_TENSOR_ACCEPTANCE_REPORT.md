@@ -19,7 +19,7 @@ Conforme a separação arquitetural do ecossistema:
 ### A. Teste de Sharding & Escala: AllenAI OLMo-2 1B (5.6 GB)
 O modelo `OLMo-2-0425-1B` é distribuído em múltiplos shards e possui arquitetura completa CausalLM (16 camadas, 2048 hidden dimension, 16 attention heads, 100.352 vocab size).
 
-- **Script:** [`examples/ai/roundtrip_sharded_test.kaz`](file:///home/armando/Projetos/kaz/examples/ai/roundtrip_sharded_test.kaz)
+- **Script:** [`examples/ai/roundtrip_sharded_test.kaz`](examples/ai/roundtrip_sharded_test.kaz)
 - **Arquivos de Origem:**
   - Shard 1: `model-00001-of-00002.safetensors` (4.7 GB, 173 tensores)
   - Shard 2: `model-00002-of-00002.safetensors` (913 MB, 6 tensores)
@@ -43,7 +43,7 @@ O modelo `OLMo-2-0425-1B` é distribuído em múltiplos shards e possui arquitet
 
 ### B. Teste Sintético Rápido para CI/CD (Borda, Alinhamento e Multi-Dtype)
 Para evitar tempos de CI proibitivos decorrentes do download e processamento de arquivos de 127 MB ou 5.6 GB, foi criado um teste unitário determinístico em memória:
-- **Arquivo:** [`tests/synthetic_safetensors_test.rs`](file:///home/armando/Projetos/kaz/tests/synthetic_safetensors_test.rs)
+- **Arquivo:** [`tests/synthetic_safetensors_test.rs`](tests/synthetic_safetensors_test.rs)
 - **Cenários Cobertos:**
   1. **Tensores Alinhados (F32):** 64 bytes (4x4 floats).
   2. **Tensores com Tamanho Desalinhado (BF16):** 34 bytes (17 elementos de 2 bytes — propositalmente não-múltiplo de 64 para testar o padding zero-byte de alinhamento no `.kzm`).
