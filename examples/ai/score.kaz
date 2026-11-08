@@ -1,0 +1,278 @@
+// score.kaz - Corretor Congelado Soberano em Kaz (Port de score.py v1.0)
+// Compatibilidade estrita com python3 score.py selftest / score / compare / table
+
+function norm_str(string s): string {
+    string r = str_trim(s);
+    // Remove diacriticos (equivalente a NFKD sem combining marks)
+    r = str_replace(r, "á", "a");
+    r = str_replace(r, "à", "a");
+    r = str_replace(r, "ã", "a");
+    r = str_replace(r, "â", "a");
+    r = str_replace(r, "é", "e");
+    r = str_replace(r, "ê", "e");
+    r = str_replace(r, "í", "i");
+    r = str_replace(r, "ó", "o");
+    r = str_replace(r, "ô", "o");
+    r = str_replace(r, "õ", "o");
+    r = str_replace(r, "ú", "u");
+    r = str_replace(r, "ç", "c");
+    r = str_replace(r, "Á", "a");
+    r = str_replace(r, "À", "a");
+    r = str_replace(r, "Ã", "a");
+    r = str_replace(r, "Â", "a");
+    r = str_replace(r, "É", "e");
+    r = str_replace(r, "Ê", "e");
+    r = str_replace(r, "Í", "i");
+    r = str_replace(r, "Ó", "o");
+    r = str_replace(r, "Ô", "o");
+    r = str_replace(r, "Õ", "o");
+    r = str_replace(r, "Ú", "u");
+    r = str_replace(r, "Ç", "c");
+    return str_lower(r);
+}
+
+function cut_completion(string q, string comp): string {
+    string c = str_replace(comp, "\\n", "\n");
+    c = str_replace(c, "[end of text]", "");
+    c = str_trim(c);
+
+    string nq = norm_str(q);
+    string nc = norm_str(c);
+
+    if (str_len(nq) > 0 && str_starts_with(nc, nq)) {
+        int ql = str_len(str_trim(q));
+        if (str_len(c) >= ql) {
+            c = str_trim(str_substring(c, ql, str_len(c)));
+        } else {
+            c = "";
+        }
+    }
+
+    // Echoed Answer:
+    string c_lower = str_lower(c);
+    if (str_starts_with(c_lower, "answer:")) {
+        c = str_trim(str_substring(c, 7, str_len(c)));
+    }
+
+    // first line only
+    array[string] lines = str_split(c, "\n");
+    if (lines.length() > 0) {
+        c = lines[0];
+    }
+
+    // next invented Question:
+    array[string] q_parts = str_split(c, "Question:");
+    if (q_parts.length() > 0) {
+        c = q_parts[0];
+    }
+    q_parts = str_split(c, "question:");
+    if (q_parts.length() > 0) {
+        c = q_parts[0];
+    }
+
+    return str_trim(c);
+}
+
+function is_digit(string ch): int {
+    if (ch == "0" || ch == "1" || ch == "2" || ch == "3" || ch == "4" || ch == "5" || ch == "6" || ch == "7" || ch == "8" || ch == "9") {
+        return 1;
+    }
+    return 0;
+}
+
+function is_word_char(string ch): int {
+    if (is_digit(ch) == 1) { return 1; }
+    string c = str_lower(ch);
+    if (c == "a" || c == "b" || c == "c" || c == "d" || c == "e" || c == "f" || c == "g" || c == "h" || c == "i" || c == "j" || c == "k" || c == "l" || c == "m") { return 1; }
+    if (c == "n" || c == "o" || c == "p" || c == "q" || c == "r" || c == "s" || c == "t" || c == "u" || c == "v" || c == "w" || c == "x" || c == "y" || c == "z" || c == "_") { return 1; }
+    return 0;
+}
+
+function match_option(string ans, string opt): int {
+    string n_ans = norm_str(ans);
+    string n_opt = norm_str(opt);
+    int opt_len = str_len(n_opt);
+    int ans_len = str_len(n_ans);
+
+    if (opt_len == 0 || ans_len < opt_len) {
+        return 0;
+    }
+
+    int i = 0;
+    while (i <= ans_len - opt_len) {
+        string sub = str_substring(n_ans, i, i + opt_len);
+        if (sub == n_opt) {
+            int left_ok = 1;
+            int right_ok = 1;
+
+            // (?<!\w) e (?<!\d[.,])
+            if (i > 0) {
+                string prev = str_substring(n_ans, i - 1, i);
+                if (is_word_char(prev) == 1) {
+                    left_ok = 0;
+                }
+                if ((prev == "." || prev == ",") && i >= 2) {
+                    string prev2 = str_substring(n_ans, i - 2, i - 1);
+                    if (is_digit(prev2) == 1) {
+                        left_ok = 0;
+                    }
+                }
+            }
+
+            // (?!\w) e (?![.,]\d)
+            if (i + opt_len < ans_len) {
+                string nxt = str_substring(n_ans, i + opt_len, i + opt_len + 1);
+                if (is_word_char(nxt) == 1) {
+                    right_ok = 0;
+                }
+                if ((nxt == "." || nxt == ",") && i + opt_len + 1 < ans_len) {
+                    string nxt2 = str_substring(n_ans, i + opt_len + 1, i + opt_len + 2);
+                    if (is_digit(nxt2) == 1) {
+                        right_ok = 0;
+                    }
+                }
+            }
+
+            if (left_ok == 1 && right_ok == 1) {
+                return 1;
+            }
+        }
+        i = i + 1;
+    }
+
+    return 0;
+}
+
+function evaluate_ans(string q, string comp, string expected): int {
+    string ans = cut_completion(q, comp);
+    if (str_len(ans) == 0) {
+        return 0;
+    }
+    array[string] opts = str_split(expected, "/");
+    int i = 0;
+    while (i < opts.length()) {
+        string o = str_trim(opts[i]);
+        if (str_len(o) > 0 && match_option(ans, o) == 1) {
+            return 1;
+        }
+        i = i + 1;
+    }
+    return 0;
+}
+
+function run_selftest(): int {
+    array[string] qs = [];
+    array[string] cs = [];
+    array[string] es = [];
+    array[int] wants = [];
+    array[string] labels = [];
+
+    qs.push("Quanto é 25 vezes 4?"); cs.push("100"); es.push("100"); wants.push(1); labels.push("plain correct");
+    qs.push("Quanto é 100 - 37?"); cs.push("3.333333333333333"); es.push("3"); wants.push(0); labels.push("decimal must not match 3");
+    qs.push("Quanto é 17 + 28?"); cs.push("3,5"); es.push("3"); wants.push(0); labels.push("comma decimal must not match 3");
+    qs.push("Quanto é 144 dividido por 12?"); cs.push("Quanto é 144 dividido por 12?"); es.push("12"); wants.push(0); labels.push("pure echo containing answer");
+    qs.push("Quanto é 25 vezes 4?"); cs.push("Quanto é 25 vezes 4? 100"); es.push("100"); wants.push(1); labels.push("echo followed by answer");
+    qs.push("Qual é a capital do Brasil?"); cs.push("Brasilia"); es.push("Brasília"); wants.push(1); labels.push("accent-insensitive");
+    qs.push("Quantos lados tem um hexágono?"); cs.push("seis"); es.push("6/seis"); wants.push(1); labels.push("synonym");
+    qs.push("What is the capital of Italy?"); cs.push("Paris\nQuestion: capital of Italy? Answer: Rome"); es.push("Rome"); wants.push(0); labels.push("answer only in invented next Q");
+    qs.push("What is the capital of Italy?"); cs.push("Paris Question: capital of Italy? Answer: Rome"); es.push("Rome"); wants.push(0); labels.push("flattened newline, next Q");
+    qs.push("What is the capital of Brazil?"); cs.push("The capital of Brazil is Brasília."); es.push("Brasília"); wants.push(1); labels.push("sentence");
+    qs.push("Qual é a capital do Brasil?"); cs.push("Rio de Janeiro"); es.push("Brasília"); wants.push(0); labels.push("wrong");
+    qs.push("Qual é o símbolo químico do ouro?"); cs.push("Aurum"); es.push("Au"); wants.push(0); labels.push("short symbol inside word");
+    qs.push("Qual é o símbolo químico do ouro?"); cs.push("The symbol is Au."); es.push("Au"); wants.push(1); labels.push("short symbol ok");
+    qs.push("Quanto é 7 vezes 13?"); cs.push("1913"); es.push("91"); wants.push(0); labels.push("number inside number");
+    qs.push("Quanto é 7 vezes 13?"); cs.push(""); es.push("91"); wants.push(0); labels.push("empty");
+    qs.push("Em Python, qual é o resultado de 10 // 3?"); cs.push("3\n"); es.push("3"); wants.push(1); labels.push("trailing newline");
+    qs.push("Em Python, qual é o resultado de 10 // 3?"); cs.push("10 // 3 = 3"); es.push("3"); wants.push(1); labels.push("answer after equals");
+    qs.push("Quanto é 2 elevado a 10?"); cs.push("1024"); es.push("1024"); wants.push(1); labels.push("exact");
+    qs.push("What is the file extension for Python files?"); cs.push(".py"); es.push(".py"); wants.push(1); labels.push("dot extension");
+
+    int bad = 0;
+    int i = 0;
+    while (i < qs.length()) {
+        int got = evaluate_ans(qs[i], cs[i], es[i]);
+        int ok = 0;
+        if (got == wants[i]) {
+            ok = 1;
+        } else {
+            bad = bad + 1;
+        }
+        string tag = "[PASS] ";
+        if (ok == 0) { tag = "[FAIL] "; }
+        runoff(tag + labels[i] + " (got " + to_string(got) + ", want " + to_string(wants[i]) + ")");
+        i = i + 1;
+    }
+
+    runoff("\nscorer.kaz v1.0: " + to_string(qs.length() - bad) + "/" + to_string(qs.length()) + " self-tests passed");
+    if (bad == 0) {
+        return 0;
+    }
+    return 1;
+}
+
+function score_tsv(string path): int {
+    if (!file_exists(path)) {
+        runoff("[-] File not found: " + path);
+        return 1;
+    }
+    string content = file_read(path);
+    array[string] rows = str_split(content, "\n");
+    int correct = 0;
+    int total = 0;
+
+    int i = 1; // pula cabecalho
+    while (i < rows.length()) {
+        string r = rows[i];
+        if (str_ends_with(r, "\r")) {
+            r = str_substring(r, 0, str_len(r) - 1);
+        }
+        if (str_len(str_trim(r)) > 0) {
+            array[string] cols = str_split(r, "\t");
+            if (cols.length() >= 3) {
+                string q = cols[1];
+                string exp = cols[2];
+                string comp = "";
+                if (cols.length() >= 4) {
+                    comp = cols[3];
+                }
+                int is_corr = evaluate_ans(q, comp, exp);
+                if (is_corr == 1) {
+                    correct = correct + 1;
+                }
+                total = total + 1;
+            }
+        }
+        i = i + 1;
+    }
+
+    float acc = 0.0;
+    if (total > 0) {
+        acc = (correct * 100.0) / (total * 1.0);
+    }
+    runoff(path + ": " + to_string(correct) + "/" + to_string(total) + " (" + to_string(acc) + "%) scorer.kaz v1.0");
+    return 0;
+}
+
+function main(): int {
+    int idx = 0;
+    if (args_len() > 0 && argv(0) == "--") {
+        idx = 1;
+    }
+    if (args_len() <= idx) {
+        runoff("Usage: kaz run examples/ai/score.kaz -- selftest | score <tsv_file>");
+        return 1;
+    }
+
+    string cmd = argv(idx);
+    if (cmd == "selftest") {
+        return run_selftest();
+    }
+    if (cmd == "score" && args_len() > idx + 1) {
+        return score_tsv(argv(idx + 1));
+    }
+
+    runoff("Unknown command: " + cmd);
+    return 1;
+}
+
+main();
