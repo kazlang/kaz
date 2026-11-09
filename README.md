@@ -6,8 +6,8 @@
 </p>
 
 <p align="center">
-    <a href="https://github.com/armandosds/Kaz"><img src="https://img.shields.io/badge/version-1.5.0-blue.svg" alt="Version"></a>
-    <a href="CHANGELOG.md"><img src="https://img.shields.io/badge/changelog-v1.5.0-informational.svg" alt="Changelog"></a>
+    <a href="https://github.com/armandosds/Kaz"><img src="https://img.shields.io/badge/version-1.6.0-blue.svg" alt="Version"></a>
+    <a href="CHANGELOG.md"><img src="https://img.shields.io/badge/changelog-v1.6.0-informational.svg" alt="Changelog"></a>
     <a href="LICENSE"><img src="https://img.shields.io/badge/License-Proprietary-red.svg" alt="License: Proprietary"></a>
     <img src="https://img.shields.io/badge/build-passing-brightgreen.svg" alt="Build Status">
     <img src="https://img.shields.io/badge/Engine-Stack%20Bytecode%20VM-purple.svg" alt="Engine: Bytecode VM">

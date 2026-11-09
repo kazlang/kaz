@@ -7,7 +7,7 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ---
 
-## [1.5.0] - 2026-10-20
+## [1.6.0] - 2026-10-20
 
 ### 🚀 Adicionado & Concluído (Milestone 5 - Compilador Nativo Self-Hosted Completo & Ponto Fixo AOT)
 - **Bootstrap Nativo e Ponto Fixo (Fixed Point) 100% Alcançado**:
@@ -19,8 +19,8 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
   - Alocador nativo sob demanda via syscall pura do kernel Linux `sys_brk(12)` com expansão em blocos de 64 MB e gerenciamento de paginação pelo kernel, eliminando riscos de buffer overflow.
 - **Tree Merge O(N) e Otimizações de Memória**:
   - Substituição da concatenação quadrática de strings no gerador NASM por Binary Reduction Tree Merge (`aot_join_lines`), reduzindo o consumo de memória na compilação de 20 GB para menos de 20 MB.
-- **Extensão VS Code v1.5.0**:
-  - Atualização do pacote oficial `.vsix` v1.5.0 com suporte a novos opcodes AOT e builtins estendidos.
+- **Extensão VS Code v1.6.0**:
+  - Atualização do pacote oficial `.vsix` v1.6.0 com suporte a novos opcodes AOT e builtins estendidos.
 
 ---
 
