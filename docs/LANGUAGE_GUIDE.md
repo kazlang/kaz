@@ -1,4 +1,6 @@
-# Official Kaz Language Guide 🦅
+# Official Kaz Language Guide (v1.6.0) 🦅
+
+> 📚 **Unified Reference:** For the complete 12-chapter book covering the language, standard library, Sovereign AOT compilers, and `.kzm` AI engine, read **[The Official Kaz Programming Language Book (THE_KAZ_BOOK.md)](THE_KAZ_BOOK.md)** ([Português: O_LIVRO_KAZ.pt-BR.md](O_LIVRO_KAZ.pt-BR.md)).
 
 Welcome to the comprehensive reference guide for the **Kaz** programming language.  
 Kaz is a modern, strongly typed, expressive, and high-performance language engineered to combine clean syntax with the robustness of compilation for both a **Stack-Based Bytecode Virtual Machine (Stack VM)** and direct **Native AOT x86-64 Machine Code Generation**.

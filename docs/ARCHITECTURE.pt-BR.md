@@ -1,6 +1,8 @@
-# Arquitetura Interna & Engenharia de Compilação 🏛️
+# Arquitetura Interna & Engenharia de Compilação (v1.6.0) 🏛️
 
-A linguagem **Kaz** combina a segurança de tipos inspirada em Rust com uma arquitetura moderna de compilação para **Máquina Virtual de Bytecode baseada em Pilha (Stack VM)**.
+> 📚 **Referência Central Unificada:** Para o livro completo de 12 capítulos cobrindo toda a linguagem, biblioteca padrão, compiladores AOT soberanos e o motor de IA `.kzm`, leia **[O Livro Oficial da Linguagem Kaz (O_LIVRO_KAZ.pt-BR.md)](O_LIVRO_KAZ.pt-BR.md)** ([English: THE_KAZ_BOOK.md](THE_KAZ_BOOK.md)).
+
+A linguagem **Kaz** combina a segurança de tipos inspirada em Rust com uma arquitetura moderna de compilação para **Máquina Virtual de Bytecode baseada em Pilha (Stack VM)**, **Cranelift JIT**, **Emissores Nativos AOT Soberanos x86-64 (Linux ELF64 & Windows PE32+)** e **Compilador AOT de Modelos de IA em 7 Fases (`.safetensors` $\rightarrow$ `.kzm`)**.
 
 Este documento detalha o pipeline completo de execução, desde o código-fonte `.kaz` até o ciclo de instruções na VM.
 
@@ -216,45 +218,24 @@ A linguagem Kaz possui seu próprio compilador escrito integralmente em Kaz puro
 - **Driver CLI (`compiler/main.kaz`)**: Orquestrador e gerador de disassembly nativo.
 ---
 
-## 15. Arquitetura do Compilador Nativo AOT x86-64 (`src/aot/`) ⚙️
+## 15. Arquitetura do Compilador Nativo AOT Soberano x86-64 (`compiler/backend/elf64/` & `pe64/`) ⚙️
 
-O subsistema AOT do Kaz traduz código Kaz para **código de máquina nativo x86-64 autônomo**, gerando binários estáticos ELF64 com zero dependências de libc ou VM:
+O subsistema AOT Soberano da Kaz 1.6.0 traduz código Kaz diretamente para **bytes de máquina nativos x86-64**, gerando binários estáticos **Linux ELF64 (`ET_EXEC`)** e **Windows PE32+ (`.exe`)** com zero dependências de NASM, GNU LD, MSVC, libc ou VM:
 
-```
+```text
   ┌───────────────────────────────────────────────────────────┐
-  │                 Código-Fonte Kaz (.kaz)                   │
+  │       Backend AOT Soberano (Codificador x86-64 Direto)    │
+  │   - Inferência estática de tipos e IR Escalar             │
+  │   - Emissão direta de bytes REX.W, ModR/M, SIB e rel32    │
   └─────────────────────────────┬─────────────────────────────┘
                                 │
-                                ▼
-  ┌───────────────────────────────────────────────────────────┐
-  │       Frontend Kaz (AST & Compilador de Bytecode)         │
-  └─────────────────────────────┬─────────────────────────────┘
-                                │
-                                ▼
-  ┌───────────────────────────────────────────────────────────┐
-  │         Backend AOT Nativo (`src/aot/mod.rs`)             │
-  │   - Inferência estática de tipos via pilha abstrata       │
-  │   - Mapeamento direto de registradores e slots RBP        │
-  │   - Emissão de Assembly x86-64 limpo (sintaxe Intel)      │
-  └─────────────────────────────┬─────────────────────────────┘
-                                │
-                                ▼
-  ┌───────────────────────────────────────────────────────────┐
-  │                 NASM Assembler (elf64)                    │
-  └─────────────────────────────┬─────────────────────────────┘
-                                │
-                                ▼
-  ┌───────────────────────────────────────────────────────────┐
-  │               GNU LD (Linker Estático ELF64)              │
-  └─────────────────────────────┬─────────────────────────────┘
-                                │
-                                ▼
-  ┌───────────────────────────────────────────────────────────┐
-  │        Executável Nativo Autônomo (~10-12 KB)             │
-  │   - Syscalls Linux diretas (sys_write, sys_exit)          │
-  │   - Bump Allocator de Heap integrado (kaz_alloc)          │
-  │   - Zero dependências de runtime ou interpretadores       │
-  └───────────────────────────────────────────────────────────┘
+             ┌──────────────────┴──────────────────┐
+             ▼                                     ▼
+  ┌───────────────────────────┐         ┌───────────────────────────┐
+  │  elf64_writer.kaz (Linux) │         │ pe64_writer.kaz (Windows) │
+  │  - Binário ELF64 ET_EXEC  │         │ - Cabeçalhos DOS + PE32+  │
+  │  - Syscalls Linux diretas │         │ - IAT nativa kernel32.dll │
+  └───────────────────────────┘         └───────────────────────────┘
 ```
 
 ### Layout de Memória e Estruturas no Heap Nativo:

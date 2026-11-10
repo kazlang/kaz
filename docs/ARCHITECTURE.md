@@ -1,6 +1,8 @@
-# Internal Architecture & Compilation Engineering 🏛️
+# Internal Architecture & Compilation Engineering (v1.6.0) 🏛️
 
-The **Kaz** programming language combines Rust-inspired type safety with a modern compilation pipeline targeting an optimized **Stack-Based Bytecode Virtual Machine (Stack VM)** and direct **Native AOT x86-64 Machine Code Generation**.
+> 📚 **Unified Reference:** For the complete 12-chapter book covering the language, standard library, Sovereign AOT compilers, and `.kzm` AI engine, read **[The Official Kaz Programming Language Book (THE_KAZ_BOOK.md)](THE_KAZ_BOOK.md)** ([Português: O_LIVRO_KAZ.pt-BR.md](O_LIVRO_KAZ.pt-BR.md)).
+
+The **Kaz** programming language combines Rust-inspired type safety with a modern compilation pipeline targeting an optimized **Stack-Based Bytecode Virtual Machine (Stack VM)**, **Cranelift JIT**, **Sovereign Direct Native AOT x86-64 Machine Code Emitters (Linux ELF64 & Windows PE32+)**, and a **7-Phase AI Model AOT Compiler (`.safetensors` $\rightarrow$ `.kzm`)**.
 
 This document details the complete execution pipeline, from `.kaz` source code to native bare-metal execution and VM instruction dispatch.
 
@@ -121,35 +123,24 @@ Execution through the Stack VM achieves up to **30x-40x** performance gains over
 
 ---
 
-## 11. Native AOT x86-64 Architecture (`src/aot/`) ⚙️
+## 11. Sovereign Native AOT x86-64 Architecture (`compiler/backend/elf64/` & `pe64/`) ⚙️
 
-The AOT subsystem translates Kaz code directly into **pure standalone x86-64 machine code**, producing static ELF64 executables with **zero dependencies** on libc or virtual machines:
+The Sovereign AOT subsystem translates Kaz code directly into **pure standalone x86-64 machine code**, producing static **Linux ELF64 (`ET_EXEC`)** and **Windows PE32+ (`.exe`)** executables with **zero dependencies** on NASM, GNU LD, MSVC, libc, or virtual machines:
 
 ```text
   ┌───────────────────────────────────────────────────────────┐
-  │         Native AOT Backend (`src/aot/mod.rs`)             │
-  │   - Static type inference over abstract stack             │
-  │   - Direct hardware register and RBP slot mapping         │
-  │   - Clean Intel-syntax NASM assembly generation           │
+  │       Sovereign AOT Backend (x86-64 Machine Encoder)      │
+  │   - Static type inference & Scalar IR lowering            │
+  │   - Direct REX.W, ModR/M, SIB, and rel32 byte emission    │
   └─────────────────────────────┬─────────────────────────────┘
                                 │
-                                ▼
-  ┌───────────────────────────────────────────────────────────┐
-  │                 NASM Assembler (elf64)                    │
-  └─────────────────────────────┬─────────────────────────────┘
-                                │
-                                ▼
-  ┌───────────────────────────────────────────────────────────┐
-  │               GNU LD (Static ELF64 Linker)                │
-  └─────────────────────────────┬─────────────────────────────┘
-                                │
-                                ▼
-  ┌───────────────────────────────────────────────────────────┐
-  │        Standalone Native Executable (~10-12 KB)           │
-  │   - Direct Linux syscalls (sys_write, sys_exit)           │
-  │   - On-demand dynamic heap allocator via sys_brk(12)      │
-  │   - Zero runtime dependencies                             │
-  └───────────────────────────────────────────────────────────┘
+             ┌──────────────────┴──────────────────┐
+             ▼                                     ▼
+  ┌───────────────────────────┐         ┌───────────────────────────┐
+  │  elf64_writer.kaz (Linux) │         │ pe64_writer.kaz (Windows) │
+  │  - Direct ELF64 ET_EXEC   │         │ - DOS + PE32+ Header      │
+  │  - Direct Linux syscalls  │         │ - Native kernel32.dll IAT │
+  └───────────────────────────┘         └───────────────────────────┘
 ```
 
 ### Memory Layout and Heap Primitives:

@@ -1,4 +1,6 @@
-# Guia Oficial da Linguagem Kaz 🦅
+# Guia Oficial da Linguagem Kaz (v1.6.0) 🦅
+
+> 📚 **Referência Central Unificada:** Para o livro completo de 12 capítulos cobrindo toda a linguagem, biblioteca padrão, compiladores AOT soberanos e o motor de IA `.kzm`, leia **[O Livro Oficial da Linguagem Kaz (O_LIVRO_KAZ.pt-BR.md)](O_LIVRO_KAZ.pt-BR.md)** ([English: THE_KAZ_BOOK.md](THE_KAZ_BOOK.md)).
 
 Bem-vindo ao manual completo de referência da linguagem de programação **Kaz**.  
 Kaz é uma linguagem moderna, tipada, expressiva e de alto desempenho projetada para aliar a clareza e elegância sintática à robustez da compilação para **Máquina Virtual de Bytecode (Stack VM)** implementada em Rust.

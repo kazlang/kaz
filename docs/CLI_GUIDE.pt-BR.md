@@ -1,6 +1,8 @@
-# Manual da CLI & Kaz Terminal 🖥️
+# Manual da CLI & Kaz Terminal (v1.6.0) 🖥️
 
-O utilitário de linha de comando `kaz` é o coração do ecossistema da linguagem, fornecendo ferramentas para executar scripts, gerenciar projetos em pastas, validar código e utilizar o **Kaz Terminal Interativo**.
+> 📚 **Referência Central Unificada:** Para o livro completo de 12 capítulos cobrindo toda a linguagem, biblioteca padrão, compiladores AOT soberanos e o motor de IA `.kzm`, leia **[O Livro Oficial da Linguagem Kaz (O_LIVRO_KAZ.pt-BR.md)](O_LIVRO_KAZ.pt-BR.md)** ([English: THE_KAZ_BOOK.md](THE_KAZ_BOOK.md)).
+
+O utilitário de linha de comando `kaz` é o coração do ecossistema da linguagem, fornecendo ferramentas para executar scripts, gerenciar projetos em pastas, validar código, compilar executáveis nativos soberanos (Linux ELF64 e Windows PE32+) e utilizar o **Kaz Terminal Interativo**.
 
 ---
 
@@ -25,7 +27,7 @@ Após executar o instalador (`install.ps1` no Windows ou `install.sh` no Linux/m
 
 ```bash
 kaz --version
-# Kaz 1.5.0
+# Kaz 1.6.0
 ```
 
 ---
@@ -113,19 +115,23 @@ kaz ast programa.kaz
 
 ---
 
-## 4. Compilação de Binários Nativos Autônomos (`kaz build`) 📦
+## 4. Compilação de Binários Nativos Soberanos (`kaz build`) 📦
 
-Kaz possui um compilador nativo AOT (Ahead-of-Time) de alta performance que traduz o código diretamente para **código de máquina x86-64 estático**, gerando binários ELF64 autônomos sem necessidade de máquinas virtuais, libc ou runtimes intermediários:
+Na versão 1.6.0, a Kaz possui um compilador nativo AOT (Ahead-of-Time) **100% Soberano** (`compiler/backend/elf64/` e `compiler/backend/pe64/`) que traduz o código diretamente para **bytes de máquina x86-64 estáticos**, gerando executáveis **Linux ELF64** e **Windows PE32+ (`.exe`)** sem depender de NASM, GNU LD, MSVC, libc ou máquinas virtuais:
 
-### A. Compilação Nativa AOT Direta (Padrão)
-Compila o programa Kaz diretamente para assembly x86-64, montando com NASM e linkando com GNU LD em um binário executável estático (~10 KB):
+### A. Compilação Nativa AOT Soberana (Padrão)
+Emite diretamente um binário executável estático (~10 KB):
 ```bash
 kaz build main.kaz -o meu_app
 # Executa diretamente em bare-metal com inicialização instantânea:
 ./meu_app
+
+# Compilação cruzada soberana para Windows PE32+ (.exe com IAT nativa para kernel32.dll):
+kaz run tools/aot_soberano.kaz main.kaz meu_app.exe --target windows
 ```
 
 Opções suportadas:
+* `--target <linux|windows>`: Seleciona o formato binário nativo Linux ELF64 ou Windows PE32+ (`.exe`).
 * `--native` / `-n`: Força explicitamente a compilação nativa AOT pura (comportamento padrão).
 * `-o <saida>`: Define o nome ou caminho do binário de saída gerado.
 

@@ -1,4 +1,6 @@
-# Standard Library Reference (Stdlib) 📚
+# Standard Library Reference (Stdlib v1.6.0) 📚
+
+> 📚 **Unified Reference:** For the complete 12-chapter book covering all 14 native Stdlib modules (including the `model` `.kzm` AI inference module), read **[The Official Kaz Programming Language Book (THE_KAZ_BOOK.md)](THE_KAZ_BOOK.md)** ([Português: O_LIVRO_KAZ.pt-BR.md](O_LIVRO_KAZ.pt-BR.md)).
 
 The Kaz Standard Library provides built-in native modules compiled directly into the binary with zero external dependencies.
 

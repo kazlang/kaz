@@ -1,4 +1,6 @@
-# Referência da Biblioteca Padrão (Stdlib) 📚
+# Referência da Biblioteca Padrão (Stdlib v1.6.0) 📚
+
+> 📚 **Referência Central Unificada:** Para o livro completo de 12 capítulos cobrindo todos os 14 módulos nativos da Stdlib (incluindo o módulo de IA `.kzm` `model`), leia **[O Livro Oficial da Linguagem Kaz (O_LIVRO_KAZ.pt-BR.md)](O_LIVRO_KAZ.pt-BR.md)** ([English: THE_KAZ_BOOK.md](THE_KAZ_BOOK.md)).
 
 A Biblioteca Padrão de Kaz reúne módulos nativos compilados em Rust diretamente no binário `kaz.exe`.  
 Isso significa **máxima velocidade de execução e zero necessidade de instalar bibliotecas de terceiros**.

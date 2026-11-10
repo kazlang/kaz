@@ -1,6 +1,8 @@
-# CLI & Kaz Terminal Guide 🖥️
+# CLI & Kaz Terminal Guide (v1.6.0) 🖥️
 
-The `kaz` command-line interface is the core utility of the Kaz ecosystem, providing tools to execute scripts, manage multi-file projects, validate code, and interact with the **Kaz Interactive Shell**.
+> 📚 **Unified Reference:** For the complete 12-chapter book covering the language, standard library, Sovereign AOT compilers, and `.kzm` AI engine, read **[The Official Kaz Programming Language Book (THE_KAZ_BOOK.md)](THE_KAZ_BOOK.md)** ([Português: O_LIVRO_KAZ.pt-BR.md](O_LIVRO_KAZ.pt-BR.md)).
+
+The `kaz` command-line interface is the core utility of the Kaz ecosystem, providing tools to execute scripts, manage multi-file projects, validate code, compile standalone native binaries (Linux ELF64 & Windows PE32+), and interact with the **Kaz Interactive Shell**.
 
 ---
 
@@ -26,7 +28,7 @@ After running the official installer (`install.ps1` on Windows or `install.sh` o
 
 ```bash
 kaz --version
-# Output: Kaz 1.5.0
+# Output: Kaz 1.6.0
 ```
 
 To verify the installation and view quick help:
@@ -81,13 +83,16 @@ kaz run --ast benchmark.kaz
 
 ---
 
-## 4. Standalone Native Compilation (`kaz build`) 📦
+## 4. Standalone Sovereign Native Compilation (`kaz build`) 📦
 
-Kaz can compile source files directly into **standalone, pure x86-64 ELF64 binaries** (~10 KB) with zero external runtime dependencies (no libc, no VM):
+Kaz 1.6.0 compiles source files directly into **standalone x86-64 Linux ELF64** or **Windows PE32+ (`.exe`)** binaries (~10 KB) using its Sovereign Binary Emitters (`compiler/backend/elf64/` and `compiler/backend/pe64/`) with **zero external assemblers, linkers, or libc dependencies**:
 
 ```bash
-# Compile directly to a standalone binary
+# Compile directly to a standalone Linux ELF64 binary
 kaz build main.kaz -o my_app
+
+# Or cross-compile to a standalone Windows PE32+ (.exe) binary
+kaz run tools/aot_soberano.kaz main.kaz my_app.exe --target windows
 
 # Run the compiled native binary directly
 ./my_app
@@ -95,7 +100,8 @@ kaz build main.kaz -o my_app
 
 ### Build Options:
 - `-o <output>`: Specifies the output executable name.
-- `--emit-asm`: Emits clean Intel-syntax NASM assembly code without linking.
+- `--target <linux|windows>`: Selects Linux ELF64 (`ET_EXEC`) or Windows PE32+ (`.exe` with native `kernel32.dll` IAT).
+- `--emit-asm`: Emits clean Intel-syntax x86-64 assembly code for inspection.
 - `--emit-obj`: Emits the ELF64 object file (`.o`).
 
 ---

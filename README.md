@@ -2,7 +2,7 @@
 ### A Modern, High-Performance Typed Programming Language
 
 <p align="center">
-    <img src="kaz_logo_branco.png" width="450" alt="Kaz Logo">
+    <img src="assets/kaz_logo_branco.png" width="450" alt="Kaz Logo">
 </p>
 
 <p align="center">
@@ -368,15 +368,20 @@ Kaz has reached complete self-hosting sovereignty:
 
 ---
 
-## 📚 Technical Documentation
+## 📚 Official Unified Book & Technical Documentation
 
-Explore the comprehensive manuals inside the [`docs/`](docs/) directory:
+> 📘 **START HERE — THE OFFICIAL KAZ BOOK (v1.6.0):**  
+> Everything about the Kaz language, its 14 standard library modules, Sovereign ELF64 & PE32+ AOT compilers, and the 7-phase `.kzm` AI engine is now consolidated into a single 12-chapter book:
+> - 🇺🇸 **[The Official Kaz Programming Language Book (English — `docs/THE_KAZ_BOOK.md`)](docs/THE_KAZ_BOOK.md)**
+> - 🇧🇷 **[O Livro Oficial da Linguagem de Programação Kaz (Português — `docs/O_LIVRO_KAZ.pt-BR.md`)](docs/O_LIVRO_KAZ.pt-BR.md)**
+
+Specialized Reference Manuals in [`docs/`](docs/):
 
 - 📖 **[Official Language Guide](docs/LANGUAGE_GUIDE.md)** ([Português](docs/LANGUAGE_GUIDE.pt-BR.md)): Full syntax specification, type rules, control flow, and structs.
-- 📚 **[Standard Library Reference (Stdlib)](docs/STDLIB.md)** ([Português](docs/STDLIB.pt-BR.md)): Catalog of native functions: I/O, math, strings, SQLite, JSON, and networking.
+- 📚 **[Standard Library Reference (Stdlib)](docs/STDLIB.md)** ([Português](docs/STDLIB.pt-BR.md)): Catalog of native functions: I/O, math, strings, SQLite, JSON, networking, and `.kzm` AI (`model`).
 - 🖥️ **[CLI & Kaz Terminal Guide](docs/CLI_GUIDE.md)** ([Português](docs/CLI_GUIDE.pt-BR.md)): Terminal commands, execution flags, and interactive shell features.
-- 🏛️ **[Compiler & VM Architecture](docs/ARCHITECTURE.md)** ([Português](docs/ARCHITECTURE.pt-BR.md)): Compilation pipeline, Pratt parsing, opcode design, and VM dispatch loop.
-- 🦅 **[Milestone 3: Self-Hosted Compiler Report](docs/RELATORIO_MILESTONE_3_SELF_HOSTED.md)**: Technical breakdown, bootstrap verification, and Windows execution guide.
+- 🏛️ **[Compiler & VM Architecture](docs/ARCHITECTURE.md)** ([Português](docs/ARCHITECTURE.pt-BR.md)): Compilation pipeline, Pratt parsing, opcode design, Sovereign ELF64/PE32+ emitters, and VM dispatch loop.
+- 🤖 **[OLMo-2 Inference & `.kzm` Quantization Report](docs/benchmarks/OLMO2_INFERENCE_AND_QUANTIZATION_REPORT.md)**: Detailed benchmarks of `.kzm` `mmap`, `KZQ4`/`KZQ8` quantization, and AVX2 SIMD acceleration.
 
 ---
 
@@ -728,15 +733,20 @@ Kaz alcançou soberania técnica absoluta com auto-hospedagem completa:
 
 ---
 
-## 📚 Documentação Técnica Completa
+## 📚 O Livro Oficial da Kaz & Documentação Técnica Completa
 
-Para aprofundar-se em cada aspecto da linguagem, consulte os manuais especializados em [`docs/`](docs/):
+> 📘 **COMECE POR AQUI — O LIVRO OFICIAL DA LINGUAGEM KAZ (v1.6.0):**  
+> Toda a documentação da linguagem, os 14 módulos nativos da Stdlib, os compiladores AOT Soberanos (Linux ELF64 & Windows PE32+) e o motor nativo de IA `.kzm` estão consolidados em um único livro central de 12 capítulos:
+> - 🇧🇷 **[O Livro Oficial da Linguagem de Programação Kaz (Português — `docs/O_LIVRO_KAZ.pt-BR.md`)](docs/O_LIVRO_KAZ.pt-BR.md)**
+> - 🇺🇸 **[The Official Kaz Programming Language Book (English — `docs/THE_KAZ_BOOK.md`)](docs/THE_KAZ_BOOK.md)**
+
+Manuais de Referência Rápida em [`docs/`](docs/):
 
 - 📖 **[Guia Oficial da Linguagem (Language Guide)](docs/LANGUAGE_GUIDE.pt-BR.md)** ([English](docs/LANGUAGE_GUIDE.md)): Manual sintático completo, regras de tipagem, controle de fluxo e structs.
-- 📚 **[Referência da Biblioteca Padrão (Stdlib)](docs/STDLIB.pt-BR.md)** ([English](docs/STDLIB.md)): Catálogo com todas as funções nativas de E/S, matemática, strings, SQLite, JSON e rede.
+- 📚 **[Referência da Biblioteca Padrão (Stdlib)](docs/STDLIB.pt-BR.md)** ([English](docs/STDLIB.md)): Catálogo com todas as funções nativas de E/S, matemática, strings, SQLite, JSON, rede e IA `.kzm` (`model`).
 - 🖥️ **[Manual da CLI e Kaz Terminal](docs/CLI_GUIDE.pt-BR.md)** ([English](docs/CLI_GUIDE.md)): Comandos de terminal, flags de execução e recursos do shell interativo.
-- 🏛️ **[Arquitetura Interna do Compilador e VM](docs/ARCHITECTURE.pt-BR.md)** ([English](docs/ARCHITECTURE.md)): Detalhes do pipeline de compilação, Pratt parser, opcodes e motor de despacho da VM.
-- 🦅 **[Milestone 3: Relatório do Compilador Self-Hosted](docs/RELATORIO_MILESTONE_3_SELF_HOSTED.md)**: Detalhamento técnico, verificação de bootstrap e guia Windows.
+- 🏛️ **[Arquitetura Interna do Compilador e VM](docs/ARCHITECTURE.pt-BR.md)** ([English](docs/ARCHITECTURE.md)): Detalhes do pipeline de compilação, Pratt parser, emissores soberanos ELF64/PE32+ e motor de despacho da VM.
+- 🤖 **[Relatório de Inferência OLMo-2 e Quantização `.kzm`](docs/benchmarks/OLMO2_INFERENCE_AND_QUANTIZATION_REPORT.md)**: Benchmarks detalhados de `mmap` zero-RAM, quantização `KZQ4`/`KZQ8` e kernels AVX2 SIMD.
 
 ---
 
