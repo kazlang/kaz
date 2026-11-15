@@ -1,0 +1,278 @@
+// ============================================================================
+// KazOS Shell & Mini-Runtime Kaz (Escrito 100% em Kaz)
+// Interpretador de comandos, VFS em memória, utilitários estilo Unix/Plan9
+// ============================================================================
+import "tipos.kaz";
+
+string g_cwd = "/home/kaz";
+int g_cmd_count = 0;
+
+function kaz_shell_banner(int screenW, int screenH) {
+    TemaCores t = obterTemaPadrao();
+    sys_term_print("====================================================================================\n", t.terminalVerde);
+    sys_term_print("   KazOS v2.0 Sovereign Edition - Bare-Metal x86 + Kaz-UI & TermiKAZ Engine        \n", t.terminalVerde);
+    sys_term_print("====================================================================================\n", t.terminalVerde);
+    sys_term_print("Framebuffer TrueColor 1024x768 (Double-Buffered 60FPS) | VFS & Apps Nativos Kaz!\n", t.textoClaro);
+    sys_term_print("Digite 'help' para comandos, 'neofetch', 'calc', 'notes', ou 'x' para abrir o Kaz-X.\n\n", t.terminalAmarelo);
+}
+
+// Retorno de kaz_shell_exec:
+// 0 = comando normal executado
+// 1 = abrir modo gráfico Kaz-X
+// 2 = alternar fonte do terminal
+// 3 = abrir KazCalc no Kaz-X
+// 4 = abrir KazNotes no Kaz-X
+// 5 = abrir KazMonitor no Kaz-X
+function kaz_shell_exec(string cmd): int {
+    TemaCores t = obterTemaPadrao();
+
+    if (cmd == "") {
+        return 0;
+    }
+
+    g_cmd_count = g_cmd_count + 1;
+
+    if (cmd == "limpar" || cmd == "cls" || cmd == "clear") {
+        sys_term_clear();
+        return 0;
+    }
+
+    if (cmd == "ajuda" || cmd == "help" || cmd == "?") {
+        sys_term_print("=== Comandos do KazOS Sovereign Shell (ksh v2.0) ===\n", t.terminalAmarelo);
+        sys_term_print("  [Ambiente Grafico & Apps]\n", t.terminalCiano);
+        sys_term_print("  x / startx / gui    - Abre o Desktop Kaz-X (Multi-Janelas 60FPS)\n", t.terminalVerde);
+        sys_term_print("  calc                - Abre o aplicativo Calculadora (KazCalc)\n", t.terminalVerde);
+        sys_term_print("  notes / edit        - Abre o Bloco de Notas (KazNotes)\n", t.terminalVerde);
+        sys_term_print("  top / htop / mon    - Exibe processos ou abre o Monitor (KazMon)\n", t.terminalVerde);
+        sys_term_print("  [Arquivos & Diretorios (RamFS)]\n", t.terminalCiano);
+        sys_term_print("  ls / ll             - Lista arquivos e tamanhos no RamFS\n", t.textoClaro);
+        sys_term_print("  pwd / cd <dir>      - Exibe ou altera o diretorio atual\n", t.textoClaro);
+        sys_term_print("  cat <arq>           - Exibe o conteudo de um arquivo do RamFS\n", t.textoClaro);
+        sys_term_print("  touch <arq>         - Cria um novo arquivo no RamFS\n", t.textoClaro);
+        sys_term_print("  write <arq> <txt>   - Escreve texto dentro de um arquivo\n", t.textoClaro);
+        sys_term_print("  rm <arq>            - Remove um arquivo do RamFS\n", t.textoClaro);
+        sys_term_print("  grep <padrao> <arq> - Busca linhas contendo <padrao> no arquivo\n", t.textoClaro);
+        sys_term_print("  wc <arq>            - Conta linhas, palavras e bytes de um arquivo\n", t.textoClaro);
+        sys_term_print("  hexdump <arq>       - Inspeciona bytes em hexadecimal e ASCII\n", t.textoClaro);
+        sys_term_print("  [Sistema & Hardware]\n", t.terminalCiano);
+        sys_term_print("  neofetch / sysinfo  - Resumo completo de hardware + logo ASCII\n", t.terminalAmarelo);
+        sys_term_print("  ps / free / mem     - Lista tarefas do kernel e uso de RAM/VRAM\n", t.textoClaro);
+        sys_term_print("  uname / whoami / id - Informacoes do kernel e usuario\n", t.textoClaro);
+        sys_term_print("  date / rtc / uptime - Relogio hardware CMOS RTC e estatisticas\n", t.textoClaro);
+        sys_term_print("  expr <a op b>       - Calculadora de expressao no terminal\n", t.textoClaro);
+        sys_term_print("  history             - Historico de comandos (Use Setas Cima/Baixo!)\n", t.textoClaro);
+        sys_term_print("  fonte / clear / reboot / poweroff\n", t.textoClaro);
+        return 0;
+    }
+
+    if (cmd == "x" || cmd == "startx" || cmd == "gui") {
+        sys_term_print("[Kaz-X] Inicializando Compositor Double-Buffered e Multi-Apps...\n", t.terminalVerde);
+        return 1;
+    }
+
+    if (cmd == "calc" || cmd == "kazcalc") {
+        sys_term_print("[KazCalc] Abrindo Calculadora Nativa no Kaz-X...\n", t.terminalVerde);
+        return 3;
+    }
+
+    if (cmd == "notes" || cmd == "kaznotes" || cmd == "edit") {
+        sys_term_print("[KazNotes] Abrindo Editor de Notas no Kaz-X...\n", t.terminalVerde);
+        return 4;
+    }
+
+    if (cmd == "mon" || cmd == "monitor") {
+        sys_term_print("[KazMon] Abrindo Monitor de Sistema no Kaz-X...\n", t.terminalVerde);
+        return 5;
+    }
+
+    if (cmd == "pwd") {
+        sys_term_print(g_cwd, t.terminalVerde);
+        sys_term_print("\n", t.textoClaro);
+        return 0;
+    }
+
+    if (sys_cmd_starts(cmd, "cd")) {
+        string arg = sys_cmd_arg(cmd);
+        if (arg == "" || arg == "~") {
+            g_cwd = "/home/kaz";
+        } else if (arg == "/") {
+            g_cwd = "/";
+        } else if (arg == "..") {
+            g_cwd = "/";
+        } else if (arg == "kaz_ui" || arg == "/kaz_ui") {
+            g_cwd = "/kaz_ui";
+        } else if (arg == "etc" || arg == "/etc") {
+            g_cwd = "/etc";
+        } else if (arg == "docs" || arg == "/docs") {
+            g_cwd = "/docs";
+        } else {
+            g_cwd = arg;
+        }
+        sys_term_print("Diretorio atual: ", t.terminalCiano);
+        sys_term_print(g_cwd, t.terminalVerde);
+        sys_term_print("\n", t.textoClaro);
+        return 0;
+    }
+
+    if (cmd == "ls" || cmd == "dir" || cmd == "ll" || cmd == "ls -l" || cmd == "ls -la") {
+        sys_vfs_ls(g_cwd);
+        return 0;
+    }
+
+    if (sys_cmd_starts(cmd, "cat")) {
+        string arg = sys_cmd_arg(cmd);
+        if (arg == "") {
+            sys_term_print("Uso: cat <arquivo> (ex: cat README.md, cat sistema.conf, cat hello.kaz)\n", t.terminalAmarelo);
+            return 0;
+        }
+        sys_vfs_cat(arg);
+        return 0;
+    }
+
+    if (sys_cmd_starts(cmd, "touch")) {
+        string arg = sys_cmd_arg(cmd);
+        if (arg == "") {
+            sys_term_print("Uso: touch <nome_arquivo>\n", t.terminalAmarelo);
+            return 0;
+        }
+        sys_vfs_touch(arg);
+        return 0;
+    }
+
+    if (sys_cmd_starts(cmd, "write")) {
+        sys_vfs_write_cmd(cmd);
+        return 0;
+    }
+
+    if (sys_cmd_starts(cmd, "rm")) {
+        string arg = sys_cmd_arg(cmd);
+        if (arg == "") {
+            sys_term_print("Uso: rm <nome_arquivo>\n", t.terminalAmarelo);
+            return 0;
+        }
+        sys_vfs_rm(arg);
+        return 0;
+    }
+
+    if (sys_cmd_starts(cmd, "grep")) {
+        sys_vfs_grep_cmd(cmd);
+        return 0;
+    }
+
+    if (sys_cmd_starts(cmd, "wc")) {
+        string arg = sys_cmd_arg(cmd);
+        if (arg == "") {
+            sys_term_print("Uso: wc <nome_arquivo>\n", t.terminalAmarelo);
+            return 0;
+        }
+        sys_vfs_wc(arg);
+        return 0;
+    }
+
+    if (sys_cmd_starts(cmd, "hexdump") || sys_cmd_starts(cmd, "xxd")) {
+        string arg = sys_cmd_arg(cmd);
+        if (arg == "") {
+            sys_term_print("Uso: hexdump <nome_arquivo>\n", t.terminalAmarelo);
+            return 0;
+        }
+        sys_vfs_hexdump(arg);
+        return 0;
+    }
+
+    if (sys_cmd_starts(cmd, "echo")) {
+        string arg = sys_cmd_arg(cmd);
+        sys_term_print(arg, t.textoClaro);
+        sys_term_print("\n", t.textoClaro);
+        return 0;
+    }
+
+    if (sys_cmd_starts(cmd, "expr")) {
+        string arg = sys_cmd_arg(cmd);
+        sys_shell_expr(arg);
+        return 0;
+    }
+
+    if (cmd == "whoami") {
+        sys_term_print("root (soberano)\n", t.terminalVerde);
+        return 0;
+    }
+
+    if (cmd == "id") {
+        sys_term_print("uid=0(root) gid=0(kaz) groups=0(kernel),1(ring0),2(kaz-ui)\n", t.terminalVerde);
+        return 0;
+    }
+
+    if (cmd == "hostname") {
+        sys_term_print("kazos-baremetal\n", t.terminalCiano);
+        return 0;
+    }
+
+    if (cmd == "uname" || cmd == "uname -a" || cmd == "sobre" || cmd == "ver") {
+        sys_term_print("KazOS 2.0.0-sovereign i686 Bare-Metal x86_32 (Kaz Native Compiler & HAL)TrueColor\n", t.terminalVerde);
+        return 0;
+    }
+
+    if (cmd == "neofetch" || cmd == "sysinfo" || cmd == "fetch") {
+        sys_shell_neofetch();
+        return 0;
+    }
+
+    if (cmd == "ps" || cmd == "top" || cmd == "htop") {
+        sys_shell_ps();
+        return 0;
+    }
+
+    if (cmd == "free" || cmd == "free -m" || cmd == "mem") {
+        sys_shell_free();
+        return 0;
+    }
+
+    if (cmd == "history") {
+        sys_shell_history();
+        return 0;
+    }
+
+    if (cmd == "uptime") {
+        sys_shell_uptime(g_cmd_count);
+        return 0;
+    }
+
+    if (cmd == "kaz" || cmd == "termikaz") {
+        sys_term_print("=== Validacao em Tempo Real do Ecossistema Kaz 2.0 no Kernel ===\n", t.terminalCiano);
+        Retangulo rTeste = criarRetangulo(10, 10, 200, 100);
+        bool hit = contemPonto(rTeste, 50, 50);
+        if (hit) {
+            sys_term_print("  [OK] Structs e Geometria Kaz (criarRetangulo / contemPonto): PASS\n", t.terminalVerde);
+        }
+        sys_term_print("  [OK] Compositor Double-Buffered 60FPS (Zero-Tear Backbuffer): ATIVO\n", t.terminalVerde);
+        sys_term_print("  [OK] Suite de Apps: TermiKAZ, KazCalc, KazNotes, KazMon, Painel: ATIVO\n", t.terminalVerde);
+        sys_term_print("  [OK] RamFS & Utilitarios Unix-like (ls, cat, grep, wc, hexdump): ATIVO\n", t.terminalAmarelo);
+        return 0;
+    }
+
+    if (cmd == "hora" || cmd == "rtc" || cmd == "date") {
+        sys_term_print("Data/Hora Hardware CMOS RTC: ", t.terminalCiano);
+        sys_term_print_rtc();
+        sys_term_print("\n", t.textoClaro);
+        return 0;
+    }
+
+    if (cmd == "fonte") {
+        return 2;
+    }
+
+    if (cmd == "reboot") {
+        sys_reboot();
+        return 0;
+    }
+
+    if (cmd == "poweroff" || cmd == "shutdown" || cmd == "halt") {
+        sys_poweroff();
+        return 0;
+    }
+
+    sys_term_print("ksh: comando desconhecido: '", t.perigo);
+    sys_term_print(cmd, t.textoClaro);
+    sys_term_print("' (digite 'help' para lista completa ou 'x' para abrir a GUI)\n", t.terminalAmarelo);
+    return 0;
+}

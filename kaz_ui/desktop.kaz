@@ -1,0 +1,981 @@
+// ============================================================================
+// Kaz-UI: Gerenciador de Janelas & Ambiente Desktop Soberano (Kaz-X v2.0)
+// Escrito 100% em Kaz canônico - Compilado direto para o Kernel Bare-Metal!
+// Suporta 5 janelas independentes, Topbar + Dock/Taskbar, 4 temas e 60 FPS!
+// ============================================================================
+import "tipos.kaz";
+import "widgets.kaz";
+import "shell.kaz";
+import "apps.kaz";
+
+// --- Janelas do Ambiente Gráfico Kaz-X ---
+// ID 1: Painel de Controle
+Janela g_winPainel = Janela {
+    id: 1, x: 108, y: 44, largura: 530, altura: 390,
+    titulo: "KazOS Control Center",
+    corFundo: 0x00F4F6F8, corTitulo: 0x001F3A52,
+    ativa: false, visivel: true, minimizada: false
+};
+
+// ID 2: TermiKAZ Shell
+Janela g_winTerm = Janela {
+    id: 2, x: 350, y: 240, largura: 650, altura: 450,
+    titulo: "TermiKAZ Graphical Terminal (ksh v2.0)",
+    corFundo: 0x000B0F14, corTitulo: 0x00008F5D,
+    ativa: true, visivel: true, minimizada: false
+};
+
+// ID 3: KazCalc (Calculadora Nativa)
+Janela g_winCalc = Janela {
+    id: 3, x: 670, y: 44, largura: 264, altura: 344,
+    titulo: "KazCalc v2.0",
+    corFundo: 0x00131A24, corTitulo: 0x00D97706,
+    ativa: false, visivel: true, minimizada: false
+};
+
+// ID 4: KazNotes (Editor de Notas com RamFS)
+Janela g_winNotes = Janela {
+    id: 4, x: 140, y: 120, largura: 500, altura: 350,
+    titulo: "KazNotes - /home/kaz/notas.txt",
+    corFundo: 0x00111822, corTitulo: 0x006366F1,
+    ativa: false, visivel: false, minimizada: false
+};
+
+// ID 5: KazMon (Monitor de Sistema & Memória)
+Janela g_winMon = Janela {
+    id: 5, x: 200, y: 150, largura: 480, altura: 330,
+    titulo: "KazMon - Recursos & Kernel Ring0",
+    corFundo: 0x000F172A, corTitulo: 0x000284C7,
+    ativa: false, visivel: false, minimizada: false
+};
+
+// Z-order das 5 janelas (z4 = topo / focada, z0 = fundo)
+int g_z0 = 4;
+int g_z1 = 5;
+int g_z2 = 1;
+int g_z3 = 3;
+int g_z4 = 2;
+
+int g_janelaFocada = 2;
+int g_arrastandoId = 0;
+int g_dragOffX = 0;
+int g_dragOffY = 0;
+int g_cliquesTeste = 0;
+bool g_menuIniciarAberto = false;
+int g_temaIdx = 0;
+
+function kaz_x_init(int screenW, int screenH) {
+    g_winPainel = criarJanela(1, 108, 42, 530, 390, "KazOS Control Center");
+    g_winPainel.corFundo = 0x00F4F6F8;
+    g_winPainel.corTitulo = 0x001F3A52;
+    g_winPainel.ativa = false;
+
+    g_winTerm = criarJanela(2, 345, 250, 655, 455, "TermiKAZ Graphical Terminal (ksh v2.0)");
+    g_winTerm.corFundo = 0x000B0F14;
+    g_winTerm.corTitulo = 0x00008F5D;
+    g_winTerm.ativa = true;
+
+    g_winCalc = criarJanela(3, 666, 42, 264, 344, "KazCalc v2.0");
+    g_winCalc.corFundo = 0x00131A24;
+    g_winCalc.corTitulo = 0x00D97706;
+    g_winCalc.ativa = false;
+    g_winCalc.visivel = true;
+
+    g_winNotes = criarJanela(4, 150, 110, 500, 350, "KazNotes - /home/kaz/notas.txt");
+    g_winNotes.corFundo = 0x00111822;
+    g_winNotes.corTitulo = 0x004F46E5;
+    g_winNotes.ativa = false;
+    g_winNotes.visivel = false;
+
+    g_winMon = criarJanela(5, 210, 140, 480, 330, "KazMon - Recursos & Kernel Ring0");
+    g_winMon.corFundo = 0x000F172A;
+    g_winMon.corTitulo = 0x000284C7;
+    g_winMon.ativa = false;
+    g_winMon.visivel = false;
+
+    g_z0 = 4;
+    g_z1 = 5;
+    g_z2 = 1;
+    g_z3 = 3;
+    g_z4 = 2;
+    g_janelaFocada = 2;
+    g_arrastandoId = 0;
+    g_menuIniciarAberto = false;
+    calcLimpar();
+}
+
+function atualizarFlagsAtiva(int idAtivo) {
+    g_winPainel.ativa = (idAtivo == 1);
+    g_winTerm.ativa   = (idAtivo == 2);
+    g_winCalc.ativa   = (idAtivo == 3);
+    g_winNotes.ativa  = (idAtivo == 4);
+    g_winMon.ativa    = (idAtivo == 5);
+}
+
+function promoverZOrder(int id) {
+    if (g_z4 == id) { return; }
+    if (g_z3 == id) {
+        g_z3 = g_z4;
+        g_z4 = id;
+        return;
+    }
+    if (g_z2 == id) {
+        g_z2 = g_z3;
+        g_z3 = g_z4;
+        g_z4 = id;
+        return;
+    }
+    if (g_z1 == id) {
+        g_z1 = g_z2;
+        g_z2 = g_z3;
+        g_z3 = g_z4;
+        g_z4 = id;
+        return;
+    }
+    if (g_z0 == id) {
+        g_z0 = g_z1;
+        g_z1 = g_z2;
+        g_z2 = g_z3;
+        g_z3 = g_z4;
+        g_z4 = id;
+        return;
+    }
+}
+
+function focarJanela(int id) {
+    g_janelaFocada = id;
+    if (id == 1) {
+        g_winPainel.visivel = true;
+        g_winPainel.minimizada = false;
+    } else if (id == 2) {
+        g_winTerm.visivel = true;
+        g_winTerm.minimizada = false;
+    } else if (id == 3) {
+        g_winCalc.visivel = true;
+        g_winCalc.minimizada = false;
+    } else if (id == 4) {
+        g_winNotes.visivel = true;
+        g_winNotes.minimizada = false;
+    } else if (id == 5) {
+        g_winMon.visivel = true;
+        g_winMon.minimizada = false;
+    }
+    promoverZOrder(id);
+    atualizarFlagsAtiva(id);
+}
+
+function obterJanelaVisivelTopo(): int {
+    int passo = 0;
+    while (passo < 5) {
+        int id = g_z4;
+        if (passo == 1) { id = g_z3; }
+        else if (passo == 2) { id = g_z2; }
+        else if (passo == 3) { id = g_z1; }
+        else if (passo == 4) { id = g_z0; }
+
+        if (id == 1 && g_winPainel.visivel && !g_winPainel.minimizada) { return 1; }
+        if (id == 2 && g_winTerm.visivel && !g_winTerm.minimizada) { return 2; }
+        if (id == 3 && g_winCalc.visivel && !g_winCalc.minimizada) { return 3; }
+        if (id == 4 && g_winNotes.visivel && !g_winNotes.minimizada) { return 4; }
+        if (id == 5 && g_winMon.visivel && !g_winMon.minimizada) { return 5; }
+        passo = passo + 1;
+    }
+    return 0;
+}
+
+function desenharMolduraJanela(Janela j, TemaCores tema) {
+    if (!j.visivel || j.minimizada) {
+        return;
+    }
+
+    // Sombra suave em duas camadas
+    sys_fill_rect(j.x + 6, j.y + 6, j.largura, j.altura, 0x0005080C);
+    sys_fill_rect(j.x + 3, j.y + 3, j.largura, j.altura, 0x00090E15);
+
+    // Corpo e bordas externas/internas
+    sys_fill_rect(j.x, j.y, j.largura, j.altura, j.corFundo);
+    int corBordaExt = tema.borda;
+    if (j.ativa) {
+        corBordaExt = j.corTitulo;
+    }
+    sys_draw_rect(j.x, j.y, j.largura, j.altura, corBordaExt);
+    sys_draw_rect(j.x + 1, j.y + 1, j.largura - 2, j.altura - 2, 0x00334155);
+
+    // Barra de título (destaque quando ativa + filete luminoso superior)
+    int corBarra = tema.tituloInativo;
+    if (j.ativa) {
+        corBarra = j.corTitulo;
+    }
+    sys_fill_rect(j.x + 2, j.y + 2, j.largura - 4, 26, corBarra);
+    if (j.ativa) {
+        sys_fill_rect(j.x + 2, j.y + 2, j.largura - 4, 2, tema.acento);
+    }
+
+    // Indicador de janela ativa (bolinha/quadrado colorido) + título
+    int dotColor = 0x0094A3B8;
+    if (j.ativa) {
+        dotColor = tema.terminalVerde;
+    }
+    sys_fill_rect(j.x + 10, j.y + 11, 6, 6, dotColor);
+    sys_draw_text(j.x + 22, j.y + 7, j.titulo, tema.textoClaro, corBarra, 0);
+
+    // Botão Minimizar [_]
+    int btnMinX = j.x + j.largura - 48;
+    int btnMinY = j.y + 5;
+    sys_fill_rect(btnMinX, btnMinY, 20, 18, 0x00283545);
+    sys_draw_rect(btnMinX, btnMinY, 20, 18, 0x0064748B);
+    sys_draw_text(btnMinX + 6, btnMinY + 1, "-", tema.textoClaro, 0x00283545, 0);
+
+    // Botão Fechar [X]
+    int btnCloseX = j.x + j.largura - 24;
+    int btnCloseY = j.y + 5;
+    sys_fill_rect(btnCloseX, btnCloseY, 20, 18, tema.perigo);
+    sys_draw_rect(btnCloseX, btnCloseY, 20, 18, 0x00FCA5A5);
+    sys_draw_text(btnCloseX + 6, btnCloseY + 1, "x", tema.textoClaro, tema.perigo, 0);
+}
+
+function desenharJanelaPainel(TemaCores tema) {
+    if (!g_winPainel.visivel || g_winPainel.minimizada) {
+        return;
+    }
+    desenharMolduraJanela(g_winPainel, tema);
+
+    int cx = g_winPainel.x + 16;
+    int cy = g_winPainel.y + 38;
+
+    sys_draw_text(cx, cy, "Central de Controle KazOS v2.0 - Motor Grafico 100% em Kaz", tema.tituloAtivo, g_winPainel.corFundo, 0);
+    cy = cy + 18;
+    sys_draw_text(cx, cy, "Compositor Double-Buffered 60FPS + Suite de Aplicativos Nativos.", 0x00008F5D, g_winPainel.corFundo, 0);
+    cy = cy + 24;
+
+    // Card 1: Status da Arquitetura
+    sys_fill_rect(cx, cy, 240, 218, tema.textoClaro);
+    sys_draw_rect(cx, cy, 240, 218, 0x00CBD5E1);
+    sys_fill_rect(cx, cy, 240, 4, tema.tituloAtivo);
+    sys_draw_text(cx + 10, cy + 12, "Arquitetura Soberana:", tema.tituloAtivo, tema.textoClaro, 0);
+    sys_draw_text(cx + 10, cy + 36, "* Video: 1024x768 TrueColor", tema.texto, tema.textoClaro, 0);
+    sys_draw_text(cx + 10, cy + 58, "* Render: Backbuffer 60FPS", 0x00008F5D, tema.textoClaro, 0);
+    sys_draw_text(cx + 10, cy + 80, "* UI Engine: kaz_ui/*.kaz", tema.texto, tema.textoClaro, 0);
+    sys_draw_text(cx + 10, cy + 102, "* Compiler: kazos_cc.kaz", tema.tituloAtivo, tema.textoClaro, 0);
+    sys_draw_text(cx + 10, cy + 124, "* FS: RamFS Dinamico RW", 0x00008F5D, tema.textoClaro, 0);
+    sys_draw_text(cx + 10, cy + 146, "* Boot: MBR 240 Setores", tema.texto, tema.textoClaro, 0);
+    sys_draw_text(cx + 10, cy + 168, "* Apps: Term/Calc/Notes/Mon", tema.tituloAtivo, tema.textoClaro, 0);
+    sys_draw_num(cx + 10, cy + 192, g_cliquesTeste, 0x00D97706, tema.textoClaro);
+
+    // Card 2: Lançador Rápido & Temas
+    int card2X = cx + 252;
+    sys_fill_rect(card2X, cy, 246, 218, tema.textoClaro);
+    sys_draw_rect(card2X, cy, 246, 218, 0x00CBD5E1);
+    sys_fill_rect(card2X, cy, 246, 4, tema.acento);
+    sys_draw_text(card2X + 12, cy + 12, "Lancador de Aplicativos:", tema.tituloAtivo, tema.textoClaro, 0);
+
+    // Botão 1: Abrir Calculadora (KazCalc)
+    sys_fill_rect(card2X + 12, cy + 34, 222, 28, 0x00D97706);
+    sys_draw_rect(card2X + 12, cy + 34, 222, 28, tema.borda);
+    sys_draw_text(card2X + 22, cy + 40, "[+] Abrir Calculadora", tema.textoClaro, 0x00D97706, 0);
+
+    // Botão 2: Abrir Bloco de Notas (KazNotes)
+    sys_fill_rect(card2X + 12, cy + 68, 222, 28, 0x004F46E5);
+    sys_draw_rect(card2X + 12, cy + 68, 222, 28, tema.borda);
+    sys_draw_text(card2X + 22, cy + 74, "[=] Abrir KazNotes Editor", tema.textoClaro, 0x004F46E5, 0);
+
+    // Botão 3: Abrir Monitor de Sistema (KazMon)
+    sys_fill_rect(card2X + 12, cy + 102, 222, 28, 0x000284C7);
+    sys_draw_rect(card2X + 12, cy + 102, 222, 28, tema.borda);
+    sys_draw_text(card2X + 22, cy + 108, "[#] Abrir Monitor Sistema", tema.textoClaro, 0x000284C7, 0);
+
+    // Botão 4: Focar TermiKAZ
+    sys_fill_rect(card2X + 12, cy + 136, 222, 28, 0x00008F5D);
+    sys_draw_rect(card2X + 12, cy + 136, 222, 28, tema.borda);
+    sys_draw_text(card2X + 22, cy + 142, "[>_] Focar TermiKAZ Shell", tema.textoClaro, 0x00008F5D, 0);
+
+    // Botão 5: Alternar Tema Desktop + Botão Teste
+    sys_fill_rect(card2X + 12, cy + 172, 138, 30, 0x001E293B);
+    sys_draw_rect(card2X + 12, cy + 172, 138, 30, tema.borda);
+    sys_draw_text(card2X + 20, cy + 179, "Mudar Tema UI", tema.terminalAmarelo, 0x001E293B, 0);
+
+    sys_fill_rect(card2X + 156, cy + 172, 78, 30, tema.botao);
+    sys_draw_rect(card2X + 156, cy + 172, 78, 30, 0x0064748B);
+    sys_draw_text(card2X + 166, cy + 179, "+Clique", tema.texto, tema.botao, 0);
+
+    // Rodapé informativo da janela
+    int fy = cy + 230;
+    sys_draw_text(cx, fy, "Arraste qualquer janela pela barra de titulo. Z-Order de 5 camadas.", 0x00475569, g_winPainel.corFundo, 0);
+    sys_draw_text(cx, fy + 18, "Dica: Use Setas Cima/Baixo no TermiKAZ para navegar no historico!", tema.tituloAtivo, g_winPainel.corFundo, 0);
+}
+
+function desenharJanelaTerminal(TemaCores tema) {
+    if (!g_winTerm.visivel || g_winTerm.minimizada) {
+        return;
+    }
+    desenharMolduraJanela(g_winTerm, tema);
+
+    // Barra de subtítulo estilo TermiKAZ (abas e status)
+    int subY = g_winTerm.y + 28;
+    sys_fill_rect(g_winTerm.x + 2, subY, g_winTerm.largura - 4, 22, 0x00161B22);
+    sys_draw_text(g_winTerm.x + 10, subY + 3, "[ksh v2.0]", tema.terminalVerde, 0x00161B22, 0);
+    sys_draw_text(g_winTerm.x + 98, subY + 3, "| Dir:", 0x0094A3B8, 0x00161B22, 0);
+    sys_draw_text(g_winTerm.x + 152, subY + 3, g_cwd, tema.terminalCiano, 0x00161B22, 0);
+    if (g_winTerm.ativa) {
+        sys_draw_text(g_winTerm.x + g_winTerm.largura - 145, subY + 3, "[FOCO TECLADO]", tema.terminalAmarelo, 0x00161B22, 0);
+    } else {
+        sys_draw_text(g_winTerm.x + g_winTerm.largura - 155, subY + 3, "[CLIQUE P/ DIGITAR]", 0x0064748B, 0x00161B22, 0);
+    }
+
+    // Renderiza o buffer real do terminal dentro da área cliente da janela!
+    int clientX = g_winTerm.x + 6;
+    int clientY = g_winTerm.y + 52;
+    int clientW = g_winTerm.largura - 12;
+    int clientH = g_winTerm.altura - 58;
+    sys_render_term_in_rect(clientX, clientY, clientW, clientH, g_winTerm.ativa);
+}
+
+function desenharJanelaPorId(int id, TemaCores tema) {
+    if (id == 1) {
+        desenharJanelaPainel(tema);
+    } else if (id == 2) {
+        desenharJanelaTerminal(tema);
+    } else if (id == 3) {
+        if (g_winCalc.visivel && !g_winCalc.minimizada) {
+            desenharMolduraJanela(g_winCalc, tema);
+            desenharConteudoCalc(g_winCalc, tema);
+        }
+    } else if (id == 4) {
+        if (g_winNotes.visivel && !g_winNotes.minimizada) {
+            desenharMolduraJanela(g_winNotes, tema);
+            desenharConteudoNotes(g_winNotes, tema);
+        }
+    } else if (id == 5) {
+        if (g_winMon.visivel && !g_winMon.minimizada) {
+            desenharMolduraJanela(g_winMon, tema);
+            desenharConteudoMonitor(g_winMon, tema);
+        }
+    }
+}
+
+function desenharIconeDesktop(int x, int y, string sigla, string nome, int corBox, int corBorda, int corSigla, TemaCores tema) {
+    sys_fill_rect(x + 3, y + 3, 68, 52, 0x00070B10);
+    sys_fill_rect(x, y, 68, 52, corBox);
+    sys_draw_rect(x, y, 68, 52, corBorda);
+    sys_fill_rect(x + 2, y + 2, 64, 3, corBorda);
+    sys_draw_text(x + 22, y + 18, sigla, corSigla, corBox, 0);
+    sys_draw_text(x + 6, y + 58, nome, tema.textoClaro, tema.fundo, 0);
+}
+
+function desenharMenuIniciar(int screenH, TemaCores tema) {
+    if (!g_menuIniciarAberto) {
+        return;
+    }
+    int menuX = 8;
+    int menuH = 290;
+    int menuY = screenH - 38 - menuH - 4;
+    int menuW = 265;
+
+    // Sombra e fundo do Menu Iniciar
+    sys_fill_rect(menuX + 5, menuY + 5, menuW, menuH, 0x0004070A);
+    sys_fill_rect(menuX, menuY, menuW, menuH, 0x00111B27);
+    sys_draw_rect(menuX, menuY, menuW, menuH, tema.acento);
+
+    // Cabeçalho do Menu
+    sys_fill_rect(menuX + 2, menuY + 2, menuW - 4, 30, tema.acento);
+    sys_draw_text(menuX + 12, menuY + 9, "KazOS v2.0 Applications", tema.textoClaro, tema.acento, 0);
+
+    int iy = menuY + 40;
+    // Item 1: TermiKAZ Shell
+    sys_fill_rect(menuX + 8, iy, menuW - 16, 32, 0x001D2D3E);
+    sys_draw_rect(menuX + 8, iy, menuW - 16, 32, 0x00008F5D);
+    sys_draw_text(menuX + 16, iy + 8, ">_ TermiKAZ Terminal", tema.terminalVerde, 0x001D2D3E, 0);
+
+    // Item 2: Calculadora (KazCalc)
+    iy = iy + 38;
+    sys_fill_rect(menuX + 8, iy, menuW - 16, 32, 0x001D2D3E);
+    sys_draw_rect(menuX + 8, iy, menuW - 16, 32, 0x00D97706);
+    sys_draw_text(menuX + 16, iy + 8, "+= Calculadora KazCalc", tema.terminalAmarelo, 0x001D2D3E, 0);
+
+    // Item 3: Bloco de Notas (KazNotes)
+    iy = iy + 38;
+    sys_fill_rect(menuX + 8, iy, menuW - 16, 32, 0x001D2D3E);
+    sys_draw_rect(menuX + 8, iy, menuW - 16, 32, 0x006366F1);
+    sys_draw_text(menuX + 16, iy + 8, "== Bloco de Notas (RamFS)", tema.textoClaro, 0x001D2D3E, 0);
+
+    // Item 4: Monitor de Sistema (KazMon)
+    iy = iy + 38;
+    sys_fill_rect(menuX + 8, iy, menuW - 16, 32, 0x001D2D3E);
+    sys_draw_rect(menuX + 8, iy, menuW - 16, 32, 0x0038BDF8);
+    sys_draw_text(menuX + 16, iy + 8, "## Monitor de Sistema", tema.terminalCiano, 0x001D2D3E, 0);
+
+    // Item 5: Central de Controle & Temas
+    iy = iy + 38;
+    sys_fill_rect(menuX + 8, iy, menuW - 16, 32, 0x001D2D3E);
+    sys_draw_rect(menuX + 8, iy, menuW - 16, 32, 0x0064748B);
+    sys_draw_text(menuX + 16, iy + 8, "[] Central de Controle", tema.textoClaro, 0x001D2D3E, 0);
+
+    // Item 6: Sair para Console Fullscreen
+    iy = iy + 42;
+    sys_fill_rect(menuX + 8, iy, menuW - 16, 32, 0x00451A1C);
+    sys_draw_rect(menuX + 8, iy, menuW - 16, 32, tema.perigo);
+    sys_draw_text(menuX + 16, iy + 8, "<- Voltar ao Console Puro", tema.textoClaro, 0x00451A1C, 0);
+}
+
+function desenharAbaTaskbar(int x, int y, int w, string rotulo, bool ativa, bool aberta, int corDestaque, TemaCores tema) {
+    int bg = 0x0016212E;
+    int borda = 0x002B3D52;
+    if (ativa) {
+        bg = corDestaque;
+        borda = tema.textoClaro;
+    } else if (aberta) {
+        bg = 0x001F2E40;
+        borda = corDestaque;
+    }
+    sys_fill_rect(x, y, w, 28, bg);
+    sys_draw_rect(x, y, w, 28, borda);
+    if (aberta) {
+        sys_fill_rect(x + 2, y + 25, w - 4, 2, corDestaque);
+    }
+    sys_draw_text(x + 10, y + 6, rotulo, tema.textoClaro, bg, 0);
+}
+
+function kaz_x_render(int screenW, int screenH) {
+    TemaCores tema = obterTemaPadrao();
+    if (g_temaIdx == 1) {
+        tema.fundo = 0x00181825;
+        tema.fundoGradiente = 0x0024273A;
+        tema.acento = 0x0089B4FA;
+    } else if (g_temaIdx == 2) {
+        tema.fundo = 0x001D2021;
+        tema.fundoGradiente = 0x00282828;
+        tema.acento = 0x00FABD2F;
+    } else if (g_temaIdx == 3) {
+        tema.fundo = 0x000F172A;
+        tema.fundoGradiente = 0x001E1B4B;
+        tema.acento = 0x0038BDF8;
+    }
+
+    // 1. Wallpaper de Fundo Estilizado (Grid/Gradiente + Topbar Superior)
+    sys_draw_wallpaper(screenW, screenH - 38, tema.fundo, tema.fundoGradiente, g_temaIdx);
+
+    // Barra Superior de Status (Topbar estilo macOS / GNOME / Plan9)
+    sys_fill_rect(0, 0, screenW, 24, 0x000A1017);
+    sys_fill_rect(0, 23, screenW, 1, tema.acento);
+    sys_draw_text(12, 4, "KazOS Sovereign v2.0", tema.terminalVerde, 0x000A1017, 0);
+    sys_draw_text(190, 4, "| Kaz-X Compositor 60FPS", tema.terminalCiano, 0x000A1017, 0);
+    sys_draw_text(405, 4, "| RamFS: Online", 0x0094A3B8, 0x000A1017, 0);
+    sys_draw_rtc_clock(screenW - 115, 4, tema.terminalAmarelo, 0x000A1017);
+
+    // 2. Ícones de Desktop à Esquerda (Coluna Organizada)
+    desenharIconeDesktop(18, 38, ">_", "TermiKAZ", 0x000F1D26, tema.acento, tema.terminalVerde, tema);
+    desenharIconeDesktop(18, 122, "+=", "KazCalc",  0x002A1C11, 0x00D97706, tema.terminalAmarelo, tema);
+    desenharIconeDesktop(18, 206, "==", "KazNotes", 0x00191B38, 0x006366F1, tema.textoClaro, tema);
+    desenharIconeDesktop(18, 290, "##", "KazMon",   0x000F2537, 0x0038BDF8, tema.terminalCiano, tema);
+    desenharIconeDesktop(18, 374, "[]", "Painel",   0x001F3A52, tema.textoClaro, tema.textoClaro, tema);
+
+    // 3. Desenha as 5 Janelas na Ordem Z exata (do fundo g_z0 até o topo g_z4)
+    desenharJanelaPorId(g_z0, tema);
+    desenharJanelaPorId(g_z1, tema);
+    desenharJanelaPorId(g_z2, tema);
+    desenharJanelaPorId(g_z3, tema);
+    desenharJanelaPorId(g_z4, tema);
+
+    // 4. Barra de Tarefas Inferior (Dock / Taskbar)
+    int barY = screenH - 38;
+    sys_fill_rect(0, barY, screenW, 38, tema.barraTarefas);
+    sys_fill_rect(0, barY, screenW, 1, 0x002B3D52);
+
+    // Botão Iniciar [KazOS]
+    int corBtnStart = tema.acento;
+    if (g_menuIniciarAberto) {
+        corBtnStart = 0x0000E599;
+    }
+    sys_fill_rect(8, barY + 5, 92, 28, corBtnStart);
+    sys_draw_rect(8, barY + 5, 92, 28, tema.textoClaro);
+    sys_draw_text(18, barY + 11, ":: KazOS", tema.textoClaro, corBtnStart, 0);
+
+    // Abas das 5 Aplicações na Taskbar
+    bool pAberta = (g_winPainel.visivel && !g_winPainel.minimizada);
+    bool tAberta = (g_winTerm.visivel && !g_winTerm.minimizada);
+    bool cAberta = (g_winCalc.visivel && !g_winCalc.minimizada);
+    bool nAberta = (g_winNotes.visivel && !g_winNotes.minimizada);
+    bool mAberta = (g_winMon.visivel && !g_winMon.minimizada);
+
+    desenharAbaTaskbar(108, barY + 5, 136, ">_ TermiKAZ", (g_janelaFocada == 2 && tAberta), g_winTerm.visivel, 0x00008F5D, tema);
+    desenharAbaTaskbar(250, barY + 5, 126, "+= KazCalc",  (g_janelaFocada == 3 && cAberta), g_winCalc.visivel, 0x00D97706, tema);
+    desenharAbaTaskbar(382, barY + 5, 128, "== KazNotes", (g_janelaFocada == 4 && nAberta), g_winNotes.visivel, 0x004F46E5, tema);
+    desenharAbaTaskbar(516, barY + 5, 122, "## Monitor",  (g_janelaFocada == 5 && mAberta), g_winMon.visivel,   0x000284C7, tema);
+    desenharAbaTaskbar(644, barY + 5, 124, "[] Painel",   (g_janelaFocada == 1 && pAberta), g_winPainel.visivel, 0x001F3A52, tema);
+
+    // Indicador de Console e Relógio RTC na direita da Taskbar
+    sys_draw_text(screenW - 242, barY + 11, "[ESC: Console]", tema.terminalCiano, tema.barraTarefas, 0);
+    sys_fill_rect(screenW - 122, barY + 5, 114, 28, 0x0016222F);
+    sys_draw_rect(screenW - 122, barY + 5, 114, 28, 0x00334155);
+    sys_draw_rtc_clock(screenW - 112, barY + 11, tema.terminalAmarelo, 0x0016222F);
+
+    // 5. Menu Iniciar (se estiver aberto, desenha no topo absoluto)
+    desenharMenuIniciar(screenH, tema);
+}
+
+// Trata clique nos controles internos do Painel de Controle
+function tratarCliqueInternoPainel(int mx, int my): int {
+    int cx = g_winPainel.x + 16;
+    int cy = g_winPainel.y + 38 + 18 + 24;
+    int card2X = cx + 252;
+
+    // Botão 1: Abrir Calculadora
+    if (contemPonto(criarRetangulo(card2X + 12, cy + 34, 222, 28), mx, my)) {
+        focarJanela(3);
+        return 1;
+    }
+    // Botão 2: Abrir KazNotes
+    if (contemPonto(criarRetangulo(card2X + 12, cy + 68, 222, 28), mx, my)) {
+        focarJanela(4);
+        return 1;
+    }
+    // Botão 3: Abrir Monitor de Sistema
+    if (contemPonto(criarRetangulo(card2X + 12, cy + 102, 222, 28), mx, my)) {
+        focarJanela(5);
+        return 1;
+    }
+    // Botão 4: Focar TermiKAZ
+    if (contemPonto(criarRetangulo(card2X + 12, cy + 136, 222, 28), mx, my)) {
+        focarJanela(2);
+        return 1;
+    }
+    // Botão 5a: Mudar Tema UI
+    if (contemPonto(criarRetangulo(card2X + 12, cy + 172, 138, 30), mx, my)) {
+        g_temaIdx = (g_temaIdx + 1) % 4;
+        return 1;
+    }
+    // Botão 5b: +Clique
+    if (contemPonto(criarRetangulo(card2X + 156, cy + 172, 78, 30), mx, my)) {
+        g_cliquesTeste = g_cliquesTeste + 1;
+        return 1;
+    }
+
+    return 0;
+}
+
+function alternarOuFocarTaskbar(int id) {
+    g_menuIniciarAberto = false;
+    if (id == 1) {
+        if (g_janelaFocada == 1 && g_winPainel.visivel && !g_winPainel.minimizada) {
+            g_winPainel.minimizada = true;
+            g_winPainel.ativa = false;
+            int prox = obterJanelaVisivelTopo();
+            if (prox > 0) { focarJanela(prox); }
+        } else {
+            focarJanela(1);
+        }
+    } else if (id == 2) {
+        if (g_janelaFocada == 2 && g_winTerm.visivel && !g_winTerm.minimizada) {
+            g_winTerm.minimizada = true;
+            g_winTerm.ativa = false;
+            int prox = obterJanelaVisivelTopo();
+            if (prox > 0) { focarJanela(prox); }
+        } else {
+            focarJanela(2);
+        }
+    } else if (id == 3) {
+        if (g_janelaFocada == 3 && g_winCalc.visivel && !g_winCalc.minimizada) {
+            g_winCalc.minimizada = true;
+            g_winCalc.ativa = false;
+            int prox = obterJanelaVisivelTopo();
+            if (prox > 0) { focarJanela(prox); }
+        } else {
+            focarJanela(3);
+        }
+    } else if (id == 4) {
+        if (g_janelaFocada == 4 && g_winNotes.visivel && !g_winNotes.minimizada) {
+            g_winNotes.minimizada = true;
+            g_winNotes.ativa = false;
+            int prox = obterJanelaVisivelTopo();
+            if (prox > 0) { focarJanela(prox); }
+        } else {
+            focarJanela(4);
+        }
+    } else if (id == 5) {
+        if (g_janelaFocada == 5 && g_winMon.visivel && !g_winMon.minimizada) {
+            g_winMon.minimizada = true;
+            g_winMon.ativa = false;
+            int prox = obterJanelaVisivelTopo();
+            if (prox > 0) { focarJanela(prox); }
+        } else {
+            focarJanela(5);
+        }
+    }
+}
+
+// Retorno de kaz_x_on_mouse_down:
+// 0 = nada mudou, 1 = redesenhar GUI, 2 = sair para o terminal fullscreen
+function kaz_x_on_mouse_down(int mx, int my, int screenW, int screenH): int {
+    int barY = screenH - 38;
+
+    // 1. Verifica clique na Barra de Tarefas
+    if (my >= barY) {
+        if (contemPonto(criarRetangulo(8, barY + 5, 92, 28), mx, my)) {
+            g_menuIniciarAberto = !g_menuIniciarAberto;
+            return 1;
+        }
+        if (contemPonto(criarRetangulo(108, barY + 5, 136, 28), mx, my)) {
+            alternarOuFocarTaskbar(2);
+            return 1;
+        }
+        if (contemPonto(criarRetangulo(250, barY + 5, 126, 28), mx, my)) {
+            alternarOuFocarTaskbar(3);
+            return 1;
+        }
+        if (contemPonto(criarRetangulo(382, barY + 5, 128, 28), mx, my)) {
+            alternarOuFocarTaskbar(4);
+            return 1;
+        }
+        if (contemPonto(criarRetangulo(516, barY + 5, 122, 28), mx, my)) {
+            alternarOuFocarTaskbar(5);
+            return 1;
+        }
+        if (contemPonto(criarRetangulo(644, barY + 5, 124, 28), mx, my)) {
+            alternarOuFocarTaskbar(1);
+            return 1;
+        }
+        g_menuIniciarAberto = false;
+        return 1;
+    }
+
+    // 2. Se o Menu Iniciar estiver aberto, verifica clique nos itens do menu
+    if (g_menuIniciarAberto) {
+        int menuX = 8;
+        int menuH = 290;
+        int menuY = screenH - 38 - menuH - 4;
+        int menuW = 265;
+        Retangulo rMenu = criarRetangulo(menuX, menuY, menuW, menuH);
+
+        if (contemPonto(rMenu, mx, my)) {
+            int iy = menuY + 40;
+            if (contemPonto(criarRetangulo(menuX + 8, iy, menuW - 16, 32), mx, my)) {
+                g_menuIniciarAberto = false;
+                focarJanela(2);
+                return 1;
+            }
+            iy = iy + 38;
+            if (contemPonto(criarRetangulo(menuX + 8, iy, menuW - 16, 32), mx, my)) {
+                g_menuIniciarAberto = false;
+                focarJanela(3);
+                return 1;
+            }
+            iy = iy + 38;
+            if (contemPonto(criarRetangulo(menuX + 8, iy, menuW - 16, 32), mx, my)) {
+                g_menuIniciarAberto = false;
+                focarJanela(4);
+                return 1;
+            }
+            iy = iy + 38;
+            if (contemPonto(criarRetangulo(menuX + 8, iy, menuW - 16, 32), mx, my)) {
+                g_menuIniciarAberto = false;
+                focarJanela(5);
+                return 1;
+            }
+            iy = iy + 38;
+            if (contemPonto(criarRetangulo(menuX + 8, iy, menuW - 16, 32), mx, my)) {
+                g_menuIniciarAberto = false;
+                focarJanela(1);
+                return 1;
+            }
+            iy = iy + 42;
+            if (contemPonto(criarRetangulo(menuX + 8, iy, menuW - 16, 32), mx, my)) {
+                g_menuIniciarAberto = false;
+                return 2;
+            }
+            return 1;
+        }
+        g_menuIniciarAberto = false;
+    }
+
+    // 3. Verifica clique nas 5 Janelas na ordem inversa de Z (topo g_z4 -> fundo g_z0)
+    int passo = 0;
+    while (passo < 5) {
+        int testId = g_z4;
+        if (passo == 1) { testId = g_z3; }
+        else if (passo == 2) { testId = g_z2; }
+        else if (passo == 3) { testId = g_z1; }
+        else if (passo == 4) { testId = g_z0; }
+
+        if (testId == 1 && janelaContemPonto(g_winPainel, mx, my)) {
+            focarJanela(1);
+            if (janelaBotaoFecharClicado(g_winPainel, mx, my)) {
+                g_winPainel.visivel = false;
+                int prox = obterJanelaVisivelTopo();
+                if (prox > 0) { focarJanela(prox); }
+                return 1;
+            }
+            if (janelaBotaoMinimizarClicado(g_winPainel, mx, my)) {
+                g_winPainel.minimizada = true;
+                g_winPainel.ativa = false;
+                int prox = obterJanelaVisivelTopo();
+                if (prox > 0) { focarJanela(prox); }
+                return 1;
+            }
+            if (janelaBarraTituloClicada(g_winPainel, mx, my)) {
+                g_arrastandoId = 1;
+                g_dragOffX = mx - g_winPainel.x;
+                g_dragOffY = my - g_winPainel.y;
+                return 1;
+            }
+            int resInterno = tratarCliqueInternoPainel(mx, my);
+            if (resInterno == 2) { return 2; }
+            return 1;
+        }
+
+        if (testId == 2 && janelaContemPonto(g_winTerm, mx, my)) {
+            focarJanela(2);
+            if (janelaBotaoFecharClicado(g_winTerm, mx, my)) {
+                g_winTerm.visivel = false;
+                int prox = obterJanelaVisivelTopo();
+                if (prox > 0) { focarJanela(prox); }
+                return 1;
+            }
+            if (janelaBotaoMinimizarClicado(g_winTerm, mx, my)) {
+                g_winTerm.minimizada = true;
+                g_winTerm.ativa = false;
+                int prox = obterJanelaVisivelTopo();
+                if (prox > 0) { focarJanela(prox); }
+                return 1;
+            }
+            if (janelaBarraTituloClicada(g_winTerm, mx, my)) {
+                g_arrastandoId = 2;
+                g_dragOffX = mx - g_winTerm.x;
+                g_dragOffY = my - g_winTerm.y;
+                return 1;
+            }
+            return 1;
+        }
+
+        if (testId == 3 && janelaContemPonto(g_winCalc, mx, my)) {
+            focarJanela(3);
+            if (janelaBotaoFecharClicado(g_winCalc, mx, my)) {
+                g_winCalc.visivel = false;
+                int prox = obterJanelaVisivelTopo();
+                if (prox > 0) { focarJanela(prox); }
+                return 1;
+            }
+            if (janelaBotaoMinimizarClicado(g_winCalc, mx, my)) {
+                g_winCalc.minimizada = true;
+                g_winCalc.ativa = false;
+                int prox = obterJanelaVisivelTopo();
+                if (prox > 0) { focarJanela(prox); }
+                return 1;
+            }
+            if (janelaBarraTituloClicada(g_winCalc, mx, my)) {
+                g_arrastandoId = 3;
+                g_dragOffX = mx - g_winCalc.x;
+                g_dragOffY = my - g_winCalc.y;
+                return 1;
+            }
+            tratarCliqueCalc(g_winCalc, mx, my);
+            return 1;
+        }
+
+        if (testId == 4 && janelaContemPonto(g_winNotes, mx, my)) {
+            focarJanela(4);
+            if (janelaBotaoFecharClicado(g_winNotes, mx, my)) {
+                g_winNotes.visivel = false;
+                int prox = obterJanelaVisivelTopo();
+                if (prox > 0) { focarJanela(prox); }
+                return 1;
+            }
+            if (janelaBotaoMinimizarClicado(g_winNotes, mx, my)) {
+                g_winNotes.minimizada = true;
+                g_winNotes.ativa = false;
+                int prox = obterJanelaVisivelTopo();
+                if (prox > 0) { focarJanela(prox); }
+                return 1;
+            }
+            if (janelaBarraTituloClicada(g_winNotes, mx, my)) {
+                g_arrastandoId = 4;
+                g_dragOffX = mx - g_winNotes.x;
+                g_dragOffY = my - g_winNotes.y;
+                return 1;
+            }
+            tratarCliqueNotes(g_winNotes, mx, my);
+            return 1;
+        }
+
+        if (testId == 5 && janelaContemPonto(g_winMon, mx, my)) {
+            focarJanela(5);
+            if (janelaBotaoFecharClicado(g_winMon, mx, my)) {
+                g_winMon.visivel = false;
+                int prox = obterJanelaVisivelTopo();
+                if (prox > 0) { focarJanela(prox); }
+                return 1;
+            }
+            if (janelaBotaoMinimizarClicado(g_winMon, mx, my)) {
+                g_winMon.minimizada = true;
+                g_winMon.ativa = false;
+                int prox = obterJanelaVisivelTopo();
+                if (prox > 0) { focarJanela(prox); }
+                return 1;
+            }
+            if (janelaBarraTituloClicada(g_winMon, mx, my)) {
+                g_arrastandoId = 5;
+                g_dragOffX = mx - g_winMon.x;
+                g_dragOffY = my - g_winMon.y;
+                return 1;
+            }
+            return 1;
+        }
+
+        passo = passo + 1;
+    }
+
+    // 4. Verifica clique nos Ícones do Desktop
+    if (contemPonto(criarRetangulo(18, 38, 72, 74), mx, my)) {
+        focarJanela(2);
+        return 1;
+    }
+    if (contemPonto(criarRetangulo(18, 122, 72, 74), mx, my)) {
+        focarJanela(3);
+        return 1;
+    }
+    if (contemPonto(criarRetangulo(18, 206, 72, 74), mx, my)) {
+        focarJanela(4);
+        return 1;
+    }
+    if (contemPonto(criarRetangulo(18, 290, 72, 74), mx, my)) {
+        focarJanela(5);
+        return 1;
+    }
+    if (contemPonto(criarRetangulo(18, 374, 72, 74), mx, my)) {
+        focarJanela(1);
+        return 1;
+    }
+
+    return 1;
+}
+
+function kaz_x_on_mouse_up() {
+    g_arrastandoId = 0;
+}
+
+function kaz_x_on_mouse_move(int mx, int my, int screenW, int screenH): int {
+    if (g_arrastandoId == 0) {
+        return 0;
+    }
+
+    int nx = mx - g_dragOffX;
+    int ny = my - g_dragOffY;
+    if (nx < 0) { nx = 0; }
+    if (ny < 25) { ny = 25; }
+
+    if (g_arrastandoId == 1) {
+        if (nx + g_winPainel.largura > screenW) { nx = screenW - g_winPainel.largura; }
+        if (ny + g_winPainel.altura > screenH - 38) { ny = screenH - 38 - g_winPainel.altura; }
+        g_winPainel.x = nx;
+        g_winPainel.y = ny;
+        return 1;
+    }
+    if (g_arrastandoId == 2) {
+        if (nx + g_winTerm.largura > screenW) { nx = screenW - g_winTerm.largura; }
+        if (ny + g_winTerm.altura > screenH - 38) { ny = screenH - 38 - g_winTerm.altura; }
+        g_winTerm.x = nx;
+        g_winTerm.y = ny;
+        return 1;
+    }
+    if (g_arrastandoId == 3) {
+        if (nx + g_winCalc.largura > screenW) { nx = screenW - g_winCalc.largura; }
+        if (ny + g_winCalc.altura > screenH - 38) { ny = screenH - 38 - g_winCalc.altura; }
+        g_winCalc.x = nx;
+        g_winCalc.y = ny;
+        return 1;
+    }
+    if (g_arrastandoId == 4) {
+        if (nx + g_winNotes.largura > screenW) { nx = screenW - g_winNotes.largura; }
+        if (ny + g_winNotes.altura > screenH - 38) { ny = screenH - 38 - g_winNotes.altura; }
+        g_winNotes.x = nx;
+        g_winNotes.y = ny;
+        return 1;
+    }
+    if (g_arrastandoId == 5) {
+        if (nx + g_winMon.largura > screenW) { nx = screenW - g_winMon.largura; }
+        if (ny + g_winMon.altura > screenH - 38) { ny = screenH - 38 - g_winMon.altura; }
+        g_winMon.x = nx;
+        g_winMon.y = ny;
+        return 1;
+    }
+
+    return 0;
+}
+
+function kaz_x_is_term_active(): int {
+    if (g_winTerm.visivel && !g_winTerm.minimizada && g_winTerm.ativa) {
+        return 1;
+    }
+    return 0;
+}
+
+function kaz_x_is_notes_active(): int {
+    if (g_winNotes.visivel && !g_winNotes.minimizada && g_winNotes.ativa) {
+        return 1;
+    }
+    return 0;
+}
+
+function kaz_x_is_calc_active(): int {
+    if (g_winCalc.visivel && !g_winCalc.minimizada && g_winCalc.ativa) {
+        return 1;
+    }
+    return 0;
+}
+
+function kaz_x_open_app(int appId) {
+    focarJanela(appId);
+}
+
+// Stubs de simulação quando executado via `kaz run kaz_ui/desktop.kaz` no host
+function sys_fill_rect(int x, int y, int w, int h, int color) {}
+function sys_draw_rect(int x, int y, int w, int h, int color) {}
+function sys_draw_text(int x, int y, string text, int fg, int bg, int opaque) {}
+function sys_draw_num(int x, int y, int num, int fg, int bg) {}
+function sys_draw_int_right(int rightX, int y, int num, int fg, int bg, int scale) {}
+function sys_draw_wallpaper(int w, int h, int c1, int c2, int style) {}
+function sys_render_term_in_rect(int x, int y, int w, int h, bool active) {}
+function sys_render_notes_in_rect(int x, int y, int w, int h, bool active) {}
+function sys_render_monitor_in_rect(int x, int y, int w, int h) {}
+function sys_notes_save() {}
+function sys_notes_clear() {}
+function sys_notes_template() {}
+function sys_draw_rtc_clock(int x, int y, int fg, int bg) {}
+function sys_term_print(string s, int color) {}
+function sys_term_clear() {}
+function sys_term_print_rtc() {}
+function sys_cmd_starts(string cmd, string prefix): bool { return false; }
+function sys_cmd_arg(string cmd): string { return ""; }
+function sys_vfs_ls(string dir) {}
+function sys_vfs_cat(string name) {}
+function sys_vfs_touch(string name) {}
+function sys_vfs_write_cmd(string cmd) {}
+function sys_vfs_rm(string name) {}
+function sys_vfs_grep_cmd(string cmd) {}
+function sys_vfs_wc(string name) {}
+function sys_vfs_hexdump(string name) {}
+function sys_shell_expr(string expr) {}
+function sys_shell_neofetch() {}
+function sys_shell_ps() {}
+function sys_shell_free() {}
+function sys_shell_history() {}
+function sys_shell_uptime(int cmds) {}
+function sys_reboot() {}
+function sys_poweroff() {}
+
+function main() {
+    runoff("--- Iniciando Kaz-UI Toolkit & Kaz-X v2.0 Window Manager (100% Kaz) ---");
+    kaz_x_init(1024, 768);
+    runoff("Janela 1: " + g_winPainel.titulo);
+    runoff("Janela 2: " + g_winTerm.titulo);
+    runoff("Janela 3: " + g_winCalc.titulo);
+    runoff("Janela 4: " + g_winNotes.titulo);
+    runoff("Janela 5: " + g_winMon.titulo);
+
+    calcDigito(4);
+    calcDigito(2);
+    calcDefinirOperador(1);
+    calcDigito(8);
+    calcIgual();
+    runoff("Validacao KazCalc (42 + 8): " + to_string(g_calcVisor));
+    runoff("--- Kaz-UI Core, Apps & Multi-Window Manager validados em Kaz puro! ---");
+}

@@ -1,0 +1,74 @@
+// ============================================================================
+// Kaz-UI Toolkit (Core Types & Paleta Oficial KazOS)
+// Tipagem canônica e estrita da linguagem Kaz (int var = val;)
+// ============================================================================
+
+struct Ponto {
+    int x;
+    int y;
+}
+
+struct Retangulo {
+    int x;
+    int y;
+    int largura;
+    int altura;
+}
+
+struct TemaCores {
+    int fundo;
+    int fundoGradiente;
+    int barraTarefas;
+    int janelaFundo;
+    int tituloAtivo;
+    int tituloInativo;
+    int borda;
+    int texto;
+    int textoClaro;
+    int acento;
+    int botao;
+    int perigo;
+    int terminalFundo;
+    int terminalVerde;
+    int terminalCiano;
+    int terminalAmarelo;
+}
+
+function obterTemaPadrao(): TemaCores {
+    TemaCores t = TemaCores {
+        fundo: 0x00131C26,
+        fundoGradiente: 0x001E2D3D,
+        barraTarefas: 0x000D141C,
+        janelaFundo: 0x00F4F6F8,
+        tituloAtivo: 0x001F3A52,
+        tituloInativo: 0x0041505E,
+        borda: 0x000A1017,
+        texto: 0x001A1D21,
+        textoClaro: 0x00FFFFFF,
+        acento: 0x0000B87C,
+        botao: 0x00E1E6EB,
+        perigo: 0x00E53935,
+        terminalFundo: 0x000B0F14,
+        terminalVerde: 0x0000FF7F,
+        terminalCiano: 0x0033CCFF,
+        terminalAmarelo: 0x00FFD166
+    };
+    return t;
+}
+
+function criarRetangulo(int x, int y, int largura, int altura): Retangulo {
+    Retangulo r = Retangulo {
+        x: x,
+        y: y,
+        largura: largura,
+        altura: altura
+    };
+    return r;
+}
+
+function contemPonto(Retangulo r, int px, int py): bool {
+    if (px >= r.x && px <= (r.x + r.largura) && py >= r.y && py <= (r.y + r.altura)) {
+        return true;
+    }
+    return false;
+}

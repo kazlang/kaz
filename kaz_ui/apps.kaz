@@ -1,0 +1,295 @@
+// ============================================================================
+// Kaz-UI: Aplicativos Nativos do Desktop KazOS (100% em Kaz)
+// Inclui:
+//   1. KazCalc  - Calculadora Científica/Inteira Interativa
+//   2. KazNotes - Editor de Notas integrado ao RamFS
+//   3. KazMon   - Monitor de Sistema, Memória, CPU e Tarefas em Tempo Real
+// ============================================================================
+import "tipos.kaz";
+import "widgets.kaz";
+
+// --- Estado Global da Calculadora (KazCalc) ---
+int g_calcVisor = 0;
+int g_calcAcumulador = 0;
+int g_calcOperador = 0; // 0=nenhum, 1=+, 2=-, 3=*, 4=/, 5=%
+bool g_calcNovoNumero = true;
+bool g_calcErroDivZero = false;
+
+function calcLimpar() {
+    g_calcVisor = 0;
+    g_calcAcumulador = 0;
+    g_calcOperador = 0;
+    g_calcNovoNumero = true;
+    g_calcErroDivZero = false;
+}
+
+function calcDigito(int d) {
+    if (g_calcErroDivZero) {
+        calcLimpar();
+    }
+    if (g_calcNovoNumero) {
+        g_calcVisor = d;
+        g_calcNovoNumero = false;
+    } else {
+        if (g_calcVisor >= 0) {
+            if (g_calcVisor < 100000000) {
+                g_calcVisor = g_calcVisor * 10 + d;
+            }
+        } else {
+            if (g_calcVisor > -100000000) {
+                g_calcVisor = g_calcVisor * 10 - d;
+            }
+        }
+    }
+}
+
+function calcExecutarPendente() {
+    if (g_calcOperador == 1) {
+        g_calcVisor = g_calcAcumulador + g_calcVisor;
+    } else if (g_calcOperador == 2) {
+        g_calcVisor = g_calcAcumulador - g_calcVisor;
+    } else if (g_calcOperador == 3) {
+        g_calcVisor = g_calcAcumulador * g_calcVisor;
+    } else if (g_calcOperador == 4) {
+        if (g_calcVisor == 0) {
+            g_calcErroDivZero = true;
+            g_calcVisor = 0;
+        } else {
+            g_calcVisor = g_calcAcumulador / g_calcVisor;
+        }
+    } else if (g_calcOperador == 5) {
+        if (g_calcVisor == 0) {
+            g_calcErroDivZero = true;
+            g_calcVisor = 0;
+        } else {
+            g_calcVisor = g_calcAcumulador % g_calcVisor;
+        }
+    }
+    g_calcAcumulador = g_calcVisor;
+}
+
+function calcDefinirOperador(int op) {
+    if (g_calcErroDivZero) {
+        calcLimpar();
+    }
+    if (!g_calcNovoNumero && g_calcOperador != 0) {
+        calcExecutarPendente();
+    } else {
+        g_calcAcumulador = g_calcVisor;
+    }
+    g_calcOperador = op;
+    g_calcNovoNumero = true;
+}
+
+function calcIgual() {
+    if (g_calcErroDivZero) {
+        calcLimpar();
+        return;
+    }
+    if (g_calcOperador != 0) {
+        calcExecutarPendente();
+        g_calcOperador = 0;
+        g_calcNovoNumero = true;
+    }
+}
+
+function calcInverterSinal() {
+    g_calcVisor = 0 - g_calcVisor;
+}
+
+function desenharBotaoCalc(int x, int y, int w, int h, string label, int bg, int fg) {
+    sys_fill_rect(x, y, w, h, bg);
+    sys_draw_rect(x, y, w, h, 0x00222A35);
+    sys_draw_rect(x + 1, y + 1, w - 2, 1, 0x00455364);
+    int tx = x + (w / 2) - 4;
+    int ty = y + (h / 2) - 8;
+    sys_draw_text(tx, ty, label, fg, bg, 0);
+}
+
+function desenharConteudoCalc(Janela j, TemaCores tema) {
+    int cx = j.x + 14;
+    int cy = j.y + 38;
+    int cw = j.largura - 28;
+
+    // Display digital escuro estilo LCD moderno
+    sys_fill_rect(cx, cy, cw, 56, 0x000A0F14);
+    sys_draw_rect(cx, cy, cw, 56, tema.acento);
+    sys_draw_rect(cx + 1, cy + 1, cw - 2, 54, 0x001B2836);
+
+    // Indicador de operação no topo esquerdo do visor
+    string opStr = "DEC";
+    if (g_calcOperador == 1) { opStr = "OP: +"; }
+    else if (g_calcOperador == 2) { opStr = "OP: -"; }
+    else if (g_calcOperador == 3) { opStr = "OP: *"; }
+    else if (g_calcOperador == 4) { opStr = "OP: /"; }
+    else if (g_calcOperador == 5) { opStr = "OP: %"; }
+    sys_draw_text(cx + 8, cy + 6, opStr, tema.terminalCiano, 0x000A0F14, 0);
+
+    if (g_calcErroDivZero) {
+        sys_draw_text(cx + 10, cy + 28, "ERRO: DIV POR 0", tema.perigo, 0x000A0F14, 0);
+    } else {
+        sys_draw_int_right(cx + cw - 12, cy + 20, g_calcVisor, tema.terminalVerde, 0x000A0F14, 2);
+    }
+
+    // Grade de botões 4x5
+    int startY = cy + 66;
+    int bw = 54;
+    int bh = 38;
+    int gap = 6;
+
+    // Linha 1: C, +/-, %, /
+    int r1y = startY;
+    desenharBotaoCalc(cx + 0 * (bw + gap), r1y, bw, bh, "C", 0x00992B2B, tema.textoClaro);
+    desenharBotaoCalc(cx + 1 * (bw + gap), r1y, bw, bh, "neg", 0x002C3B4D, tema.textoClaro);
+    desenharBotaoCalc(cx + 2 * (bw + gap), r1y, bw, bh, "%", 0x002C3B4D, tema.textoClaro);
+    desenharBotaoCalc(cx + 3 * (bw + gap), r1y, bw, bh, "/", 0x00D97706, tema.textoClaro);
+
+    // Linha 2: 7, 8, 9, *
+    int r2y = startY + 1 * (bh + gap);
+    desenharBotaoCalc(cx + 0 * (bw + gap), r2y, bw, bh, "7", 0x001E293B, tema.textoClaro);
+    desenharBotaoCalc(cx + 1 * (bw + gap), r2y, bw, bh, "8", 0x001E293B, tema.textoClaro);
+    desenharBotaoCalc(cx + 2 * (bw + gap), r2y, bw, bh, "9", 0x001E293B, tema.textoClaro);
+    desenharBotaoCalc(cx + 3 * (bw + gap), r2y, bw, bh, "*", 0x00D97706, tema.textoClaro);
+
+    // Linha 3: 4, 5, 6, -
+    int r3y = startY + 2 * (bh + gap);
+    desenharBotaoCalc(cx + 0 * (bw + gap), r3y, bw, bh, "4", 0x001E293B, tema.textoClaro);
+    desenharBotaoCalc(cx + 1 * (bw + gap), r3y, bw, bh, "5", 0x001E293B, tema.textoClaro);
+    desenharBotaoCalc(cx + 2 * (bw + gap), r3y, bw, bh, "6", 0x001E293B, tema.textoClaro);
+    desenharBotaoCalc(cx + 3 * (bw + gap), r3y, bw, bh, "-", 0x00D97706, tema.textoClaro);
+
+    // Linha 4: 1, 2, 3, +
+    int r4y = startY + 3 * (bh + gap);
+    desenharBotaoCalc(cx + 0 * (bw + gap), r4y, bw, bh, "1", 0x001E293B, tema.textoClaro);
+    desenharBotaoCalc(cx + 1 * (bw + gap), r4y, bw, bh, "2", 0x001E293B, tema.textoClaro);
+    desenharBotaoCalc(cx + 2 * (bw + gap), r4y, bw, bh, "3", 0x001E293B, tema.textoClaro);
+    desenharBotaoCalc(cx + 3 * (bw + gap), r4y, bw, bh, "+", 0x00D97706, tema.textoClaro);
+
+    // Linha 5: 0 (largo), x^2, =
+    int r5y = startY + 4 * (bh + gap);
+    desenharBotaoCalc(cx + 0 * (bw + gap), r5y, bw * 2 + gap, bh, "0", 0x001E293B, tema.textoClaro);
+    desenharBotaoCalc(cx + 2 * (bw + gap), r5y, bw, bh, "x2", 0x002C3B4D, tema.terminalCiano);
+    desenharBotaoCalc(cx + 3 * (bw + gap), r5y, bw, bh, "=", tema.acento, tema.textoClaro);
+}
+
+function tratarCliqueCalc(Janela j, int mx, int my): int {
+    int cx = j.x + 14;
+    int cy = j.y + 38;
+    int startY = cy + 66;
+    int bw = 54;
+    int bh = 38;
+    int gap = 6;
+
+    // Verifica qual linha e coluna foi clicada
+    if (my < startY || mx < cx) {
+        return 0;
+    }
+
+    int relX = mx - cx;
+    int relY = my - startY;
+    int col = relX / (bw + gap);
+    int row = relY / (bh + gap);
+
+    if (col < 0 || col > 3 || row < 0 || row > 4) {
+        return 0;
+    }
+
+    if (row == 0) {
+        if (col == 0) { calcLimpar(); }
+        else if (col == 1) { calcInverterSinal(); }
+        else if (col == 2) { calcDefinirOperador(5); }
+        else if (col == 3) { calcDefinirOperador(4); }
+        return 1;
+    }
+    if (row == 1) {
+        if (col == 0) { calcDigito(7); }
+        else if (col == 1) { calcDigito(8); }
+        else if (col == 2) { calcDigito(9); }
+        else if (col == 3) { calcDefinirOperador(3); }
+        return 1;
+    }
+    if (row == 2) {
+        if (col == 0) { calcDigito(4); }
+        else if (col == 1) { calcDigito(5); }
+        else if (col == 2) { calcDigito(6); }
+        else if (col == 3) { calcDefinirOperador(2); }
+        return 1;
+    }
+    if (row == 3) {
+        if (col == 0) { calcDigito(1); }
+        else if (col == 1) { calcDigito(2); }
+        else if (col == 2) { calcDigito(3); }
+        else if (col == 3) { calcDefinirOperador(1); }
+        return 1;
+    }
+    if (row == 4) {
+        if (col == 0 || col == 1) { calcDigito(0); }
+        else if (col == 2) {
+            g_calcVisor = g_calcVisor * g_calcVisor;
+            g_calcNovoNumero = true;
+        }
+        else if (col == 3) { calcIgual(); }
+        return 1;
+    }
+
+    return 0;
+}
+
+// --- Aplicativo 2: KazNotes (Bloco de Notas com persistência no RamFS) ---
+function desenharConteudoNotes(Janela j, TemaCores tema) {
+    int cx = j.x + 8;
+    int cy = j.y + 32;
+    int cw = j.largura - 16;
+    int ch = j.altura - 40;
+
+    // Barra de ferramentas do KazNotes
+    sys_fill_rect(cx, cy, cw, 28, 0x001E293B);
+    sys_draw_rect(cx, cy, cw, 28, 0x00334155);
+
+    // Botão Salvar no RamFS
+    sys_fill_rect(cx + 6, cy + 4, 118, 20, tema.acento);
+    sys_draw_text(cx + 14, cy + 6, "[Salvar RamFS]", tema.textoClaro, tema.acento, 0);
+
+    // Botão Limpar
+    sys_fill_rect(cx + 132, cy + 4, 78, 20, 0x00992B2B);
+    sys_draw_text(cx + 140, cy + 6, "[Limpar]", tema.textoClaro, 0x00992B2B, 0);
+
+    // Botão Inserir Template Kaz
+    sys_fill_rect(cx + 218, cy + 4, 124, 20, 0x002B4C6F);
+    sys_draw_text(cx + 226, cy + 6, "[+Codigo Kaz]", tema.textoClaro, 0x002B4C6F, 0);
+
+    // Área de edição do documento (renderizada pelo kernel a partir do buffer do notas.txt)
+    sys_render_notes_in_rect(cx, cy + 32, cw, ch - 32, j.ativa);
+}
+
+function tratarCliqueNotes(Janela j, int mx, int my): int {
+    int cx = j.x + 8;
+    int cy = j.y + 32;
+
+    // Botão Salvar RamFS
+    if (contemPonto(criarRetangulo(cx + 6, cy + 4, 118, 20), mx, my)) {
+        sys_notes_save();
+        return 1;
+    }
+    // Botão Limpar
+    if (contemPonto(criarRetangulo(cx + 132, cy + 4, 78, 20), mx, my)) {
+        sys_notes_clear();
+        return 1;
+    }
+    // Botão +Codigo Kaz
+    if (contemPonto(criarRetangulo(cx + 218, cy + 4, 124, 20), mx, my)) {
+        sys_notes_template();
+        return 1;
+    }
+    return 1;
+}
+
+// --- Aplicativo 3: KazMon (System Monitor & Performance) ---
+function desenharConteudoMonitor(Janela j, TemaCores tema) {
+    int cx = j.x + 12;
+    int cy = j.y + 36;
+    int cw = j.largura - 24;
+    int ch = j.altura - 46;
+
+    sys_render_monitor_in_rect(cx, cy, cw, ch);
+}

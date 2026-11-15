@@ -1,0 +1,104 @@
+// ============================================================================
+// Kaz-UI: Widgets (Janelas, Botões, Cards e Hit-testing)
+// Tipagem canônica e estrita da linguagem Kaz (int var = val;)
+// ============================================================================
+import "tipos.kaz";
+
+struct Botao {
+    int id;
+    int x;
+    int y;
+    int largura;
+    int altura;
+    string texto;
+    int corFundo;
+    int corTexto;
+    bool pressionado;
+}
+
+struct Janela {
+    int id;
+    int x;
+    int y;
+    int largura;
+    int altura;
+    string titulo;
+    int corFundo;
+    int corTitulo;
+    bool ativa;
+    bool visivel;
+    bool minimizada;
+}
+
+function criarJanela(int id, int x, int y, int w, int h, string titulo): Janela {
+    Janela j = Janela {
+        id: id,
+        x: x,
+        y: y,
+        largura: w,
+        altura: h,
+        titulo: titulo,
+        corFundo: 0x00EFEFEF,
+        corTitulo: 0x002B4C6F,
+        ativa: true,
+        visivel: true,
+        minimizada: false
+    };
+    return j;
+}
+
+function criarBotao(int id, int x, int y, int w, int h, string texto): Botao {
+    Botao b = Botao {
+        id: id,
+        x: x,
+        y: y,
+        largura: w,
+        altura: h,
+        texto: texto,
+        corFundo: 0x00D0D4D8,
+        corTexto: 0x00111111,
+        pressionado: false
+    };
+    return b;
+}
+
+function botaoClicado(Botao b, int mouseX, int mouseY): bool {
+    Retangulo r = criarRetangulo(b.x, b.y, b.largura, b.altura);
+    return contemPonto(r, mouseX, mouseY);
+}
+
+function janelaContemPonto(Janela j, int px, int py): bool {
+    if (!j.visivel || j.minimizada) {
+        return false;
+    }
+    Retangulo r = criarRetangulo(j.x, j.y, j.largura, j.altura);
+    return contemPonto(r, px, py);
+}
+
+function janelaBarraTituloClicada(Janela j, int px, int py): bool {
+    if (!j.visivel || j.minimizada) {
+        return false;
+    }
+    Retangulo r = criarRetangulo(j.x, j.y, j.largura - 52, 26);
+    return contemPonto(r, px, py);
+}
+
+function janelaBotaoFecharClicado(Janela j, int px, int py): bool {
+    if (!j.visivel || j.minimizada) {
+        return false;
+    }
+    int bx = j.x + j.largura - 24;
+    int by = j.y + 4;
+    Retangulo r = criarRetangulo(bx, by, 20, 20);
+    return contemPonto(r, px, py);
+}
+
+function janelaBotaoMinimizarClicado(Janela j, int px, int py): bool {
+    if (!j.visivel || j.minimizada) {
+        return false;
+    }
+    int bx = j.x + j.largura - 48;
+    int by = j.y + 4;
+    Retangulo r = criarRetangulo(bx, by, 20, 20);
+    return contemPonto(r, px, py);
+}
