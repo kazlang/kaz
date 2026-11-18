@@ -1,9 +1,10 @@
-# Garante que scripts PowerShell e instaladores não apareçam nas estatísticas de linguagem do GitHub
+# Ignora scripts de automacao e documentacao da barra de linguagens
 *.ps1 linguist-detectable=false
 *.bat linguist-detectable=false
 *.sh  linguist-detectable=false
 scripts/** linguist-detectable=false
 docs/** linguist-documentation=true
 
-# Código Kaz
+# Codigo Kaz marcado com a sintaxe nativa C para highlight imediato
 *.kaz linguist-detectable=true
+*.kaz linguist-language=C
