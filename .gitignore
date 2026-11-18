@@ -1,10 +1,28 @@
-# Ignorar arquivos temporários e caches de SO
+# Binários compilados e artefatos de build
+bin/
+dist/
+release-*/
+target/
+*.exe
+*.o
+*.a
+*.so
+*.dylib
+*.dll
+*.kzc
+
+# Pacotes de distribuição (devem ir para Releases no GitHub)
+*.tar.gz
+*.deb
+*.zip
+*.vsix
+
+# Temporários e caches de SO/IDE
 .DS_Store
 Thumbs.db
 *.tmp
 *.log
-*.kzc
 .vscode/
-*.tar.gz
-*.deb
-*.zip
+.idea/
+*.swp
+__pycache__/

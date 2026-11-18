@@ -216,7 +216,7 @@ kaz
 ### Interface do Kaz Terminal:
 ```text
 ╔═════════════════════════════════════════════════════════════════╗
-║                      KAZ TERMINAL 🦅 v1.5.0                     ║
+║                      KAZ TERMINAL 🦅 v1.6.0                     ║
 ║              Ambiente Interativo & Shell da Linguagem           ║
 ╚═════════════════════════════════════════════════════════════════╝
 

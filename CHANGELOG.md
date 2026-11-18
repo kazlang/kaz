@@ -7,7 +7,7 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ---
 
-## [1.6.0] - 2026-10-20
+## [1.5.0] - 2026-10-20
 
 ### 🚀 Adicionado & Concluído (Milestone 5 - Compilador Nativo Self-Hosted Completo & Ponto Fixo AOT)
 - **Bootstrap Nativo e Ponto Fixo (Fixed Point) 100% Alcançado**:
@@ -19,8 +19,8 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
   - Alocador nativo sob demanda via syscall pura do kernel Linux `sys_brk(12)` com expansão em blocos de 64 MB e gerenciamento de paginação pelo kernel, eliminando riscos de buffer overflow.
 - **Tree Merge O(N) e Otimizações de Memória**:
   - Substituição da concatenação quadrática de strings no gerador NASM por Binary Reduction Tree Merge (`aot_join_lines`), reduzindo o consumo de memória na compilação de 20 GB para menos de 20 MB.
-- **Extensão VS Code v1.6.0**:
-  - Atualização do pacote oficial `.vsix` v1.6.0 com suporte a novos opcodes AOT e builtins estendidos.
+- **Extensão VS Code v1.5.0**:
+  - Atualização do pacote oficial `.vsix` v1.5.0 com suporte a novos opcodes AOT e builtins estendidos.
 
 ---
 
@@ -30,7 +30,7 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 - **Compilador Nativo AOT Direto (`kaz build`)**:
   - O comando `kaz build <arquivo.kaz> [-o saida]` agora compila diretamente programas Kaz para binários executáveis **ELF64 x86-64 estáticos, puros e autônomos (~10 KB)** com montagem via NASM e linkagem via GNU LD.
   - Binários gerados rodam diretamente em bare-metal com **zero dependências** de runtime, libc ou máquinas virtuais intermediárias.
-  - Módulo nativo implementado em Rust puro em [`src/aot/mod.rs`](src/aot/mod.rs) e utilitário autônomo em [`tools/kazaot.py`](tools/kazaot.py).
+  - Módulo nativo implementado em Rust puro em [`src/aot/mod.rs`](file:///home/armando/Projetos/kaz/src/aot/mod.rs) e utilitário autônomo em [`tools/kazaot.py`](file:///home/armando/Projetos/kaz/tools/kazaot.py).
 - **Suporte Abrangente a Toda a Linguagem Kaz no Backend Nativo**:
   - **Aritmética, Variáveis & Controle**: Operações de 64 bits (`Add`, `Sub`, `Mul`, `Div`, `Mod`), comparações relacionais e condicionais, laços `while` e variáveis locais indexadas em pilha de hardware `[rbp - 8*(slot+1)]`.
   - **Funções de Usuário & Recursão Profunda**: Convenção de chamada nativa com prólogo/epílogo `rbp/rsp` e passagem de parâmetros em pilha. Fibonacci recursivo (`fib(25) = 75025`) executa em apenas **4ms** (55x mais rápido que na Stack VM).

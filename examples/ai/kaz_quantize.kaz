@@ -20,16 +20,20 @@ if (args_len() < start_idx + 2) {
     int bits = 4;
     if (args_len() > start_idx + 2) {
         string mode_arg = argv(start_idx + 2);
-        if (mode_arg == "4S" || mode_arg == "4s" || mode_arg == "35" || mode_arg == "3") {
-            bits = 35;
+        if (mode_arg == "37" || mode_arg == "3.7" || mode_arg == "4M") {
+            bits = 37;
         } else {
-            if (mode_arg == "2X" || mode_arg == "2x" || mode_arg == "25" || mode_arg == "2") {
-                bits = 25;
+            if (mode_arg == "4S" || mode_arg == "4s" || mode_arg == "35" || mode_arg == "3") {
+                bits = 35;
             } else {
-                if (mode_arg == "8") {
-                    bits = 8;
+                if (mode_arg == "2X" || mode_arg == "2x" || mode_arg == "25" || mode_arg == "2") {
+                    bits = 25;
                 } else {
-                    bits = 4;
+                    if (mode_arg == "8") {
+                        bits = 8;
+                    } else {
+                        bits = 4;
+                    }
                 }
             }
         }
@@ -41,6 +45,7 @@ if (args_len() < start_idx + 2) {
         int in_size_mb = fs_size(in_path) / (1024 * 1024);
         string profile_name = "KZQ-4B";
         if (bits == 8) { profile_name = "KZQ-8B"; }
+        if (bits == 37) { profile_name = "KZQ-4M (Refined ~3.7 bpw)"; }
         if (bits == 35) { profile_name = "KZQ-4S (Smart Hybrid ~3.5 bpw)"; }
         if (bits == 25) { profile_name = "KZQ-2X (Outlier-Aware ~2.5 bpw)"; }
         runoff("[+] Quantizador Soberano Kaz (" + profile_name + ")");

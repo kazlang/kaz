@@ -1,0 +1,65 @@
+// convert_phi4_to_kzm.kaz - Converte Microsoft Phi-4-mini-instruct (safetensors) direto para .kzm quantizado em Kaz puro
+// Uso: kaz run examples/ai/convert_phi4_to_kzm.kaz [-- 4B|4S|2X|8B|BF16]
+
+function main(): int {
+    runoff("================================================================================");
+    runoff("  KAZ AI ENGINE - Direct Safetensors -> Sovereign Quantized .kzm Converter");
+    runoff("================================================================================");
+
+    string dir = "/home/armando/Projetos/kaz/models/Phi-4-mini-instruct/";
+    string s1 = dir + "model-00001-of-00002.safetensors";
+    string s2 = dir + "model-00002-of-00002.safetensors";
+
+    string mode = "4S";
+    int idx = 0;
+    if (args_len() > 0 && argv(0) == "--") {
+        idx = 1;
+    }
+    if (args_len() > idx) {
+        mode = argv(idx);
+    }
+
+    float bitrate = 3.5;
+    string out_path = dir + "phi-4-mini-kzq4s.kzm";
+    if (mode == "4B" || mode == "4b" || mode == "4") {
+        bitrate = 4.5;
+        out_path = dir + "phi-4-mini-kzq4.kzm";
+    }
+    if (mode == "2X" || mode == "2x" || mode == "2") {
+        bitrate = 2.5;
+        out_path = dir + "phi-4-mini-kzq2x.kzm";
+    }
+    if (mode == "8B" || mode == "8b" || mode == "8") {
+        bitrate = 8.5;
+        out_path = dir + "phi-4-mini-kzq8.kzm";
+    }
+    if (mode == "BF16" || mode == "bf16" || mode == "16") {
+        bitrate = 16.0;
+        out_path = dir + "phi-4-mini-instruct.kzm";
+    }
+
+    if (!file_exists(s1) || !file_exists(s2)) {
+        runoff("[-] Error: Source shards not found in " + dir);
+        return 1;
+    }
+
+    array[string] shards = [s1, s2];
+    runoff("[*] Profile    : KZQ-" + mode + " (bitrate=" + to_string(bitrate) + " bpw)");
+    runoff("[*] Target .kzm: " + out_path);
+
+    int t0 = time_now_ms();
+    // Arch=3 (Phi), Layers=32, HiddenDim=3072, Heads=24, Vocab=200064
+    int count = kzm_convert_sharded_safetensors(shards, out_path, 3, 32, 3072, 24, 200064, bitrate);
+    int elapsed = time_now_ms() - t0;
+
+    if (count <= 0) {
+        runoff("[-] Error: Failed to convert sharded model to .kzm format");
+        return 1;
+    }
+
+    int size_mb = fs_size(out_path) / (1024 * 1024);
+    runoff("[+] Converted " + to_string(count) + " tensors directly from .safetensors to .kzm in " + to_string(elapsed) + " ms");
+    runoff("[+] Final .kzm size: " + to_string(size_mb) + " MB");
+    runoff("================================================================================");
+    return 0;
+}
