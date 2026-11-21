@@ -2,7 +2,7 @@
 ### Uma Linguagem de Programação Moderna, Tipada e de Alta Performance
 
 <p align="center">
-    <img src="kaz_logo_branco.png" width="450" alt="Kaz Logo">
+    <img src="assets/kaz_logo_branco.png" width="450" alt="Kaz Logo">
 </p>
 
 <p align="center">
